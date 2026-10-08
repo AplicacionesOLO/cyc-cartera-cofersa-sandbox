@@ -1,0 +1,80 @@
+version = 0.1
+
+[dev.build.parameters]
+cached = true
+parallel = true
+
+[dev.deploy.parameters]
+stack_name = "dev-cyc-cofersa-api"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+resolve_s3 = true
+s3_prefix = "dev-cyc-cofersa-api"
+parameter_overrides = [
+  "Environment=dev",
+  "VpcSubnetIds=/dev/cyc-cofersa/network/subnets",
+  "LambdaSecurityGroupId=/dev/cyc-cofersa/network/lambda-sg",
+  "DbProxyEndpoint=/dev/cyc-cofersa/db/proxy-endpoint",
+  "DbSecretName=/dev/cyc-cofersa/db/app",
+  "DbName=cof_dev_cyc_cofersa_db",
+  "AllowedOrigins=/dev/cyc-cofersa/frontend/origin",
+  "GoogleOAuthSecretName=/dev/cyc-cofersa/google-oauth",
+]
+tags = [
+  "Project=CYC_COFERSA",
+  "Environment=DEV",
+  "Name=dev-cyc-cofersa-api",
+]
+
+[qa.build.parameters]
+cached = true
+parallel = true
+
+[qa.deploy.parameters]
+stack_name = "qa-cyc-cofersa-api"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+resolve_s3 = true
+s3_prefix = "qa-cyc-cofersa-api"
+parameter_overrides = [
+  "Environment=qa",
+  "VpcSubnetIds=/qa/cyc-cofersa/network/subnets",
+  "LambdaSecurityGroupId=/qa/cyc-cofersa/network/lambda-sg",
+  "DbProxyEndpoint=/qa/cyc-cofersa/db/proxy-endpoint",
+  "DbSecretName=/qa/cyc-cofersa/db/app",
+  "DbName=cof_qa_cyc_cofersa_db",
+  "AllowedOrigins=/qa/cyc-cofersa/frontend/origin",
+]
+tags = [
+  "Project=CYC_COFERSA",
+  "Environment=QA",
+  "Name=qa-cyc-cofersa-api",
+]
+
+[prod.build.parameters]
+cached = true
+parallel = true
+
+[prod.deploy.parameters]
+stack_name = "prod-cyc-cofersa-api"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+resolve_s3 = true
+s3_prefix = "prod-cyc-cofersa-api"
+parameter_overrides = [
+  "Environment=prod",
+  "VpcSubnetIds=/prod/cyc-cofersa/network/subnets",
+  "LambdaSecurityGroupId=/prod/cyc-cofersa/network/lambda-sg",
+  "DbProxyEndpoint=/prod/cyc-cofersa/db/proxy-endpoint",
+  "DbSecretName=/prod/cyc-cofersa/db/app",
+  "DbName=cof_prd_cyc_cofersa_db",
+  "AllowedOrigins=/prod/cyc-cofersa/frontend/origin",
+]
+tags = [
+  "Project=CYC_COFERSA",
+  "Environment=PROD",
+  "Name=prod-cyc-cofersa-api",
+]

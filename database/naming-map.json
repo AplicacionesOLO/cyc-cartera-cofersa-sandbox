@@ -1,0 +1,1791 @@
+{
+  "environment": "dev",
+  "database": "cof_dev_cyc_cofersa_db",
+  "schemas": {
+    "public": "cof_dev_cyc_cofersa_sch_core"
+  },
+  "search_path": [
+    "cof_dev_cyc_cofersa_sch_core"
+  ],
+  "roles": {
+    "ro": "ro_cyc_cofersa",
+    "rw": "rw_cyc_cofersa",
+    "ddl": "ddl_cyc_cofersa",
+    "admin": "admin_cyc_cofersa"
+  },
+  "users": {
+    "ro": "usr_cyc_cofersa_report",
+    "rw": "usr_cyc_cofersa_app",
+    "ddl": "usr_cyc_cofersa_deploy",
+    "admin": "usr_cyc_cofersa_dba"
+  },
+  "relations": [
+    {
+      "source": "public.cartera",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_cartera",
+      "target_name": "tbl_cartera",
+      "kind": "table"
+    },
+    {
+      "source": "public.cartera_id_seq",
+      "target": "cof_dev_cyc_cofersa_sch_core.seq_cartera_id",
+      "target_name": "seq_cartera_id",
+      "kind": "sequence"
+    },
+    {
+      "source": "public.centro_recursos_aplicaciones",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_centro_recursos_aplicaciones",
+      "target_name": "tbl_centro_recursos_aplicaciones",
+      "kind": "table"
+    },
+    {
+      "source": "public.centro_recursos_documentos",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_centro_recursos_documentos",
+      "target_name": "tbl_centro_recursos_documentos",
+      "kind": "table"
+    },
+    {
+      "source": "public.config_audit_log",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_config_audit_log",
+      "target_name": "tbl_config_audit_log",
+      "kind": "table"
+    },
+    {
+      "source": "public.config_sistema",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_config_sistema",
+      "target_name": "tbl_config_sistema",
+      "kind": "table"
+    },
+    {
+      "source": "public.cuentas_bancarias",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_cuentas_bancarias",
+      "target_name": "tbl_cuentas_bancarias",
+      "kind": "table"
+    },
+    {
+      "source": "public.cuentas_bancarias_id_seq",
+      "target": "cof_dev_cyc_cofersa_sch_core.seq_cuentas_bancarias_id",
+      "target_name": "seq_cuentas_bancarias_id",
+      "kind": "sequence"
+    },
+    {
+      "source": "public.directorio_empresa",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_directorio_empresa",
+      "target_name": "tbl_directorio_empresa",
+      "kind": "table"
+    },
+    {
+      "source": "public.facturas",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_facturas",
+      "target_name": "tbl_facturas",
+      "kind": "table"
+    },
+    {
+      "source": "public.facturas_id_seq",
+      "target": "cof_dev_cyc_cofersa_sch_core.seq_facturas_id",
+      "target_name": "seq_facturas_id",
+      "kind": "sequence"
+    },
+    {
+      "source": "public.garantia_eventos",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_garantia_eventos",
+      "target_name": "tbl_garantia_eventos",
+      "kind": "table"
+    },
+    {
+      "source": "public.garantias",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_garantias",
+      "target_name": "tbl_garantias",
+      "kind": "table"
+    },
+    {
+      "source": "public.garantias_consecutivo_anual",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_garantias_consecutivo_anual",
+      "target_name": "tbl_garantias_consecutivo_anual",
+      "kind": "table"
+    },
+    {
+      "source": "public.gestiones",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_gestiones",
+      "target_name": "tbl_gestiones",
+      "kind": "table"
+    },
+    {
+      "source": "public.historico_aging_factura",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_historico_aging_factura",
+      "target_name": "tbl_historico_aging_factura",
+      "kind": "table"
+    },
+    {
+      "source": "public.historico_bloqueados",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_historico_bloqueados",
+      "target_name": "tbl_historico_bloqueados",
+      "kind": "table"
+    },
+    {
+      "source": "public.historico_bloqueados_id_seq",
+      "target": "cof_dev_cyc_cofersa_sch_core.seq_historico_bloqueados_id",
+      "target_name": "seq_historico_bloqueados_id",
+      "kind": "sequence"
+    },
+    {
+      "source": "public.historico_cartera",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_historico_cartera",
+      "target_name": "tbl_historico_cartera",
+      "kind": "table"
+    },
+    {
+      "source": "public.historico_cierres_cartera",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_historico_cierres_cartera",
+      "target_name": "tbl_historico_cierres_cartera",
+      "kind": "table"
+    },
+    {
+      "source": "public.historico_pedidos_retenidos",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_historico_pedidos_retenidos",
+      "target_name": "tbl_historico_pedidos_retenidos",
+      "kind": "table"
+    },
+    {
+      "source": "public.icp_por_cliente",
+      "target": "cof_dev_cyc_cofersa_sch_core.vw_icp_por_cliente",
+      "target_name": "vw_icp_por_cliente",
+      "kind": "view"
+    },
+    {
+      "source": "public.maestro_clientes",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_maestro_clientes",
+      "target_name": "tbl_maestro_clientes",
+      "kind": "table"
+    },
+    {
+      "source": "public.maestro_clientes_id_seq",
+      "target": "cof_dev_cyc_cofersa_sch_core.seq_maestro_clientes_id",
+      "target_name": "seq_maestro_clientes_id",
+      "kind": "sequence"
+    },
+    {
+      "source": "public.marcas",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_marcas",
+      "target_name": "tbl_marcas",
+      "kind": "table"
+    },
+    {
+      "source": "public.notas_rapidas",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_notas_rapidas",
+      "target_name": "tbl_notas_rapidas",
+      "kind": "table"
+    },
+    {
+      "source": "public.notificaciones",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_notificaciones",
+      "target_name": "tbl_notificaciones",
+      "kind": "table"
+    },
+    {
+      "source": "public.pagos",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_pagos",
+      "target_name": "tbl_pagos",
+      "kind": "table"
+    },
+    {
+      "source": "public.pagos_anulados",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_pagos_anulados",
+      "target_name": "tbl_pagos_anulados",
+      "kind": "table"
+    },
+    {
+      "source": "public.pagos_duplicado_descartado",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_pagos_duplicado_descartado",
+      "target_name": "tbl_pagos_duplicado_descartado",
+      "kind": "table"
+    },
+    {
+      "source": "public.pagos_stage",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_pagos_stage",
+      "target_name": "tbl_pagos_stage",
+      "kind": "table"
+    },
+    {
+      "source": "public.pedidos_retenidos",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_pedidos_retenidos",
+      "target_name": "tbl_pedidos_retenidos",
+      "kind": "table"
+    },
+    {
+      "source": "public.pedidos_retenidos_stage",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_pedidos_retenidos_stage",
+      "target_name": "tbl_pedidos_retenidos_stage",
+      "kind": "table"
+    },
+    {
+      "source": "public.personas_legales",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_personas_legales",
+      "target_name": "tbl_personas_legales",
+      "kind": "table"
+    },
+    {
+      "source": "public.portafolio_acotado",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_portafolio_acotado",
+      "target_name": "tbl_portafolio_acotado",
+      "kind": "table"
+    },
+    {
+      "source": "public.portafolio_grupos",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_portafolio_grupos",
+      "target_name": "tbl_portafolio_grupos",
+      "kind": "table"
+    },
+    {
+      "source": "public.presupuesto_cobro",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_presupuesto_cobro",
+      "target_name": "tbl_presupuesto_cobro",
+      "kind": "table"
+    },
+    {
+      "source": "public.presupuesto_cobro_id_seq",
+      "target": "cof_dev_cyc_cofersa_sch_core.seq_presupuesto_cobro_id",
+      "target_name": "seq_presupuesto_cobro_id",
+      "kind": "sequence"
+    },
+    {
+      "source": "public.presupuesto_meta_vendedor",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_presupuesto_meta_vendedor",
+      "target_name": "tbl_presupuesto_meta_vendedor",
+      "kind": "table"
+    },
+    {
+      "source": "public.presupuesto_meta_vendedor_id_seq",
+      "target": "cof_dev_cyc_cofersa_sch_core.seq_presupuesto_meta_vendedor_id",
+      "target_name": "seq_presupuesto_meta_vendedor_id",
+      "kind": "sequence"
+    },
+    {
+      "source": "public.promesas",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_promesas",
+      "target_name": "tbl_promesas",
+      "kind": "table"
+    },
+    {
+      "source": "public.proyeccion_semana_snapshot",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_proyeccion_semana_snapshot",
+      "target_name": "tbl_proyeccion_semana_snapshot",
+      "kind": "table"
+    },
+    {
+      "source": "public.reporte_pago_detalles",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_reporte_pago_detalles",
+      "target_name": "tbl_reporte_pago_detalles",
+      "kind": "table"
+    },
+    {
+      "source": "public.reportes_pago",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_reportes_pago",
+      "target_name": "tbl_reportes_pago",
+      "kind": "table"
+    },
+    {
+      "source": "public.saldos_favor",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_saldos_favor",
+      "target_name": "tbl_saldos_favor",
+      "kind": "table"
+    },
+    {
+      "source": "public.solicitud_comentarios",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_solicitud_comentarios",
+      "target_name": "tbl_solicitud_comentarios",
+      "kind": "table"
+    },
+    {
+      "source": "public.solicitud_historial_estados",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_solicitud_historial_estados",
+      "target_name": "tbl_solicitud_historial_estados",
+      "kind": "table"
+    },
+    {
+      "source": "public.solicitudes",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_solicitudes",
+      "target_name": "tbl_solicitudes",
+      "kind": "table"
+    },
+    {
+      "source": "public.solicitudes_actualizacion",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_solicitudes_actualizacion",
+      "target_name": "tbl_solicitudes_actualizacion",
+      "kind": "table"
+    },
+    {
+      "source": "public.solicitudes_actualizacion_id_seq",
+      "target": "cof_dev_cyc_cofersa_sch_core.seq_solicitudes_actualizacion_id",
+      "target_name": "seq_solicitudes_actualizacion_id",
+      "kind": "sequence"
+    },
+    {
+      "source": "public.solicitudes_consecutivo_seq",
+      "target": "cof_dev_cyc_cofersa_sch_core.seq_solicitudes_numero_consecutivo",
+      "target_name": "seq_solicitudes_numero_consecutivo",
+      "kind": "sequence"
+    },
+    {
+      "source": "public.supervisores",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_supervisores",
+      "target_name": "tbl_supervisores",
+      "kind": "table"
+    },
+    {
+      "source": "public.sync_log",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_sync_log",
+      "target_name": "tbl_sync_log",
+      "kind": "table"
+    },
+    {
+      "source": "public.sync_log_id_seq",
+      "target": "cof_dev_cyc_cofersa_sch_core.seq_sync_log_id",
+      "target_name": "seq_sync_log_id",
+      "kind": "sequence"
+    },
+    {
+      "source": "public.sync_salud",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_sync_salud",
+      "target_name": "tbl_sync_salud",
+      "kind": "table"
+    },
+    {
+      "source": "public.usuarios",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_usuarios",
+      "target_name": "tbl_usuarios",
+      "kind": "table"
+    },
+    {
+      "source": "public.v_automatizaciones_feed",
+      "target": "cof_dev_cyc_cofersa_sch_core.vw_v_automatizaciones_feed",
+      "target_name": "vw_v_automatizaciones_feed",
+      "kind": "view"
+    },
+    {
+      "source": "public.vendedores",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_vendedores",
+      "target_name": "tbl_vendedores",
+      "kind": "table"
+    },
+    {
+      "source": "public.ventas_mensuales",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_ventas_mensuales",
+      "target_name": "tbl_ventas_mensuales",
+      "kind": "table"
+    },
+    {
+      "source": "auth.users",
+      "target": "cof_dev_cyc_cofersa_sch_core.tbl_app_users",
+      "target_name": "tbl_app_users",
+      "kind": "table"
+    }
+  ],
+  "functions": [
+    {
+      "source": "public._recalc_metas",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn__recalc_metas",
+      "target_name": "fn__recalc_metas"
+    },
+    {
+      "source": "public.fn_actualizar_contacto_cliente",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_actualizar_contacto_cliente",
+      "target_name": "fn_actualizar_contacto_cliente"
+    },
+    {
+      "source": "public.fn_actualizar_logistica_cliente",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_actualizar_logistica_cliente",
+      "target_name": "fn_actualizar_logistica_cliente"
+    },
+    {
+      "source": "public.fn_aging_por_dimension",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_aging_por_dimension",
+      "target_name": "fn_aging_por_dimension"
+    },
+    {
+      "source": "public.fn_analisis_alertas_deterioro",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_analisis_alertas_deterioro",
+      "target_name": "fn_analisis_alertas_deterioro"
+    },
+    {
+      "source": "public.fn_analisis_concentracion",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_analisis_concentracion",
+      "target_name": "fn_analisis_concentracion"
+    },
+    {
+      "source": "public.fn_analisis_perfil_vendedor",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_analisis_perfil_vendedor",
+      "target_name": "fn_analisis_perfil_vendedor"
+    },
+    {
+      "source": "public.fn_analisis_ranking_clientes",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_analisis_ranking_clientes",
+      "target_name": "fn_analisis_ranking_clientes"
+    },
+    {
+      "source": "public.fn_asignar_analista_por_vendedor",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_asignar_analista_por_vendedor",
+      "target_name": "fn_asignar_analista_por_vendedor"
+    },
+    {
+      "source": "public.fn_automatizaciones_resumen",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_automatizaciones_resumen",
+      "target_name": "fn_automatizaciones_resumen"
+    },
+    {
+      "source": "public.fn_buscar_contribuyentes",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_buscar_contribuyentes",
+      "target_name": "fn_buscar_contribuyentes"
+    },
+    {
+      "source": "public.fn_cargar_pagos_stage",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_cargar_pagos_stage",
+      "target_name": "fn_cargar_pagos_stage"
+    },
+    {
+      "source": "public.fn_check_recibos_reversion",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_check_recibos_reversion",
+      "target_name": "fn_check_recibos_reversion"
+    },
+    {
+      "source": "public.fn_check_sync_salud",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_check_sync_salud",
+      "target_name": "fn_check_sync_salud"
+    },
+    {
+      "source": "public.fn_cierre_mensual_icp",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_cierre_mensual_icp",
+      "target_name": "fn_cierre_mensual_icp"
+    },
+    {
+      "source": "public.fn_cierre_mensual_meses",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_cierre_mensual_meses",
+      "target_name": "fn_cierre_mensual_meses"
+    },
+    {
+      "source": "public.fn_cierre_mensual_mora",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_cierre_mensual_mora",
+      "target_name": "fn_cierre_mensual_mora"
+    },
+    {
+      "source": "public.fn_cierre_mensual_pedidos_retenidos",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_cierre_mensual_pedidos_retenidos",
+      "target_name": "fn_cierre_mensual_pedidos_retenidos"
+    },
+    {
+      "source": "public.fn_cierre_mensual_riesgo_vendedor",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_cierre_mensual_riesgo_vendedor",
+      "target_name": "fn_cierre_mensual_riesgo_vendedor"
+    },
+    {
+      "source": "public.fn_clientes_lista",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_clientes_lista",
+      "target_name": "fn_clientes_lista"
+    },
+    {
+      "source": "public.fn_cola_del_dia",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_cola_del_dia",
+      "target_name": "fn_cola_del_dia"
+    },
+    {
+      "source": "public.fn_conciliar_promesas",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_conciliar_promesas",
+      "target_name": "fn_conciliar_promesas"
+    },
+    {
+      "source": "public.fn_contar_garantias_en_carpeta",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_contar_garantias_en_carpeta",
+      "target_name": "fn_contar_garantias_en_carpeta"
+    },
+    {
+      "source": "public.fn_cron_cierre_mensual",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_cron_cierre_mensual",
+      "target_name": "fn_cron_cierre_mensual"
+    },
+    {
+      "source": "public.fn_dashboard_analista_kpis",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_dashboard_analista_kpis",
+      "target_name": "fn_dashboard_analista_kpis"
+    },
+    {
+      "source": "public.fn_dashboard_vendedores_analista",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_dashboard_vendedores_analista",
+      "target_name": "fn_dashboard_vendedores_analista"
+    },
+    {
+      "source": "public.fn_es_usuario_activo",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_es_usuario_activo",
+      "target_name": "fn_es_usuario_activo"
+    },
+    {
+      "source": "public.fn_estados_cuenta",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_estados_cuenta",
+      "target_name": "fn_estados_cuenta"
+    },
+    {
+      "source": "public.fn_expirar_solicitudes_actualizacion",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_expirar_solicitudes_actualizacion",
+      "target_name": "fn_expirar_solicitudes_actualizacion"
+    },
+    {
+      "source": "public.fn_garantias_clientes_sin_garantia",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_garantias_clientes_sin_garantia",
+      "target_name": "fn_garantias_clientes_sin_garantia"
+    },
+    {
+      "source": "public.fn_garantias_lista",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_garantias_lista",
+      "target_name": "fn_garantias_lista"
+    },
+    {
+      "source": "public.fn_matching_saldos_favor",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_matching_saldos_favor",
+      "target_name": "fn_matching_saldos_favor"
+    },
+    {
+      "source": "public.fn_meta_analista_mes",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_meta_analista_mes",
+      "target_name": "fn_meta_analista_mes"
+    },
+    {
+      "source": "public.fn_normalizar_analista_nombre",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_normalizar_analista_nombre",
+      "target_name": "fn_normalizar_analista_nombre"
+    },
+    {
+      "source": "public.fn_notificar_pedido_en_regla",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_notificar_pedido_en_regla",
+      "target_name": "fn_notificar_pedido_en_regla"
+    },
+    {
+      "source": "public.fn_notificar_pedido_retenido",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_notificar_pedido_retenido",
+      "target_name": "fn_notificar_pedido_retenido"
+    },
+    {
+      "source": "public.fn_notificar_promesas_hoy",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_notificar_promesas_hoy",
+      "target_name": "fn_notificar_promesas_hoy"
+    },
+    {
+      "source": "public.fn_notificar_sin_gestion",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_notificar_sin_gestion",
+      "target_name": "fn_notificar_sin_gestion"
+    },
+    {
+      "source": "public.fn_notificar_sla_vencido",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_notificar_sla_vencido",
+      "target_name": "fn_notificar_sla_vencido"
+    },
+    {
+      "source": "public.fn_pagos_mes_resumen",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_pagos_mes_resumen",
+      "target_name": "fn_pagos_mes_resumen"
+    },
+    {
+      "source": "public.fn_pedidos_retenidos",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_pedidos_retenidos",
+      "target_name": "fn_pedidos_retenidos"
+    },
+    {
+      "source": "public.fn_portafolio_destinatarios",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_portafolio_destinatarios",
+      "target_name": "fn_portafolio_destinatarios"
+    },
+    {
+      "source": "public.fn_presupuesto_calc",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_presupuesto_calc",
+      "target_name": "fn_presupuesto_calc"
+    },
+    {
+      "source": "public.fn_presupuesto_frozen",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_presupuesto_frozen",
+      "target_name": "fn_presupuesto_frozen"
+    },
+    {
+      "source": "public.fn_presupuesto_guardar",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_presupuesto_guardar",
+      "target_name": "fn_presupuesto_guardar"
+    },
+    {
+      "source": "public.fn_presupuesto_meta",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_presupuesto_meta",
+      "target_name": "fn_presupuesto_meta"
+    },
+    {
+      "source": "public.fn_presupuesto_preview",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_presupuesto_preview",
+      "target_name": "fn_presupuesto_preview"
+    },
+    {
+      "source": "public.fn_presupuesto_reasignar",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_presupuesto_reasignar",
+      "target_name": "fn_presupuesto_reasignar"
+    },
+    {
+      "source": "public.fn_propagar_analista_vendedor",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_propagar_analista_vendedor",
+      "target_name": "fn_propagar_analista_vendedor"
+    },
+    {
+      "source": "public.fn_proteger_contacto_manual",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_proteger_contacto_manual",
+      "target_name": "fn_proteger_contacto_manual"
+    },
+    {
+      "source": "public.fn_proteger_logistica_manual",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_proteger_logistica_manual",
+      "target_name": "fn_proteger_logistica_manual"
+    },
+    {
+      "source": "public.fn_proyeccion_cobro",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_proyeccion_cobro",
+      "target_name": "fn_proyeccion_cobro"
+    },
+    {
+      "source": "public.fn_recuperacion",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_recuperacion",
+      "target_name": "fn_recuperacion"
+    },
+    {
+      "source": "public.fn_recuperacion_mom",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_recuperacion_mom",
+      "target_name": "fn_recuperacion_mom"
+    },
+    {
+      "source": "public.fn_recuperacion_periodo",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_recuperacion_periodo",
+      "target_name": "fn_recuperacion_periodo"
+    },
+    {
+      "source": "public.fn_recuperacion_tramos",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_recuperacion_tramos",
+      "target_name": "fn_recuperacion_tramos"
+    },
+    {
+      "source": "public.fn_registrar_historico_cartera",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_registrar_historico_cartera",
+      "target_name": "fn_registrar_historico_cartera"
+    },
+    {
+      "source": "public.fn_reporte_aging",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_reporte_aging",
+      "target_name": "fn_reporte_aging"
+    },
+    {
+      "source": "public.fn_reporte_bloqueados",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_reporte_bloqueados",
+      "target_name": "fn_reporte_bloqueados"
+    },
+    {
+      "source": "public.fn_reporte_cei",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_reporte_cei",
+      "target_name": "fn_reporte_cei"
+    },
+    {
+      "source": "public.fn_reporte_efectividad",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_reporte_efectividad",
+      "target_name": "fn_reporte_efectividad"
+    },
+    {
+      "source": "public.fn_reporte_migracion_mora",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_reporte_migracion_mora",
+      "target_name": "fn_reporte_migracion_mora"
+    },
+    {
+      "source": "public.fn_reporte_mora_vendedor",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_reporte_mora_vendedor",
+      "target_name": "fn_reporte_mora_vendedor"
+    },
+    {
+      "source": "public.fn_reporte_plazo_especial",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_reporte_plazo_especial",
+      "target_name": "fn_reporte_plazo_especial"
+    },
+    {
+      "source": "public.fn_resolver_responsables_contribuyente",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_resolver_responsables_contribuyente",
+      "target_name": "fn_resolver_responsables_contribuyente"
+    },
+    {
+      "source": "public.fn_saldo_contribuyente",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_saldo_contribuyente",
+      "target_name": "fn_saldo_contribuyente"
+    },
+    {
+      "source": "public.fn_saldos_favor",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_saldos_favor",
+      "target_name": "fn_saldos_favor"
+    },
+    {
+      "source": "public.fn_siguiente_carpeta_disponible",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_siguiente_carpeta_disponible",
+      "target_name": "fn_siguiente_carpeta_disponible"
+    },
+    {
+      "source": "public.fn_siguiente_consecutivo_garantia",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_siguiente_consecutivo_garantia",
+      "target_name": "fn_siguiente_consecutivo_garantia"
+    },
+    {
+      "source": "public.fn_sin_pago_cliente",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_sin_pago_cliente",
+      "target_name": "fn_sin_pago_cliente"
+    },
+    {
+      "source": "public.fn_sincronizar_analista_nombre",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_sincronizar_analista_nombre",
+      "target_name": "fn_sincronizar_analista_nombre"
+    },
+    {
+      "source": "public.fn_snapshot_aging_factura",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_snapshot_aging_factura",
+      "target_name": "fn_snapshot_aging_factura"
+    },
+    {
+      "source": "public.fn_snapshot_bloqueados_semana",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_snapshot_bloqueados_semana",
+      "target_name": "fn_snapshot_bloqueados_semana"
+    },
+    {
+      "source": "public.fn_snapshot_cierre_cartera",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_snapshot_cierre_cartera",
+      "target_name": "fn_snapshot_cierre_cartera"
+    },
+    {
+      "source": "public.fn_snapshot_cierre_completo",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_snapshot_cierre_completo",
+      "target_name": "fn_snapshot_cierre_completo"
+    },
+    {
+      "source": "public.fn_snapshot_proyeccion_semana",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_snapshot_proyeccion_semana",
+      "target_name": "fn_snapshot_proyeccion_semana"
+    },
+    {
+      "source": "public.fn_sync_cartera",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_sync_cartera",
+      "target_name": "fn_sync_cartera"
+    },
+    {
+      "source": "public.fn_sync_facturas",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_sync_facturas",
+      "target_name": "fn_sync_facturas"
+    },
+    {
+      "source": "public.fn_sync_pagos",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_sync_pagos",
+      "target_name": "fn_sync_pagos"
+    },
+    {
+      "source": "public.fn_sync_pedidos_retenidos",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_sync_pedidos_retenidos",
+      "target_name": "fn_sync_pedidos_retenidos"
+    },
+    {
+      "source": "public.fn_sync_saldos_favor",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_sync_saldos_favor",
+      "target_name": "fn_sync_saldos_favor"
+    },
+    {
+      "source": "public.fn_sync_salud_eval",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_sync_salud_eval",
+      "target_name": "fn_sync_salud_eval"
+    },
+    {
+      "source": "public.fn_tendencia_pago_cliente",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_tendencia_pago_cliente",
+      "target_name": "fn_tendencia_pago_cliente"
+    },
+    {
+      "source": "public.fn_vendedores_por_contribuyente",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_vendedores_por_contribuyente",
+      "target_name": "fn_vendedores_por_contribuyente"
+    },
+    {
+      "source": "public.get_kpis_cartera",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_get_kpis_cartera",
+      "target_name": "fn_get_kpis_cartera"
+    },
+    {
+      "source": "public.get_kpis_saldos_favor",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_get_kpis_saldos_favor",
+      "target_name": "fn_get_kpis_saldos_favor"
+    },
+    {
+      "source": "public.get_mi_rol",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_get_mi_rol",
+      "target_name": "fn_get_mi_rol"
+    },
+    {
+      "source": "public.get_usuario_id",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_get_usuario_id",
+      "target_name": "fn_get_usuario_id"
+    },
+    {
+      "source": "public.set_updated_at",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_set_updated_at",
+      "target_name": "fn_set_updated_at"
+    },
+    {
+      "source": "public.update_updated_at",
+      "target": "cof_dev_cyc_cofersa_sch_core.fn_update_updated_at",
+      "target_name": "fn_update_updated_at"
+    }
+  ],
+  "auth_functions": {
+    "auth.uid()": "fn_auth_uid()",
+    "auth.role()": "fn_auth_role()",
+    "auth.email()": "fn_auth_email()",
+    "auth.jwt()": "fn_auth_jwt()"
+  },
+  "constraints": [
+    {
+      "table": "public.cartera",
+      "source": "cartera_contribuyente_cliente_cod_key",
+      "target": "uq_cartera_contribuyente_cliente_cod"
+    },
+    {
+      "table": "public.cartera",
+      "source": "cartera_pkey",
+      "target": "pk_cartera"
+    },
+    {
+      "table": "public.centro_recursos_aplicaciones",
+      "source": "centro_recursos_aplicaciones_pkey",
+      "target": "pk_centro_recursos_aplicaciones"
+    },
+    {
+      "table": "public.centro_recursos_documentos",
+      "source": "centro_recursos_documentos_pkey",
+      "target": "pk_centro_recursos_documentos"
+    },
+    {
+      "table": "public.config_audit_log",
+      "source": "config_audit_log_pkey",
+      "target": "pk_config_audit_log"
+    },
+    {
+      "table": "public.config_sistema",
+      "source": "config_sistema_pkey",
+      "target": "pk_config_sistema"
+    },
+    {
+      "table": "public.cuentas_bancarias",
+      "source": "cuentas_bancarias_moneda_check",
+      "target": "ck_cuentas_bancarias_moneda"
+    },
+    {
+      "table": "public.cuentas_bancarias",
+      "source": "cuentas_bancarias_pkey",
+      "target": "pk_cuentas_bancarias"
+    },
+    {
+      "table": "public.cuentas_bancarias",
+      "source": "cuentas_bancarias_tipo_check",
+      "target": "ck_cuentas_bancarias_tipo"
+    },
+    {
+      "table": "public.directorio_empresa",
+      "source": "directorio_empresa_email_key",
+      "target": "uq_directorio_empresa_email"
+    },
+    {
+      "table": "public.directorio_empresa",
+      "source": "directorio_empresa_pkey",
+      "target": "pk_directorio_empresa"
+    },
+    {
+      "table": "public.facturas",
+      "source": "facturas_contribuyente_documento_key",
+      "target": "uq_facturas_contribuyente_documento"
+    },
+    {
+      "table": "public.facturas",
+      "source": "facturas_pkey",
+      "target": "pk_facturas"
+    },
+    {
+      "table": "public.garantia_eventos",
+      "source": "garantia_eventos_garantia_id_fkey",
+      "target": "fk_garantia_eventos_garantias"
+    },
+    {
+      "table": "public.garantia_eventos",
+      "source": "garantia_eventos_pkey",
+      "target": "pk_garantia_eventos"
+    },
+    {
+      "table": "public.garantia_eventos",
+      "source": "garantia_eventos_tipo_evento_check",
+      "target": "ck_garantia_eventos_tipo_evento"
+    },
+    {
+      "table": "public.garantia_eventos",
+      "source": "garantia_eventos_usuario_id_fkey",
+      "target": "fk_garantia_eventos_usuarios"
+    },
+    {
+      "table": "public.garantias",
+      "source": "garantias_consecutivo_key",
+      "target": "uq_garantias_consecutivo"
+    },
+    {
+      "table": "public.garantias",
+      "source": "garantias_deudor_estado_civil_check",
+      "target": "ck_garantias_deudor_estado_civil"
+    },
+    {
+      "table": "public.garantias",
+      "source": "garantias_estado_custodia_check",
+      "target": "ck_garantias_estado_custodia"
+    },
+    {
+      "table": "public.garantias",
+      "source": "garantias_fiador_estado_civil_check",
+      "target": "ck_garantias_fiador_estado_civil"
+    },
+    {
+      "table": "public.garantias",
+      "source": "garantias_monto_garantizado_check",
+      "target": "ck_garantias_monto_garantizado"
+    },
+    {
+      "table": "public.garantias",
+      "source": "garantias_origen_registro_check",
+      "target": "ck_garantias_origen_registro"
+    },
+    {
+      "table": "public.garantias",
+      "source": "garantias_pkey",
+      "target": "pk_garantias"
+    },
+    {
+      "table": "public.garantias",
+      "source": "garantias_reemplazada_por_id_fkey",
+      "target": "fk_garantias_garantias"
+    },
+    {
+      "table": "public.garantias",
+      "source": "garantias_registrado_por_fkey",
+      "target": "fk_garantias_usuarios"
+    },
+    {
+      "table": "public.garantias",
+      "source": "garantias_representante_estado_civil_check",
+      "target": "ck_garantias_representante_estado_civil"
+    },
+    {
+      "table": "public.garantias",
+      "source": "garantias_tasa_interes_moratorio_check",
+      "target": "ck_garantias_tasa_interes_moratorio"
+    },
+    {
+      "table": "public.garantias",
+      "source": "garantias_tipo_titulo_check",
+      "target": "ck_garantias_tipo_titulo"
+    },
+    {
+      "table": "public.garantias",
+      "source": "garantias_vencimiento_posterior_check",
+      "target": "ck_garantias_vencimiento_posterior"
+    },
+    {
+      "table": "public.garantias_consecutivo_anual",
+      "source": "garantias_consecutivo_anual_pkey",
+      "target": "pk_garantias_consecutivo_anual"
+    },
+    {
+      "table": "public.gestiones",
+      "source": "gestiones_pkey",
+      "target": "pk_gestiones"
+    },
+    {
+      "table": "public.historico_aging_factura",
+      "source": "historico_aging_factura_anio_mes_cliente_cod_documento_key",
+      "target": "uq_historico_aging_factura_anio_mes_cliente_cod_documento"
+    },
+    {
+      "table": "public.historico_aging_factura",
+      "source": "historico_aging_factura_mes_check",
+      "target": "ck_historico_aging_factura_mes"
+    },
+    {
+      "table": "public.historico_aging_factura",
+      "source": "historico_aging_factura_pkey",
+      "target": "pk_historico_aging_factura"
+    },
+    {
+      "table": "public.historico_bloqueados",
+      "source": "historico_bloqueados_fecha_semana_cliente_cod_key",
+      "target": "uq_historico_bloqueados_fecha_semana_cliente_cod"
+    },
+    {
+      "table": "public.historico_bloqueados",
+      "source": "historico_bloqueados_pkey",
+      "target": "pk_historico_bloqueados"
+    },
+    {
+      "table": "public.historico_bloqueados",
+      "source": "historico_bloqueados_vendedor_cod_fkey",
+      "target": "fk_historico_bloqueados_vendedores"
+    },
+    {
+      "table": "public.historico_cartera",
+      "source": "historico_cartera_fecha_key",
+      "target": "uq_historico_cartera_fecha"
+    },
+    {
+      "table": "public.historico_cartera",
+      "source": "historico_cartera_pkey",
+      "target": "pk_historico_cartera"
+    },
+    {
+      "table": "public.historico_cierres_cartera",
+      "source": "historico_cierres_cartera_anio_mes_vendedor_cod_key",
+      "target": "uq_historico_cierres_cartera_anio_mes_vendedor_cod"
+    },
+    {
+      "table": "public.historico_cierres_cartera",
+      "source": "historico_cierres_cartera_mes_check",
+      "target": "ck_historico_cierres_cartera_mes"
+    },
+    {
+      "table": "public.historico_cierres_cartera",
+      "source": "historico_cierres_cartera_pkey",
+      "target": "pk_historico_cierres_cartera"
+    },
+    {
+      "table": "public.historico_cierres_cartera",
+      "source": "historico_cierres_cartera_vendedor_cod_fkey",
+      "target": "fk_historico_cierres_cartera_vendedores"
+    },
+    {
+      "table": "public.historico_pedidos_retenidos",
+      "source": "historico_pedidos_retenidos_pkey",
+      "target": "pk_historico_pedidos_retenidos"
+    },
+    {
+      "table": "public.maestro_clientes",
+      "source": "maestro_clientes_analista_email_fkey",
+      "target": "fk_maestro_clientes_usuarios"
+    },
+    {
+      "table": "public.maestro_clientes",
+      "source": "maestro_clientes_cliente_cod_key",
+      "target": "uq_maestro_clientes_cliente_cod"
+    },
+    {
+      "table": "public.maestro_clientes",
+      "source": "maestro_clientes_pkey",
+      "target": "pk_maestro_clientes"
+    },
+    {
+      "table": "public.maestro_clientes",
+      "source": "maestro_clientes_vendedor_cod_fkey",
+      "target": "fk_maestro_clientes_vendedores"
+    },
+    {
+      "table": "public.marcas",
+      "source": "marcas_comprador_id_fkey",
+      "target": "fk_marcas_directorio_empresa"
+    },
+    {
+      "table": "public.marcas",
+      "source": "marcas_pkey",
+      "target": "pk_marcas"
+    },
+    {
+      "table": "public.notas_rapidas",
+      "source": "notas_rapidas_pkey",
+      "target": "pk_notas_rapidas"
+    },
+    {
+      "table": "public.notas_rapidas",
+      "source": "notas_rapidas_usuario_id_fecha_key",
+      "target": "uq_notas_rapidas_usuario_id_fecha"
+    },
+    {
+      "table": "public.notas_rapidas",
+      "source": "notas_rapidas_usuario_id_fkey",
+      "target": "fk_notas_rapidas_usuarios"
+    },
+    {
+      "table": "public.notificaciones",
+      "source": "notificaciones_pkey",
+      "target": "pk_notificaciones"
+    },
+    {
+      "table": "public.notificaciones",
+      "source": "notificaciones_tipo_check",
+      "target": "ck_notificaciones_tipo"
+    },
+    {
+      "table": "public.notificaciones",
+      "source": "notificaciones_usuario_id_fkey",
+      "target": "fk_notificaciones_usuarios"
+    },
+    {
+      "table": "public.pagos",
+      "source": "pagos_factura_recibo_uq",
+      "target": "uq_pagos_no_factura_no_recibo"
+    },
+    {
+      "table": "public.pagos",
+      "source": "pagos_pkey",
+      "target": "pk_pagos"
+    },
+    {
+      "table": "public.pagos_anulados",
+      "source": "pagos_anulados_pkey",
+      "target": "pk_pagos_anulados"
+    },
+    {
+      "table": "public.pagos_duplicado_descartado",
+      "source": "pagos_duplicado_descartado_pkey",
+      "target": "pk_pagos_duplicado_descartado"
+    },
+    {
+      "table": "public.pedidos_retenidos",
+      "source": "pedidos_retenidos_estado_check",
+      "target": "ck_pedidos_retenidos_estado_sic"
+    },
+    {
+      "table": "public.pedidos_retenidos",
+      "source": "pedidos_retenidos_pkey",
+      "target": "pk_pedidos_retenidos"
+    },
+    {
+      "table": "public.personas_legales",
+      "source": "personas_legales_estado_civil_check",
+      "target": "ck_personas_legales_estado_civil"
+    },
+    {
+      "table": "public.personas_legales",
+      "source": "personas_legales_pkey",
+      "target": "pk_personas_legales"
+    },
+    {
+      "table": "public.portafolio_acotado",
+      "source": "portafolio_acotado_pkey",
+      "target": "pk_portafolio_acotado"
+    },
+    {
+      "table": "public.portafolio_acotado",
+      "source": "portafolio_acotado_principal_cod_fkey",
+      "target": "fk_portafolio_acotado_portafolio_grupos"
+    },
+    {
+      "table": "public.portafolio_acotado",
+      "source": "portafolio_acotado_principal_cod_vendedor_cod_key",
+      "target": "uq_portafolio_acotado_principal_cod_vendedor_cod"
+    },
+    {
+      "table": "public.portafolio_acotado",
+      "source": "portafolio_acotado_vendedor_cod_fkey",
+      "target": "fk_portafolio_acotado_vendedores"
+    },
+    {
+      "table": "public.portafolio_grupos",
+      "source": "portafolio_grupos_pkey",
+      "target": "pk_portafolio_grupos"
+    },
+    {
+      "table": "public.presupuesto_cobro",
+      "source": "presupuesto_cobro_anio_mes_cliente_cod_key",
+      "target": "uq_presupuesto_cobro_anio_mes_cliente_cod"
+    },
+    {
+      "table": "public.presupuesto_cobro",
+      "source": "presupuesto_cobro_pkey",
+      "target": "pk_presupuesto_cobro"
+    },
+    {
+      "table": "public.presupuesto_cobro",
+      "source": "presupuesto_cobro_vendedor_cod_fkey",
+      "target": "fk_presupuesto_cobro_vendedores"
+    },
+    {
+      "table": "public.presupuesto_meta_vendedor",
+      "source": "presupuesto_meta_vendedor_anio_mes_vendedor_cod_key",
+      "target": "uq_presupuesto_meta_vendedor_anio_mes_vendedor_cod"
+    },
+    {
+      "table": "public.presupuesto_meta_vendedor",
+      "source": "presupuesto_meta_vendedor_pkey",
+      "target": "pk_presupuesto_meta_vendedor"
+    },
+    {
+      "table": "public.presupuesto_meta_vendedor",
+      "source": "presupuesto_meta_vendedor_vendedor_cod_fkey",
+      "target": "fk_presupuesto_meta_vendedor_vendedores"
+    },
+    {
+      "table": "public.promesas",
+      "source": "promesas_estado_check",
+      "target": "ck_promesas_estado"
+    },
+    {
+      "table": "public.promesas",
+      "source": "promesas_pkey",
+      "target": "pk_promesas"
+    },
+    {
+      "table": "public.promesas",
+      "source": "promesas_reprogramada_de_id_fkey",
+      "target": "fk_promesas_promesas"
+    },
+    {
+      "table": "public.proyeccion_semana_snapshot",
+      "source": "proyeccion_semana_snapshot_pkey",
+      "target": "pk_proyeccion_semana_snapshot"
+    },
+    {
+      "table": "public.reporte_pago_detalles",
+      "source": "reporte_pago_detalles_pkey",
+      "target": "pk_reporte_pago_detalles"
+    },
+    {
+      "table": "public.reporte_pago_detalles",
+      "source": "reporte_pago_detalles_reporte_id_fkey",
+      "target": "fk_reporte_pago_detalles_reportes_pago"
+    },
+    {
+      "table": "public.reportes_pago",
+      "source": "reportes_pago_pkey",
+      "target": "pk_reportes_pago"
+    },
+    {
+      "table": "public.reportes_pago",
+      "source": "reportes_pago_referencia_key",
+      "target": "uq_reportes_pago_referencia"
+    },
+    {
+      "table": "public.saldos_favor",
+      "source": "saldos_favor_documento_uq",
+      "target": "uq_saldos_favor_documento"
+    },
+    {
+      "table": "public.saldos_favor",
+      "source": "saldos_favor_estado_manual_check",
+      "target": "ck_saldos_favor_estado_manual"
+    },
+    {
+      "table": "public.saldos_favor",
+      "source": "saldos_favor_pkey",
+      "target": "pk_saldos_favor"
+    },
+    {
+      "table": "public.solicitud_comentarios",
+      "source": "solicitud_comentarios_pkey",
+      "target": "pk_solicitud_comentarios"
+    },
+    {
+      "table": "public.solicitud_comentarios",
+      "source": "solicitud_comentarios_solicitud_id_fkey",
+      "target": "fk_solicitud_comentarios_solicitudes"
+    },
+    {
+      "table": "public.solicitud_comentarios",
+      "source": "solicitud_comentarios_usuario_id_fkey",
+      "target": "fk_solicitud_comentarios_usuarios"
+    },
+    {
+      "table": "public.solicitud_historial_estados",
+      "source": "solicitud_historial_estados_pkey",
+      "target": "pk_solicitud_historial_estados"
+    },
+    {
+      "table": "public.solicitud_historial_estados",
+      "source": "solicitud_historial_estados_solicitud_id_fkey",
+      "target": "fk_solicitud_historial_estados_solicitudes"
+    },
+    {
+      "table": "public.solicitud_historial_estados",
+      "source": "solicitud_historial_estados_usuario_id_fkey",
+      "target": "fk_solicitud_historial_estados_usuarios"
+    },
+    {
+      "table": "public.solicitudes",
+      "source": "solicitudes_cliente_id_fkey",
+      "target": "fk_solicitudes_maestro_clientes"
+    },
+    {
+      "table": "public.solicitudes",
+      "source": "solicitudes_gestion_id_fkey",
+      "target": "fk_solicitudes_gestiones"
+    },
+    {
+      "table": "public.solicitudes",
+      "source": "solicitudes_pkey",
+      "target": "pk_solicitudes"
+    },
+    {
+      "table": "public.solicitudes",
+      "source": "solicitudes_prioridad_check",
+      "target": "ck_solicitudes_prioridad"
+    },
+    {
+      "table": "public.solicitudes",
+      "source": "solicitudes_revisor_id_fkey",
+      "target": "fk_solicitudes_usuarios_revisor_id"
+    },
+    {
+      "table": "public.solicitudes",
+      "source": "solicitudes_solicitante_id_fkey",
+      "target": "fk_solicitudes_usuarios_solicitante_id"
+    },
+    {
+      "table": "public.solicitudes_actualizacion",
+      "source": "solicitudes_actualizacion_aprobada_por_fkey",
+      "target": "fk_solicitudes_actualizacion_usuarios_aprobada_por"
+    },
+    {
+      "table": "public.solicitudes_actualizacion",
+      "source": "solicitudes_actualizacion_enviada_por_fkey",
+      "target": "fk_solicitudes_actualizacion_usuarios_enviada_por"
+    },
+    {
+      "table": "public.solicitudes_actualizacion",
+      "source": "solicitudes_actualizacion_estado_check",
+      "target": "ck_solicitudes_actualizacion_estado"
+    },
+    {
+      "table": "public.solicitudes_actualizacion",
+      "source": "solicitudes_actualizacion_garantia_id_fkey",
+      "target": "fk_solicitudes_actualizacion_garantias"
+    },
+    {
+      "table": "public.solicitudes_actualizacion",
+      "source": "solicitudes_actualizacion_pkey",
+      "target": "pk_solicitudes_actualizacion"
+    },
+    {
+      "table": "public.solicitudes_actualizacion",
+      "source": "solicitudes_actualizacion_tipo_persona_check",
+      "target": "ck_solicitudes_actualizacion_tipo_persona"
+    },
+    {
+      "table": "public.solicitudes_actualizacion",
+      "source": "solicitudes_actualizacion_token_hash_key",
+      "target": "uq_solicitudes_actualizacion_token_hash"
+    },
+    {
+      "table": "public.supervisores",
+      "source": "supervisores_email_key",
+      "target": "uq_supervisores_email"
+    },
+    {
+      "table": "public.supervisores",
+      "source": "supervisores_jefe_regional_cod_fkey",
+      "target": "fk_supervisores_supervisores"
+    },
+    {
+      "table": "public.supervisores",
+      "source": "supervisores_pkey",
+      "target": "pk_supervisores"
+    },
+    {
+      "table": "public.sync_log",
+      "source": "sync_log_pkey",
+      "target": "pk_sync_log"
+    },
+    {
+      "table": "public.sync_salud",
+      "source": "sync_salud_pkey",
+      "target": "pk_sync_salud"
+    },
+    {
+      "table": "public.usuarios",
+      "source": "usuarios_email_key",
+      "target": "uq_usuarios_email"
+    },
+    {
+      "table": "public.usuarios",
+      "source": "usuarios_pkey",
+      "target": "pk_usuarios"
+    },
+    {
+      "table": "public.usuarios",
+      "source": "usuarios_rol_check",
+      "target": "ck_usuarios_rol"
+    },
+    {
+      "table": "public.vendedores",
+      "source": "vendedores_analista_email_fkey",
+      "target": "fk_vendedores_usuarios"
+    },
+    {
+      "table": "public.vendedores",
+      "source": "vendedores_pkey",
+      "target": "pk_vendedores"
+    },
+    {
+      "table": "public.vendedores",
+      "source": "vendedores_supervisor_cod_fkey",
+      "target": "fk_vendedores_supervisores"
+    },
+    {
+      "table": "public.ventas_mensuales",
+      "source": "ventas_mensuales_anio_mes_key",
+      "target": "uq_ventas_mensuales_anio_mes"
+    },
+    {
+      "table": "public.ventas_mensuales",
+      "source": "ventas_mensuales_pkey",
+      "target": "pk_ventas_mensuales"
+    }
+  ],
+  "indexes": [
+    {
+      "source": "public.garantia_eventos_garantia_id_idx",
+      "target": "idx_garantia_eventos_garantia_id"
+    },
+    {
+      "source": "public.garantia_eventos_usuario_id_idx",
+      "target": "idx_garantia_eventos_usuario_id"
+    },
+    {
+      "source": "public.garantias_analista_email_idx",
+      "target": "idx_garantias_analista_email"
+    },
+    {
+      "source": "public.garantias_contribuyente_idx",
+      "target": "uidx_garantias_contribuyente_partial"
+    },
+    {
+      "source": "public.garantias_reemplazada_por_id_idx",
+      "target": "idx_garantias_reemplazada_por_id"
+    },
+    {
+      "source": "public.garantias_registrado_por_idx",
+      "target": "idx_garantias_registrado_por"
+    },
+    {
+      "source": "public.historico_cartera_fecha_idx",
+      "target": "idx_historico_cartera_fecha"
+    },
+    {
+      "source": "public.idx_aging_fact_doc",
+      "target": "idx_historico_aging_factura_cliente_cod_documento"
+    },
+    {
+      "source": "public.idx_aging_fact_periodo",
+      "target": "idx_historico_aging_factura_anio_mes"
+    },
+    {
+      "source": "public.idx_audit_fecha",
+      "target": "idx_config_audit_log_realizado_en"
+    },
+    {
+      "source": "public.idx_audit_tabla",
+      "target": "idx_config_audit_log_tabla"
+    },
+    {
+      "source": "public.idx_cartera_cliente_cod",
+      "target": "idx_cartera_cliente_cod"
+    },
+    {
+      "source": "public.idx_cartera_contribuyente",
+      "target": "idx_cartera_contribuyente"
+    },
+    {
+      "source": "public.idx_cartera_sync_id",
+      "target": "idx_cartera_sync_id"
+    },
+    {
+      "source": "public.idx_cierres_anio_mes",
+      "target": "idx_historico_cierres_cartera_anio_mes"
+    },
+    {
+      "source": "public.idx_facturas_cliente_cod",
+      "target": "idx_facturas_cliente_cod"
+    },
+    {
+      "source": "public.idx_facturas_contribuyente",
+      "target": "idx_facturas_contribuyente"
+    },
+    {
+      "source": "public.idx_gestiones_analista",
+      "target": "idx_gestiones_analista_email"
+    },
+    {
+      "source": "public.idx_gestiones_cliente_cod",
+      "target": "idx_gestiones_cliente_cod"
+    },
+    {
+      "source": "public.idx_gestiones_fecha",
+      "target": "idx_gestiones_fecha"
+    },
+    {
+      "source": "public.idx_hist_bloq_cliente",
+      "target": "idx_historico_bloqueados_cliente_cod"
+    },
+    {
+      "source": "public.idx_hist_bloq_semana",
+      "target": "idx_historico_bloqueados_fecha_semana"
+    },
+    {
+      "source": "public.idx_historico_pedidos_retenidos_anio_mes",
+      "target": "idx_historico_pedidos_retenidos_anio_mes"
+    },
+    {
+      "source": "public.idx_historico_pedidos_retenidos_cliente",
+      "target": "idx_historico_pedidos_retenidos_codigo_cliente"
+    },
+    {
+      "source": "public.idx_mc_analista",
+      "target": "idx_maestro_clientes_analista_email"
+    },
+    {
+      "source": "public.idx_notas_usuario_fecha",
+      "target": "idx_notas_rapidas_usuario_id_fecha"
+    },
+    {
+      "source": "public.idx_notif_created",
+      "target": "idx_notificaciones_created_at"
+    },
+    {
+      "source": "public.idx_notif_leida",
+      "target": "idx_notificaciones_leida_partial"
+    },
+    {
+      "source": "public.idx_notif_usuario",
+      "target": "idx_notificaciones_usuario_id"
+    },
+    {
+      "source": "public.idx_notif_usuario_leida",
+      "target": "idx_notificaciones_usuario_id_leida"
+    },
+    {
+      "source": "public.idx_pagos_cliente_cod",
+      "target": "idx_pagos_cliente_cod"
+    },
+    {
+      "source": "public.idx_pagos_contribuyente",
+      "target": "idx_pagos_contribuyente"
+    },
+    {
+      "source": "public.idx_pagos_fecha_pago",
+      "target": "idx_pagos_fecha_pago"
+    },
+    {
+      "source": "public.idx_pagos_fecha_venc",
+      "target": "idx_pagos_fecha_vencimiento"
+    },
+    {
+      "source": "public.idx_pagos_no_factura",
+      "target": "idx_pagos_no_factura"
+    },
+    {
+      "source": "public.idx_pedidos_retenidos_codigo_cliente",
+      "target": "idx_pedidos_retenidos_codigo_cliente"
+    },
+    {
+      "source": "public.idx_pedidos_retenidos_estado",
+      "target": "idx_pedidos_retenidos_estado_sic"
+    },
+    {
+      "source": "public.idx_pedidos_retenidos_vendedor",
+      "target": "idx_pedidos_retenidos_vendedor"
+    },
+    {
+      "source": "public.idx_ppto_cobro_mes",
+      "target": "idx_presupuesto_cobro_anio_mes"
+    },
+    {
+      "source": "public.idx_ppto_meta_mes",
+      "target": "idx_presupuesto_meta_vendedor_anio_mes"
+    },
+    {
+      "source": "public.idx_promesas_cliente_cod",
+      "target": "idx_promesas_cliente_cod"
+    },
+    {
+      "source": "public.idx_promesas_estado",
+      "target": "idx_promesas_estado"
+    },
+    {
+      "source": "public.idx_promesas_estado_fecha",
+      "target": "idx_promesas_estado_fecha_promesa"
+    },
+    {
+      "source": "public.idx_promesas_fecha",
+      "target": "idx_promesas_fecha_promesa"
+    },
+    {
+      "source": "public.idx_promesas_gestion_id",
+      "target": "idx_promesas_gestion_id"
+    },
+    {
+      "source": "public.idx_promesas_reprog_de_id",
+      "target": "idx_promesas_reprogramada_de_id"
+    },
+    {
+      "source": "public.idx_reporte_detalles_reporte",
+      "target": "idx_reporte_pago_detalles_reporte_id"
+    },
+    {
+      "source": "public.idx_reportes_pago_analista",
+      "target": "idx_reportes_pago_analista_email"
+    },
+    {
+      "source": "public.idx_reportes_pago_cliente",
+      "target": "idx_reportes_pago_cliente_cod_contribuyente"
+    },
+    {
+      "source": "public.idx_saldos_favor_cliente_cod",
+      "target": "idx_saldos_favor_cliente_cod"
+    },
+    {
+      "source": "public.idx_saldos_favor_contribuyente",
+      "target": "idx_saldos_favor_contribuyente"
+    },
+    {
+      "source": "public.idx_saldos_favor_estado_manual",
+      "target": "idx_saldos_favor_estado_manual"
+    },
+    {
+      "source": "public.idx_saldos_favor_tipo_documento",
+      "target": "idx_saldos_favor_tipo_documento"
+    },
+    {
+      "source": "public.idx_sol_area",
+      "target": "idx_solicitudes_area"
+    },
+    {
+      "source": "public.idx_sol_com_sol",
+      "target": "idx_solicitud_comentarios_solicitud_id"
+    },
+    {
+      "source": "public.idx_sol_estado",
+      "target": "idx_solicitudes_estado"
+    },
+    {
+      "source": "public.idx_sol_gestion_id",
+      "target": "idx_solicitudes_gestion_id"
+    },
+    {
+      "source": "public.idx_sol_hist_sol",
+      "target": "idx_solicitud_historial_estados_solicitud_id"
+    },
+    {
+      "source": "public.idx_sol_sla_venc",
+      "target": "idx_solicitudes_sla_vencimiento"
+    },
+    {
+      "source": "public.idx_solicitudes_cliente",
+      "target": "idx_solicitudes_cliente_id"
+    },
+    {
+      "source": "public.idx_solicitudes_created",
+      "target": "idx_solicitudes_created_at"
+    },
+    {
+      "source": "public.idx_solicitudes_estado",
+      "target": "idx_solicitudes_estado_2"
+    },
+    {
+      "source": "public.idx_solicitudes_numero_consecutivo",
+      "target": "uidx_solicitudes_numero_consecutivo"
+    },
+    {
+      "source": "public.idx_solicitudes_solicitante",
+      "target": "idx_solicitudes_solicitante_id"
+    },
+    {
+      "source": "public.idx_vendedores_analista",
+      "target": "idx_vendedores_analista_email"
+    },
+    {
+      "source": "public.idx_vendedores_supervisor",
+      "target": "idx_vendedores_supervisor_cod"
+    },
+    {
+      "source": "public.idx_ventas_mensuales_periodo",
+      "target": "idx_ventas_mensuales_anio_mes"
+    },
+    {
+      "source": "public.solicitudes_actualizacion_aprobada_por_idx",
+      "target": "idx_solicitudes_actualizacion_aprobada_por"
+    },
+    {
+      "source": "public.solicitudes_actualizacion_contribuyente_activa_idx",
+      "target": "uidx_solicitudes_actualizacion_contribuyente_partial"
+    },
+    {
+      "source": "public.solicitudes_actualizacion_enviada_por_idx",
+      "target": "idx_solicitudes_actualizacion_enviada_por"
+    },
+    {
+      "source": "public.solicitudes_actualizacion_garantia_id_idx",
+      "target": "idx_solicitudes_actualizacion_garantia_id"
+    },
+    {
+      "source": "public.uq_pagos_recibo_factura",
+      "target": "uidx_pagos_no_recibo_no_factura"
+    }
+  ],
+  "triggers": [
+    {
+      "table": "public.garantias",
+      "source": "garantias_updated_at",
+      "target": "trg_garantias_updated_at"
+    },
+    {
+      "table": "public.maestro_clientes",
+      "source": "trg_asignar_analista",
+      "target": "trg_maestro_clientes_trg_asignar_analista"
+    },
+    {
+      "table": "public.maestro_clientes",
+      "source": "trg_normalizar_analista_nombre",
+      "target": "trg_maestro_clientes_trg_normalizar_analista_nombre"
+    },
+    {
+      "table": "public.maestro_clientes",
+      "source": "trg_proteger_contacto_manual",
+      "target": "trg_maestro_clientes_trg_proteger_contacto_manual"
+    },
+    {
+      "table": "public.maestro_clientes",
+      "source": "trg_proteger_logistica_manual",
+      "target": "trg_maestro_clientes_trg_proteger_logistica_manual"
+    },
+    {
+      "table": "public.maestro_clientes",
+      "source": "trg_sincronizar_analista_nombre",
+      "target": "trg_maestro_clientes_trg_sincronizar_analista_nombre"
+    },
+    {
+      "table": "public.notas_rapidas",
+      "source": "notas_rapidas_updated_at",
+      "target": "trg_notas_rapidas_updated_at"
+    },
+    {
+      "table": "public.pedidos_retenidos",
+      "source": "trg_notificar_pedido_retenido",
+      "target": "trg_pedidos_retenidos_trg_notificar_pedido_retenido"
+    },
+    {
+      "table": "public.personas_legales",
+      "source": "personas_legales_updated_at",
+      "target": "trg_personas_legales_updated_at"
+    },
+    {
+      "table": "public.solicitudes",
+      "source": "solicitudes_updated_at",
+      "target": "trg_solicitudes_updated_at"
+    },
+    {
+      "table": "public.solicitudes_actualizacion",
+      "source": "solicitudes_actualizacion_updated_at",
+      "target": "trg_solicitudes_actualizacion_updated_at"
+    },
+    {
+      "table": "public.vendedores",
+      "source": "trg_propagar_analista_vendedor",
+      "target": "trg_vendedores_trg_propagar_analista_vendedor"
+    }
+  ]
+}

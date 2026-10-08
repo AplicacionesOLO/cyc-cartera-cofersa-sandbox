@@ -1,0 +1,71 @@
+{
+  "status": "MIGRATION COMPLETE",
+  "criteria": {
+    "1": {
+      "title": "Discovery completo: preflight, proyecto, uso de Supabase y esquema real",
+      "status": "OK"
+    },
+    "2": {
+      "title": "Manifest revisado (sin borrador, endpoints válidos, reglas de autorización asignadas)",
+      "status": "OK"
+    },
+    "3": {
+      "title": "Scripts Aurora completos por ambiente (provisioning, schema, validation, rollback, migration, datos)",
+      "status": "OK"
+    },
+    "4": {
+      "title": "SQL Aurora validado en PostgreSQL efímero (idempotente, TOTAL_FALTA=0, rollback limpio)",
+      "status": "OK"
+    },
+    "5": {
+      "title": "Backend hexagonal: handlers y use cases existen; dependencias entre capas y SQL en su lugar",
+      "status": "OK"
+    },
+    "6": {
+      "title": "Tests del backend en verde (unitarios con fakes e integración contra el esquema generado)",
+      "status": "OK"
+    },
+    "7": {
+      "title": "Lint del backend limpio (ruff)",
+      "status": "OK"
+    },
+    "8": {
+      "title": "Template SAM único y samconfig dev/qa/prod con tags y rutas por ambiente",
+      "status": "OK"
+    },
+    "9": {
+      "title": "Template válido (cfn-lint y transformación SAM)",
+      "status": "OK"
+    },
+    "10": {
+      "title": "IAM mínimo y resiliencia (sin wildcards salvo ENI; SQS con DLQ, reintentos, visibility e idempotencia)",
+      "status": "OK"
+    },
+    "11": {
+      "title": "Frontend con arquitectura estándar (Page → Controller → Api → axiosApiGateway, naming y tamaños)",
+      "status": "OK"
+    },
+    "12": {
+      "title": "Frontend compila, cumple Prettier y sus tests pasan",
+      "status": "OK"
+    },
+    "13": {
+      "title": "Cero residuos de Supabase (código, dependencias, variables)",
+      "status": "OK"
+    },
+    "14": {
+      "title": "Sin secretos ni identificadores de ambiente hardcodeados",
+      "status": "OK"
+    },
+    "15": {
+      "title": "Sin TODO/FIXME/pseudocódigo en el código generado",
+      "status": "OK"
+    },
+    "16": {
+      "title": "Reporte final con matriz ORIGEN → DESTINO y solo pendientes de configuración",
+      "status": "OK",
+      "items": []
+    }
+  },
+  "reasons": []
+}

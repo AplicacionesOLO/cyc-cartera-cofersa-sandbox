@@ -1,0 +1,1410 @@
+{
+  "environment": "prd",
+  "database": "cof_prd_cyc_cofersa_db",
+  "rls_mode": "backend",
+  "counts": {
+    "tables": 47,
+    "views": 2,
+    "materialized_views": 0,
+    "functions": 90,
+    "triggers": 12,
+    "enums": 0,
+    "sequences": 10,
+    "indexes": 72,
+    "constraints": 119,
+    "policies": 79
+  },
+  "extensions": [
+    {
+      "name": "pg_net",
+      "version": "0.20.0",
+      "source_schema": "extensions",
+      "class": "supabase_specific",
+      "generated": false,
+      "note": "Supabase-specific: mover webhooks/llamadas HTTP al backend o a EventBridge."
+    },
+    {
+      "name": "pg_stat_statements",
+      "version": "1.11",
+      "source_schema": "extensions",
+      "class": "compatible",
+      "generated": true,
+      "note": ""
+    },
+    {
+      "name": "pgcrypto",
+      "version": "1.3",
+      "source_schema": "extensions",
+      "class": "compatible",
+      "generated": true,
+      "note": ""
+    },
+    {
+      "name": "supabase_vault",
+      "version": "0.3.1",
+      "source_schema": "vault",
+      "class": "supabase_specific",
+      "generated": false,
+      "note": "Supabase-specific: usar Secrets Manager."
+    },
+    {
+      "name": "uuid-ossp",
+      "version": "1.1",
+      "source_schema": "extensions",
+      "class": "compatible",
+      "generated": true,
+      "note": ""
+    }
+  ],
+  "review": [
+    {
+      "object": "public.fn_es_usuario_activo",
+      "kind": "auth_users_ref",
+      "detail": "auth.users → tbl_app_users: solo existen id, cognito_sub, email, created_at, updated_at"
+    },
+    {
+      "object": "public.get_mi_rol",
+      "kind": "auth_users_ref",
+      "detail": "auth.users → tbl_app_users: solo existen id, cognito_sub, email, created_at, updated_at"
+    },
+    {
+      "object": "public.get_usuario_id",
+      "kind": "auth_users_ref",
+      "detail": "auth.users → tbl_app_users: solo existen id, cognito_sub, email, created_at, updated_at"
+    }
+  ],
+  "rls_policies": [
+    {
+      "table": "public.cartera",
+      "policy": "cartera_select_autenticados",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.centro_recursos_aplicaciones",
+      "policy": "authenticated_read_aplicaciones",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.centro_recursos_documentos",
+      "policy": "authenticated_read_documentos",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.config_audit_log",
+      "policy": "Solo coordinador accede al log",
+      "command": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol = 'COORDINADOR'::text) AND (usuarios.activo = true))))",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.config_sistema",
+      "policy": "config_sistema_select_usuarios_activos",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.cuentas_bancarias",
+      "policy": "authenticated_read_cuentas_bancarias",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.directorio_empresa",
+      "policy": "Coordinador gestiona directorio",
+      "command": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol = 'COORDINADOR'::text) AND (usuarios.activo = true))))",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.directorio_empresa",
+      "policy": "Todos leen directorio para autocomplete",
+      "command": "SELECT",
+      "roles": [
+        "public"
+      ],
+      "using": "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.activo = true))))",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.facturas",
+      "policy": "facturas_select_usuarios_activos",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.garantia_eventos",
+      "policy": "garantia_eventos_insert_activos",
+      "command": "INSERT",
+      "roles": [
+        "public"
+      ],
+      "using": null,
+      "with_check": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.garantia_eventos",
+      "policy": "garantia_eventos_select_activos",
+      "command": "SELECT",
+      "roles": [
+        "public"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.garantias",
+      "policy": "garantias_insert_activos",
+      "command": "INSERT",
+      "roles": [
+        "public"
+      ],
+      "using": null,
+      "with_check": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.garantias",
+      "policy": "garantias_select_activos",
+      "command": "SELECT",
+      "roles": [
+        "public"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.garantias",
+      "policy": "garantias_update_activos",
+      "command": "UPDATE",
+      "roles": [
+        "public"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.garantias_consecutivo_anual",
+      "policy": "garantias_consecutivo_anual_bloqueada",
+      "command": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "false",
+      "with_check": "false",
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.gestiones",
+      "policy": "gestiones_insert_autenticados",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": null,
+      "with_check": "((( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo) AND (analista_email = (auth.jwt() ->> 'email'::text))) OR (EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol = 'COORDINADOR'::text) AND (usuarios.activo = true)))))",
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.gestiones",
+      "policy": "gestiones_select_autenticados",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.gestiones",
+      "policy": "gestiones_update_autenticados",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "((( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo) AND (analista_email = (auth.jwt() ->> 'email'::text))) OR (EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol = 'COORDINADOR'::text) AND (usuarios.activo = true)))))",
+      "with_check": "((( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo) AND (analista_email = (auth.jwt() ->> 'email'::text))) OR (EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol = 'COORDINADOR'::text) AND (usuarios.activo = true)))))",
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.historico_aging_factura",
+      "policy": "solo_usuarios_activos",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.historico_bloqueados",
+      "policy": "solo_usuarios_activos",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.historico_cartera",
+      "policy": "read_historico_cartera",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.historico_cierres_cartera",
+      "policy": "solo_usuarios_activos",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.historico_pedidos_retenidos",
+      "policy": "historico_pedidos_retenidos_select_activos",
+      "command": "SELECT",
+      "roles": [
+        "public"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.maestro_clientes",
+      "policy": "maestro_clientes_select_autenticados",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.maestro_clientes",
+      "policy": "maestro_clientes_update_autenticados",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "((( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo) AND (analista_email = (auth.jwt() ->> 'email'::text))) OR (EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol = 'COORDINADOR'::text) AND (usuarios.activo = true)))))",
+      "with_check": "((( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo) AND (analista_email = (auth.jwt() ->> 'email'::text))) OR (EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol = 'COORDINADOR'::text) AND (usuarios.activo = true)))))",
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.marcas",
+      "policy": "authenticated_read_marcas",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.notas_rapidas",
+      "policy": "notas_delete_own",
+      "command": "DELETE",
+      "roles": [
+        "public"
+      ],
+      "using": "(usuario_id = ( SELECT usuarios.id\n   FROM usuarios\n  WHERE (usuarios.email = (auth.jwt() ->> 'email'::text))\n LIMIT 1))",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.notas_rapidas",
+      "policy": "notas_insert_own",
+      "command": "INSERT",
+      "roles": [
+        "public"
+      ],
+      "using": null,
+      "with_check": "(usuario_id = ( SELECT usuarios.id\n   FROM usuarios\n  WHERE (usuarios.email = (auth.jwt() ->> 'email'::text))\n LIMIT 1))",
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.notas_rapidas",
+      "policy": "notas_select_own",
+      "command": "SELECT",
+      "roles": [
+        "public"
+      ],
+      "using": "(usuario_id = ( SELECT usuarios.id\n   FROM usuarios\n  WHERE (usuarios.email = (auth.jwt() ->> 'email'::text))\n LIMIT 1))",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.notas_rapidas",
+      "policy": "notas_update_own",
+      "command": "UPDATE",
+      "roles": [
+        "public"
+      ],
+      "using": "(usuario_id = ( SELECT usuarios.id\n   FROM usuarios\n  WHERE (usuarios.email = (auth.jwt() ->> 'email'::text))\n LIMIT 1))",
+      "with_check": "(usuario_id = ( SELECT usuarios.id\n   FROM usuarios\n  WHERE (usuarios.email = (auth.jwt() ->> 'email'::text))\n LIMIT 1))",
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.notificaciones",
+      "policy": "Usuario actualiza sus notificaciones",
+      "command": "UPDATE",
+      "roles": [
+        "public"
+      ],
+      "using": "(usuario_id = ( SELECT usuarios.id\n   FROM usuarios\n  WHERE (usuarios.email = (auth.jwt() ->> 'email'::text))\n LIMIT 1))",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.notificaciones",
+      "policy": "Usuario ve sus propias notificaciones",
+      "command": "SELECT",
+      "roles": [
+        "public"
+      ],
+      "using": "(usuario_id = ( SELECT usuarios.id\n   FROM usuarios\n  WHERE (usuarios.email = (auth.jwt() ->> 'email'::text))\n LIMIT 1))",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.notificaciones",
+      "policy": "notificaciones_insert_usuarios_activos",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": null,
+      "with_check": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.pagos",
+      "policy": "pagos_select_usuarios_activos",
+      "command": "SELECT",
+      "roles": [
+        "public"
+      ],
+      "using": "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.activo = true))))",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.pagos",
+      "policy": "pagos_write_coordinador",
+      "command": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol = 'COORDINADOR'::text) AND (usuarios.activo = true))))",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.pagos_anulados",
+      "policy": "Solo coordinador accede a pagos_anulados",
+      "command": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol = 'COORDINADOR'::text) AND (usuarios.activo = true))))",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.pagos_duplicado_descartado",
+      "policy": "Solo coordinador accede a pagos_duplicado_descartado",
+      "command": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol = 'COORDINADOR'::text) AND (usuarios.activo = true))))",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.pagos_stage",
+      "policy": "solo_usuarios_activos",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.pedidos_retenidos",
+      "policy": "pedidos_retenidos_select_activos",
+      "command": "SELECT",
+      "roles": [
+        "public"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.pedidos_retenidos",
+      "policy": "pedidos_retenidos_update_activos",
+      "command": "UPDATE",
+      "roles": [
+        "public"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.pedidos_retenidos_stage",
+      "policy": "pedidos_retenidos_stage_activos",
+      "command": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.personas_legales",
+      "policy": "personas_legales_insert_activos",
+      "command": "INSERT",
+      "roles": [
+        "public"
+      ],
+      "using": null,
+      "with_check": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.personas_legales",
+      "policy": "personas_legales_select_activos",
+      "command": "SELECT",
+      "roles": [
+        "public"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.personas_legales",
+      "policy": "personas_legales_update_activos",
+      "command": "UPDATE",
+      "roles": [
+        "public"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.portafolio_acotado",
+      "policy": "solo_usuarios_activos",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.portafolio_grupos",
+      "policy": "solo_usuarios_activos",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.presupuesto_cobro",
+      "policy": "solo_usuarios_activos",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.presupuesto_meta_vendedor",
+      "policy": "solo_usuarios_activos",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.promesas",
+      "policy": "promesas_insert_autenticados",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": null,
+      "with_check": "((( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo) AND (analista_email = (auth.jwt() ->> 'email'::text))) OR (EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol = 'COORDINADOR'::text) AND (usuarios.activo = true)))))",
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.promesas",
+      "policy": "promesas_select_autenticados",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.promesas",
+      "policy": "promesas_update_autenticados",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "((( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo) AND (analista_email = (auth.jwt() ->> 'email'::text))) OR (EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol = 'COORDINADOR'::text) AND (usuarios.activo = true)))))",
+      "with_check": "((( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo) AND (analista_email = (auth.jwt() ->> 'email'::text))) OR (EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol = 'COORDINADOR'::text) AND (usuarios.activo = true)))))",
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.proyeccion_semana_snapshot",
+      "policy": "solo_usuarios_activos",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.saldos_favor",
+      "policy": "saldos_favor_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "((EXISTS ( SELECT 1\n   FROM usuarios u\n  WHERE ((u.email = (auth.jwt() ->> 'email'::text)) AND (u.rol = 'COORDINADOR'::text)))) OR (cliente_cod IN ( SELECT m.cliente_cod\n   FROM maestro_clientes m\n  WHERE (m.analista_email = (auth.jwt() ->> 'email'::text)))))",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.saldos_favor",
+      "policy": "saldos_favor_update",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "((EXISTS ( SELECT 1\n   FROM usuarios u\n  WHERE ((u.email = (auth.jwt() ->> 'email'::text)) AND (u.rol = 'COORDINADOR'::text)))) OR (cliente_cod IN ( SELECT m.cliente_cod\n   FROM maestro_clientes m\n  WHERE (m.analista_email = (auth.jwt() ->> 'email'::text)))))",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.solicitud_comentarios",
+      "policy": "sol_com_insert",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": null,
+      "with_check": "(( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo) AND (usuario_id = get_usuario_id()))",
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.solicitud_comentarios",
+      "policy": "sol_com_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.solicitud_historial_estados",
+      "policy": "sol_hist_insert",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": null,
+      "with_check": "(( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo) AND (usuario_id = get_usuario_id()))",
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.solicitud_historial_estados",
+      "policy": "sol_hist_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.solicitudes",
+      "policy": "Analista actualiza sus solicitudes pendientes",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "((solicitante_id = get_usuario_id()) AND (estado = 'PENDIENTE'::text))",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.solicitudes",
+      "policy": "Analista lee sus propias solicitudes",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "(solicitante_id = get_usuario_id())",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.solicitudes",
+      "policy": "Coordinador actualiza solicitudes",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "(get_mi_rol() = 'COORDINADOR'::text)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.solicitudes",
+      "policy": "Coordinador lee todas las solicitudes",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "(get_mi_rol() = 'COORDINADOR'::text)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.solicitudes",
+      "policy": "Gerencia lee todas las solicitudes",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "(get_mi_rol() = 'GERENCIA'::text)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.solicitudes",
+      "policy": "solicitudes_insert_usuarios_activos",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": null,
+      "with_check": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.solicitudes_actualizacion",
+      "policy": "solicitudes_actualizacion_insert_activos",
+      "command": "INSERT",
+      "roles": [
+        "public"
+      ],
+      "using": null,
+      "with_check": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.solicitudes_actualizacion",
+      "policy": "solicitudes_actualizacion_select_activos",
+      "command": "SELECT",
+      "roles": [
+        "public"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.solicitudes_actualizacion",
+      "policy": "solicitudes_actualizacion_update_activos",
+      "command": "UPDATE",
+      "roles": [
+        "public"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.supervisores",
+      "policy": "Analistas leen supervisores",
+      "command": "SELECT",
+      "roles": [
+        "public"
+      ],
+      "using": "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.activo = true))))",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.supervisores",
+      "policy": "Coordinador gestiona supervisores",
+      "command": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol = 'COORDINADOR'::text) AND (usuarios.activo = true))))",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.sync_log",
+      "policy": "sync_log_insert_usuarios_activos",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": null,
+      "with_check": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.sync_log",
+      "policy": "sync_log_select_usuarios_activos",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.sync_salud",
+      "policy": "Solo coordinador lee sync_salud",
+      "command": "SELECT",
+      "roles": [
+        "public"
+      ],
+      "using": "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol = 'COORDINADOR'::text) AND (usuarios.activo = true))))",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.usuarios",
+      "policy": "usuarios_select_autenticados",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": "( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.vendedores",
+      "policy": "Analistas leen vendedores",
+      "command": "SELECT",
+      "roles": [
+        "public"
+      ],
+      "using": "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.activo = true))))",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.vendedores",
+      "policy": "Coordinador gestiona vendedores",
+      "command": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol = 'COORDINADOR'::text) AND (usuarios.activo = true))))",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.ventas_mensuales",
+      "policy": "Coordinador gestiona ventas mensuales",
+      "command": "ALL",
+      "roles": [
+        "public"
+      ],
+      "using": "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol = 'COORDINADOR'::text) AND (usuarios.activo = true))))",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "public.ventas_mensuales",
+      "policy": "Todos leen ventas mensuales",
+      "command": "SELECT",
+      "roles": [
+        "public"
+      ],
+      "using": "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.activo = true))))",
+      "with_check": null,
+      "status": "translate_to_use_case"
+    },
+    {
+      "table": "storage.objects",
+      "policy": "usuarios_activos_suben_comprobantes",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": null,
+      "with_check": "((bucket_id = 'comprobantes-pago'::text) AND fn_es_usuario_activo())",
+      "status": "not_migrated",
+      "note": "Políticas de storage → autorización en el use case que firma URLs S3."
+    },
+    {
+      "table": "storage.objects",
+      "policy": "usuarios_activos_suben_garantias_legal",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using": null,
+      "with_check": "((bucket_id = 'garantias-legal'::text) AND fn_es_usuario_activo())",
+      "status": "not_migrated",
+      "note": "Políticas de storage → autorización en el use case que firma URLs S3."
+    }
+  ],
+  "moved_to_backend": [],
+  "webhooks": [],
+  "unsupported": [],
+  "skipped": [],
+  "warnings": [],
+  "storage_buckets": [
+    {
+      "id": "comprobantes-pago",
+      "name": "comprobantes-pago",
+      "public": true,
+      "file_size_limit": null,
+      "allowed_mime_types": null
+    },
+    {
+      "id": "documentos-recursos",
+      "name": "documentos-recursos",
+      "public": true,
+      "file_size_limit": null,
+      "allowed_mime_types": null
+    },
+    {
+      "id": "expedientes-clientes",
+      "name": "expedientes-clientes",
+      "public": false,
+      "file_size_limit": null,
+      "allowed_mime_types": null
+    },
+    {
+      "id": "garantias-legal",
+      "name": "garantias-legal",
+      "public": true,
+      "file_size_limit": null,
+      "allowed_mime_types": null
+    }
+  ],
+  "realtime_tables": [],
+  "cron_jobs": [
+    {
+      "jobname": "check_recibos_reversion",
+      "schedule": "15 23 * * 1-5",
+      "command": "SELECT public.fn_check_recibos_reversion();",
+      "active": true
+    },
+    {
+      "jobname": "check_sync_salud",
+      "schedule": "15 13-23 * * 1-5",
+      "command": "SELECT public.fn_check_sync_salud();",
+      "active": true
+    },
+    {
+      "jobname": "cierre-cartera-mensual",
+      "schedule": "50 5 * * *",
+      "command": "SELECT public.fn_cron_cierre_mensual();",
+      "active": true
+    },
+    {
+      "jobname": "cierre-mensual-pedidos-retenidos",
+      "schedule": "59 5 * * *",
+      "command": "SELECT public.fn_cierre_mensual_pedidos_retenidos();",
+      "active": true
+    },
+    {
+      "jobname": "evening-conciliar-promesas",
+      "schedule": "30 23 * * *",
+      "command": " SELECT public.fn_conciliar_promesas(); ",
+      "active": true
+    },
+    {
+      "jobname": "expirar_solicitudes_actualizacion_diario",
+      "schedule": "0 12 * * *",
+      "command": "SELECT public.fn_expirar_solicitudes_actualizacion()",
+      "active": true
+    },
+    {
+      "jobname": "historico_cartera_diario",
+      "schedule": "30 23 * * *",
+      "command": "SELECT public.fn_registrar_historico_cartera();",
+      "active": true
+    },
+    {
+      "jobname": "notificar-pedido-en-regla",
+      "schedule": "25 13-23 * * 1-5",
+      "command": "SELECT public.fn_notificar_pedido_en_regla();",
+      "active": true
+    },
+    {
+      "jobname": "notificar-promesas-hoy",
+      "schedule": "0 13 * * 1-5",
+      "command": "SELECT public.fn_notificar_promesas_hoy()",
+      "active": true
+    },
+    {
+      "jobname": "notificar-sin-gestion",
+      "schedule": "10 13 * * 1-5",
+      "command": "SELECT public.fn_notificar_sin_gestion();",
+      "active": true
+    },
+    {
+      "jobname": "notificar-sla-vencido",
+      "schedule": "20 13-23 * * 1-5",
+      "command": "SELECT public.fn_notificar_sla_vencido();",
+      "active": true
+    },
+    {
+      "jobname": "snapshot_proyeccion_lunes",
+      "schedule": "5 13 * * 1",
+      "command": "SELECT public.fn_snapshot_proyeccion_semana()",
+      "active": true
+    },
+    {
+      "jobname": "sync_cartera_0705cr",
+      "schedule": "5 13 * * *",
+      "command": "SELECT public.fn_sync_cartera()",
+      "active": true
+    },
+    {
+      "jobname": "sync_cartera_0805cr",
+      "schedule": "5 14 * * *",
+      "command": "SELECT public.fn_sync_cartera()",
+      "active": true
+    },
+    {
+      "jobname": "sync_cartera_0905cr",
+      "schedule": "5 15 * * *",
+      "command": "SELECT public.fn_sync_cartera()",
+      "active": true
+    },
+    {
+      "jobname": "sync_cartera_1005cr",
+      "schedule": "5 16 * * *",
+      "command": "SELECT public.fn_sync_cartera()",
+      "active": true
+    },
+    {
+      "jobname": "sync_cartera_1105cr",
+      "schedule": "5 17 * * *",
+      "command": "SELECT public.fn_sync_cartera()",
+      "active": true
+    },
+    {
+      "jobname": "sync_cartera_1205cr",
+      "schedule": "5 18 * * *",
+      "command": "SELECT public.fn_sync_cartera()",
+      "active": true
+    },
+    {
+      "jobname": "sync_cartera_1305cr",
+      "schedule": "5 19 * * *",
+      "command": "SELECT public.fn_sync_cartera()",
+      "active": true
+    },
+    {
+      "jobname": "sync_cartera_1405cr",
+      "schedule": "5 20 * * *",
+      "command": "SELECT public.fn_sync_cartera()",
+      "active": true
+    },
+    {
+      "jobname": "sync_cartera_1505cr",
+      "schedule": "5 21 * * *",
+      "command": "SELECT public.fn_sync_cartera()",
+      "active": true
+    },
+    {
+      "jobname": "sync_cartera_1605cr",
+      "schedule": "5 22 * * *",
+      "command": "SELECT public.fn_sync_cartera()",
+      "active": true
+    },
+    {
+      "jobname": "sync_cartera_1705cr",
+      "schedule": "5 23 * * *",
+      "command": "SELECT public.fn_sync_cartera()",
+      "active": true
+    },
+    {
+      "jobname": "sync_facturas_0705cr",
+      "schedule": "5 13 * * *",
+      "command": "SELECT public.fn_sync_facturas()",
+      "active": true
+    },
+    {
+      "jobname": "sync_facturas_0805cr",
+      "schedule": "5 14 * * *",
+      "command": "SELECT public.fn_sync_facturas()",
+      "active": true
+    },
+    {
+      "jobname": "sync_facturas_0905cr",
+      "schedule": "5 15 * * *",
+      "command": "SELECT public.fn_sync_facturas()",
+      "active": true
+    },
+    {
+      "jobname": "sync_facturas_1005cr",
+      "schedule": "5 16 * * *",
+      "command": "SELECT public.fn_sync_facturas()",
+      "active": true
+    },
+    {
+      "jobname": "sync_facturas_1105cr",
+      "schedule": "5 17 * * *",
+      "command": "SELECT public.fn_sync_facturas()",
+      "active": true
+    },
+    {
+      "jobname": "sync_facturas_1205cr",
+      "schedule": "5 18 * * *",
+      "command": "SELECT public.fn_sync_facturas()",
+      "active": true
+    },
+    {
+      "jobname": "sync_facturas_1305cr",
+      "schedule": "5 19 * * *",
+      "command": "SELECT public.fn_sync_facturas()",
+      "active": true
+    },
+    {
+      "jobname": "sync_facturas_1405cr",
+      "schedule": "5 20 * * *",
+      "command": "SELECT public.fn_sync_facturas()",
+      "active": true
+    },
+    {
+      "jobname": "sync_facturas_1505cr",
+      "schedule": "5 21 * * *",
+      "command": "SELECT public.fn_sync_facturas()",
+      "active": true
+    },
+    {
+      "jobname": "sync_facturas_1605cr",
+      "schedule": "5 22 * * *",
+      "command": "SELECT public.fn_sync_facturas()",
+      "active": true
+    },
+    {
+      "jobname": "sync_facturas_1705cr",
+      "schedule": "5 23 * * *",
+      "command": "SELECT public.fn_sync_facturas()",
+      "active": true
+    },
+    {
+      "jobname": "sync_pagos_0705cr",
+      "schedule": "5 13 * * *",
+      "command": "SELECT public.fn_sync_pagos()",
+      "active": true
+    },
+    {
+      "jobname": "sync_pagos_0805cr",
+      "schedule": "5 14 * * *",
+      "command": "SELECT public.fn_sync_pagos()",
+      "active": true
+    },
+    {
+      "jobname": "sync_pagos_0905cr",
+      "schedule": "5 15 * * *",
+      "command": "SELECT public.fn_sync_pagos()",
+      "active": true
+    },
+    {
+      "jobname": "sync_pagos_1005cr",
+      "schedule": "5 16 * * *",
+      "command": "SELECT public.fn_sync_pagos()",
+      "active": true
+    },
+    {
+      "jobname": "sync_pagos_1105cr",
+      "schedule": "5 17 * * *",
+      "command": "SELECT public.fn_sync_pagos()",
+      "active": true
+    },
+    {
+      "jobname": "sync_pagos_1205cr",
+      "schedule": "5 18 * * *",
+      "command": "SELECT public.fn_sync_pagos()",
+      "active": true
+    },
+    {
+      "jobname": "sync_pagos_1305cr",
+      "schedule": "5 19 * * *",
+      "command": "SELECT public.fn_sync_pagos()",
+      "active": true
+    },
+    {
+      "jobname": "sync_pagos_1405cr",
+      "schedule": "5 20 * * *",
+      "command": "SELECT public.fn_sync_pagos()",
+      "active": true
+    },
+    {
+      "jobname": "sync_pagos_1505cr",
+      "schedule": "5 21 * * *",
+      "command": "SELECT public.fn_sync_pagos()",
+      "active": true
+    },
+    {
+      "jobname": "sync_pagos_1605cr",
+      "schedule": "5 22 * * *",
+      "command": "SELECT public.fn_sync_pagos()",
+      "active": true
+    },
+    {
+      "jobname": "sync_pagos_1705cr",
+      "schedule": "5 23 * * *",
+      "command": "SELECT public.fn_sync_pagos()",
+      "active": true
+    },
+    {
+      "jobname": "sync_pedidos_retenidos_0705cr",
+      "schedule": "5 13 * * *",
+      "command": "SELECT public.fn_sync_pedidos_retenidos()",
+      "active": true
+    },
+    {
+      "jobname": "sync_pedidos_retenidos_0805cr",
+      "schedule": "5 14 * * *",
+      "command": "SELECT public.fn_sync_pedidos_retenidos()",
+      "active": true
+    },
+    {
+      "jobname": "sync_pedidos_retenidos_0905cr",
+      "schedule": "5 15 * * *",
+      "command": "SELECT public.fn_sync_pedidos_retenidos()",
+      "active": true
+    },
+    {
+      "jobname": "sync_pedidos_retenidos_1005cr",
+      "schedule": "5 16 * * *",
+      "command": "SELECT public.fn_sync_pedidos_retenidos()",
+      "active": true
+    },
+    {
+      "jobname": "sync_pedidos_retenidos_1105cr",
+      "schedule": "5 17 * * *",
+      "command": "SELECT public.fn_sync_pedidos_retenidos()",
+      "active": true
+    },
+    {
+      "jobname": "sync_pedidos_retenidos_1205cr",
+      "schedule": "5 18 * * *",
+      "command": "SELECT public.fn_sync_pedidos_retenidos()",
+      "active": true
+    },
+    {
+      "jobname": "sync_pedidos_retenidos_1305cr",
+      "schedule": "5 19 * * *",
+      "command": "SELECT public.fn_sync_pedidos_retenidos()",
+      "active": true
+    },
+    {
+      "jobname": "sync_pedidos_retenidos_1405cr",
+      "schedule": "5 20 * * *",
+      "command": "SELECT public.fn_sync_pedidos_retenidos()",
+      "active": true
+    },
+    {
+      "jobname": "sync_pedidos_retenidos_1505cr",
+      "schedule": "5 21 * * *",
+      "command": "SELECT public.fn_sync_pedidos_retenidos()",
+      "active": true
+    },
+    {
+      "jobname": "sync_pedidos_retenidos_1605cr",
+      "schedule": "5 22 * * *",
+      "command": "SELECT public.fn_sync_pedidos_retenidos()",
+      "active": true
+    },
+    {
+      "jobname": "sync_pedidos_retenidos_1705cr",
+      "schedule": "5 23 * * *",
+      "command": "SELECT public.fn_sync_pedidos_retenidos()",
+      "active": true
+    },
+    {
+      "jobname": "sync_saldos_0705cr",
+      "schedule": "5 13 * * *",
+      "command": "SELECT public.fn_sync_saldos_favor()",
+      "active": true
+    },
+    {
+      "jobname": "sync_saldos_0805cr",
+      "schedule": "5 14 * * *",
+      "command": "SELECT public.fn_sync_saldos_favor()",
+      "active": true
+    },
+    {
+      "jobname": "sync_saldos_0905cr",
+      "schedule": "5 15 * * *",
+      "command": "SELECT public.fn_sync_saldos_favor()",
+      "active": true
+    },
+    {
+      "jobname": "sync_saldos_1005cr",
+      "schedule": "5 16 * * *",
+      "command": "SELECT public.fn_sync_saldos_favor()",
+      "active": true
+    },
+    {
+      "jobname": "sync_saldos_1105cr",
+      "schedule": "5 17 * * *",
+      "command": "SELECT public.fn_sync_saldos_favor()",
+      "active": true
+    },
+    {
+      "jobname": "sync_saldos_1205cr",
+      "schedule": "5 18 * * *",
+      "command": "SELECT public.fn_sync_saldos_favor()",
+      "active": true
+    },
+    {
+      "jobname": "sync_saldos_1305cr",
+      "schedule": "5 19 * * *",
+      "command": "SELECT public.fn_sync_saldos_favor()",
+      "active": true
+    },
+    {
+      "jobname": "sync_saldos_1405cr",
+      "schedule": "5 20 * * *",
+      "command": "SELECT public.fn_sync_saldos_favor()",
+      "active": true
+    },
+    {
+      "jobname": "sync_saldos_1505cr",
+      "schedule": "5 21 * * *",
+      "command": "SELECT public.fn_sync_saldos_favor()",
+      "active": true
+    },
+    {
+      "jobname": "sync_saldos_1605cr",
+      "schedule": "5 22 * * *",
+      "command": "SELECT public.fn_sync_saldos_favor()",
+      "active": true
+    },
+    {
+      "jobname": "sync_saldos_1705cr",
+      "schedule": "5 23 * * *",
+      "command": "SELECT public.fn_sync_saldos_favor()",
+      "active": true
+    }
+  ],
+  "auth": {
+    "users_count": 10,
+    "providers": [
+      "email",
+      "google"
+    ],
+    "uses_user_metadata": true,
+    "user_metadata_keys": [
+      "avatar_url",
+      "custom_claims",
+      "email",
+      "email_verified",
+      "full_name",
+      "iss",
+      "name",
+      "phone_verified",
+      "picture",
+      "provider_id",
+      "sub"
+    ]
+  }
+}

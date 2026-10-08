@@ -1,0 +1,61 @@
+module:
+  name: dashboard
+  entities: [cartera, maestro_clientes, gestiones, promesas, pagos, usuarios, notificaciones, config_sistema,
+             historico_cartera, ventas_mensuales, icp_por_cliente]
+  use_cases: [GetDashboardCoordinadorUseCase, GetDashboardAnalistaUseCase, GetMiCarteraUseCase]
+api_endpoints:
+  - {method: GET, path: /dashboard/coordinador, function: DashboardApi,
+     handler: entrypoints.lambda_handlers.dashboard.dashboard_handler, use_case: GetDashboardCoordinadorUseCase,
+     module: dashboard, auth: cognito, timeout: 29,
+     source: ["src/app/(app)/dashboard/page.tsx:66", "src/app/(app)/dashboard/page.tsx:116",
+              "src/app/(app)/dashboard/page.tsx:117", "src/app/(app)/dashboard/page.tsx:122",
+              "src/app/(app)/dashboard/page.tsx:127", "src/app/(app)/dashboard/page.tsx:130",
+              "src/app/(app)/dashboard/page.tsx:131", "src/app/(app)/dashboard/page.tsx:132",
+              "src/app/(app)/dashboard/page.tsx:134", "src/app/(app)/dashboard/page.tsx:135",
+              "src/app/(app)/dashboard/page.tsx:145", "src/app/(app)/dashboard/page.tsx:269"]}
+  - {method: GET, path: /dashboard/analista, function: DashboardApi,
+     handler: entrypoints.lambda_handlers.dashboard.dashboard_handler, use_case: GetDashboardAnalistaUseCase,
+     module: dashboard, auth: cognito, timeout: 29,
+     source: ["src/app/(app)/dashboard/page.tsx:439", "src/app/(app)/dashboard/page.tsx:454",
+              "src/app/(app)/dashboard/page.tsx:458", "src/app/(app)/dashboard/page.tsx:461",
+              "src/app/(app)/dashboard/page.tsx:464", "src/app/(app)/dashboard/page.tsx:473",
+              "src/app/(app)/dashboard/page.tsx:482", "src/app/(app)/dashboard/page.tsx:495",
+              "src/app/(app)/dashboard/page.tsx:506", "src/app/(app)/dashboard/page.tsx:510",
+              "src/app/(app)/dashboard/page.tsx:560",
+              "src/lib/utils/cola-analista.ts:282", "src/lib/utils/cola-analista.ts:283",
+              "src/lib/utils/cola-analista.ts:302", "src/lib/utils/cola-analista.ts:310",
+              "src/lib/utils/cola-analista.ts:315", "src/lib/utils/cola-analista.ts:319",
+              "src/lib/utils/cola-analista.ts:325", "src/lib/utils/cola-analista.ts:327"]}
+  - {method: GET, path: /dashboard/mi-cartera, function: DashboardApi,
+     handler: entrypoints.lambda_handlers.dashboard.dashboard_handler, use_case: GetMiCarteraUseCase,
+     module: dashboard, auth: cognito, timeout: 29,
+     source: ["src/app/(app)/mi-cartera/page.tsx:22", "src/app/(app)/mi-cartera/page.tsx:45",
+              "src/lib/utils/cola-analista.ts:282", "src/lib/utils/cola-analista.ts:283",
+              "src/lib/utils/cola-analista.ts:302", "src/lib/utils/cola-analista.ts:310",
+              "src/lib/utils/cola-analista.ts:315", "src/lib/utils/cola-analista.ts:319",
+              "src/lib/utils/cola-analista.ts:325", "src/lib/utils/cola-analista.ts:327"]}
+storage_buckets: []
+authorization_rules: []
+scheduled_jobs: []
+async_workers: []
+structural_changes:
+  - "Regla de scope (antes RLS de solo lectura fn_es_usuario_activo + filtros por analista_email en el front): todo endpoint exige perfil activo (require_usuario). GET /dashboard/coordinador solo COORDINADOR o GERENCIA (403 al resto). GET /dashboard/analista y /dashboard/mi-cartera: COORDINADOR/GERENCIA pueden pedir ?email= de cualquier analista (por defecto el propio); ANALISTA/ANALISTA_RIESGO siempre quedan limitados a su propio email aunque pidan otro (analista_scope)."
+  - "Guard de Mi Cartera duplicado en el backend con el rol REAL: GERENCIA → 403; ANALISTA_RIESGO sin tiene_cartera_asignada → 403; COORDINADOR y ANALISTA entran (Usuario.puede_gestionar_cartera). El page.tsx conserva el redirect por rolEfectivo ('Ver como') y además redirige a /dashboard si el API responde 403."
+  - "computarColaDia (7 consultas + Algoritmo V4) pasa al backend: domain/services/cola_dia.py (calcular_agenda, construir_cola, puro y con tests) + application/use_cases/dashboard.py: computar_cola_dia (lecturas vía DashboardRepository). cola-analista.ts queda solo con los tipos CarteraRow/KPIs e icpColor/icpLabel (usados por mi-cartera-view y DashboardResumen). Se replican Math.round (mitades hacia +inf), fmtCRC y el formato numérico de JS en los motivos."
+  - "Dashboard coordinador: 10 consultas → 1 endpoint agregado; los conteos de gestiones Hoy/Semana/Mes de 'Mi Equipo' se agregan en SQL (count FILTER) en vez de traer filas; el fallback config_sistema.meta_mensual solo se consulta si fn_recuperacion no trae meta (igual que antes). La página cruza 'equipo' (elegibles por rol) con analistasConCarteraReal (GET /me/analistas-con-cartera) en lugar de leer maestro_clientes.range(0,4999). Los cálculos de presentación (DSO, avalúo, días hábiles, proyección) siguen en el page.tsx."
+  - "Dashboard analista: 9 consultas + enriquecimiento de nombres → 1 endpoint agregado. La cola llega ya filtrada (en_agenda && !gestionado_hoy); el nombre del cliente de la agenda se resuelve en SQL (subconsulta a maestro_clientes, última fila por id); las etiquetas PROXIMA_ACCION_LABELS y el fallback de meta_gestiones_diarias (15) siguen en el page.tsx."
+  - "Tareas sugeridas (notificaciones ALERTA 'Sin gestión ≥%' no leídas) ya no usan el cliente service_role del front: el backend las lee por el usuarios.id del analista consultado (ya no hay mezcla de espacios de UUID Auth vs usuarios)."
+  - "googleCalendarService.fetchCalendarEvents(timeMin, timeMax[, api]) usa identidadApi.calendarEvents (GET /me/calendar/events, refresh token guardado) en lugar del provider_token; se elimina el parámetro accessToken y se conserva el mapeo a CalendarEvent y el rango RFC 3339 con -06:00. No tenía consumidores en el código."
+  - "Nuevo módulo frontend src/views/dashboard/ (api/dashboard-api.ts + types.ts). No hay controller hooks: todas las pantallas del alcance son Server Components (page.tsx con createDashboardApi(await getServerHttp())); los componentes de src/components/analista|cartera|dashboard no hacían consultas y quedan intactos. equipo/page.tsx es estático (sin consultas)."
+incompatibilities:
+  - "Antes cada consulta tenía fallback silencioso (Promise.allSettled → ceros/listas vacías). Ahora el endpoint agregado corre en una sola transacción: si falla, la página muestra 'No se pudo cargar el dashboard: <mensaje>' (regla 8) en vez de KPIs en cero. La lista de analistas con cartera sí conserva el fallback (Mi Equipo vacío)."
+  - "La vista icp_por_cliente se toleraba ausente en el origen; en Aurora vw_icp_por_cliente existe, así que se consulta directo."
+  - "tbl_cartera no tiene columna dias_mora (tampoco la tenía cartera en Supabase): el origen leía c.dias_mora → undefined → 0; el backend replica dias_mora = 0 para que el scoring dé exactamente los mismos resultados."
+  - "Los conteos de gestiones de Mi Equipo y la lista de clientes de la cola ya no sufren el tope de 1000 filas de PostgREST (antes gMes podía quedar truncado en analistas con >1000 gestiones/mes)."
+  - "Orden de desempate de la cola: el origen ordenaba por score/mora con orden base Object.values() (claves numéricas primero); el backend usa el orden de lectura de la BD. Solo afecta empates exactos de score y mora."
+migration_risks:
+  - "'mañana' de la agenda se calcula, igual que el original, sobre la fecha UTC (Date.now()+1 día), no la de Costa Rica: entre 18:00 y 24:00 CR apunta a pasado mañana. Se conservó a propósito; corregirlo es un cambio funcional a decidir."
+  - "fn_recuperacion, fn_pedidos_retenidos y fn_dashboard_analista_kpis son pesadas: el dashboard coordinador ahora las ejecuta en serie dentro de una Lambda (antes en paralelo desde Next). Vigilar latencia frente al corte de 29 s de API Gateway."
+  - "Mi Cartera devuelve todas las filas de la cartera del analista (~cientos) en un solo JSON; tamaño acotado pero mayor que el resto de respuestas."
+pending:
+  - "identidad: el adapter GoogleCalendarClient.list_events usa maxResults=250 (el original pedía 100); sin impacto funcional salvo más eventos visibles."

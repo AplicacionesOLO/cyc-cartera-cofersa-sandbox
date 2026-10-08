@@ -1,0 +1,3871 @@
+# Manifest de migración SIC Cofersa (Supabase → AWS). Generado desde .discovery/manifest-parts.
+version: 1
+draft: false
+project:
+  name: cyc-cofersa
+  slug: cyc_cofersa
+  compania: cof
+  label: CYC_COFERSA
+  exposure: public
+  public_reason: El SIC lo usan analistas y gerencia desde fuera de la red corporativa (hoy publicado en Vercel);
+    API Gateway regional con Cognito en todas las rutas salvo ingesta M2M y formulario por token, WAF y throttling.
+source:
+  framework: next
+  language: ts
+  router: next-app
+  monolith: false
+  schema_source: live_database
+target:
+  aws_region: us-east-1
+  api_endpoint_type: REGIONAL
+  frontend_hosting: ecs-fargate
+  lambda:
+    memory: 512
+    timeout: 29
+    architecture: x86_64
+  cognito:
+    groups: []
+  database:
+    engine: aurora-postgresql
+    rls_mode: backend
+modules:
+- name: analisis_pagos
+  entities:
+  - public.pagos
+  - public.pagos_anulados
+  - public.pagos_duplicado_descartado
+  use_cases:
+  - GetRankingClientesUseCase
+  - GetPerfilVendedorUseCase
+  - GetAlertasDeterioroUseCase
+  - GetConcentracionUseCase
+  - GetPagosMesResumenUseCase
+  - MarcarPagosAnuladosUseCase
+  - DesmarcarPagoAnuladoUseCase
+  - DescartarDuplicadoUseCase
+  - RevertirDescarteDuplicadoUseCase
+- name: auditoria_legal
+  entities:
+  - garantias
+  - garantia_eventos
+  - garantias_consecutivo_anual
+  - personas_legales
+  - solicitudes_actualizacion
+  use_cases:
+  - ListGarantiasUseCase
+  - ListClientesSinGarantiaUseCase
+  - ListVendedoresActivosUseCase
+  - GetVendedorGarantiaUseCase
+  - ListEventosGarantiaUseCase
+  - BuscarContribuyentesUseCase
+  - GetSaldoContribuyenteUseCase
+  - GetGarantiaActivaContribuyenteUseCase
+  - ListVendedoresContribuyenteUseCase
+  - ListPersonasLegalesUseCase
+  - GetConfigPagareUseCase
+  - ContarGarantiasCarpetaUseCase
+  - SiguienteCarpetaDisponibleUseCase
+  - GetPagareImprimibleUseCase
+  - RegistrarGarantiaUseCase
+  - EditarGarantiaUseCase
+  - CambiarCustodiaGarantiaUseCase
+  - CrearUploadDocumentoGarantiaUseCase
+  - AdjuntarDocumentoGarantiaUseCase
+  - GenerarPagareUseCase
+  - ListSolicitudesActualizacionUseCase
+  - CrearSolicitudActualizacionUseCase
+  - GetSolicitudActualizacionUseCase
+  - GestionarSolicitudActualizacionUseCase
+  - ValidarTokenActualizacionUseCase
+  - CrearUploadsActualizacionUseCase
+  - EnviarActualizacionPerfilUseCase
+- name: centro_recursos
+  entities:
+  - centro_recursos_aplicaciones
+  - centro_recursos_documentos
+  - marcas
+  - config_audit_log
+  - vendedores
+  - supervisores
+  - usuarios
+  - portafolio_grupos
+  - portafolio_acotado
+  - directorio_empresa
+  use_cases:
+  - GetCentroRecursosUseCase
+  - ListAplicacionesUseCase
+  - CrearAplicacionUseCase
+  - ActualizarAplicacionUseCase
+  - ListDocumentosUseCase
+  - CrearUrlCargaDocumentoUseCase
+  - CrearDocumentoUseCase
+  - CrearMarcaUseCase
+  - ActualizarMarcaUseCase
+- name: clientes
+  entities:
+  - public.cartera
+  - public.facturas
+  - public.maestro_clientes
+  - public.historico_cartera
+  - public.historico_aging_factura
+  - public.cuentas_bancarias
+  use_cases:
+  - ListClientesUseCase
+  - BuscarGlobalUseCase
+  - GetFichaClienteUseCase
+  - ActualizarContactoClienteUseCase
+  - ActualizarLogisticaClienteUseCase
+  - CambiarEstadoClienteUseCase
+  - RegistrarRecordatorioUseCase
+  - GetEstadoCuentaDataUseCase
+  - EnviarEmailCobroUseCase
+  - EnviarEstadoCuentaUseCase
+  - GenerarEmailCobroIAUseCase
+- name: configuracion
+  entities:
+  - config_audit_log
+  - config_sistema
+  - directorio_empresa
+  - portafolio_acotado
+  - portafolio_grupos
+  - supervisores
+  - vendedores
+  - usuarios
+  - ventas_mensuales
+  - notificaciones
+  - maestro_clientes
+  - v_automatizaciones_feed
+  use_cases:
+  - GetConfiguracionPantallaUseCase
+  - GetParametrosUseCase
+  - UpdateParametroUseCase
+  - GetSemaforoUseCase
+  - UpdateSemaforoUseCase
+  - GetSlaUseCase
+  - UpdateSlaUseCase
+  - GetAutomatizacionesUseCase
+  - ToggleAutomatizacionUseCase
+  - ListAutomatizacionesFeedUseCase
+  - MarcarEventoLeidoUseCase
+  - ListVentasMensualesUseCase
+  - GuardarCierreMesUseCase
+  - ListAuditLogUseCase
+  - ListUsuariosConfigUseCase
+  - CreateUsuarioUseCase
+  - UpdateUsuarioUseCase
+  - ListVendedoresConfigUseCase
+  - CreateVendedorUseCase
+  - UpdateVendedorUseCase
+  - DeactivateVendedorUseCase
+  - ListSupervisoresConfigUseCase
+  - CreateSupervisorUseCase
+  - UpdateSupervisorUseCase
+  - DeactivateSupervisorUseCase
+  - ListDirectorioUseCase
+  - ListContactosDirectorioUseCase
+  - CreateContactoUseCase
+  - UpdateContactoUseCase
+  - DeactivateContactoUseCase
+  - ListRutasUseCase
+  - CreateRutaUseCase
+  - UpdateRutaUseCase
+  - DeactivateRutaUseCase
+- name: dashboard
+  entities:
+  - cartera
+  - maestro_clientes
+  - gestiones
+  - promesas
+  - pagos
+  - usuarios
+  - notificaciones
+  - config_sistema
+  - historico_cartera
+  - ventas_mensuales
+  - icp_por_cliente
+  use_cases:
+  - GetDashboardCoordinadorUseCase
+  - GetDashboardAnalistaUseCase
+  - GetMiCarteraUseCase
+- name: gestion_cartera
+  entities:
+  - pedidos_retenidos
+  - saldos_favor
+  - reportes_pago
+  - reporte_pago_detalles
+  - maestro_clientes
+  use_cases:
+  - GetPedidosRetenidosUseCase
+  - ActualizarPedidoRetenidoUseCase
+  - ListSaldosFavorUseCase
+  - ListSaldosFavorClienteUseCase
+  - AplicarSaldoFavorUseCase
+  - MatchingSaldosFavorUseCase
+  - CrearUrlSubidaComprobanteUseCase
+  - ObtenerUrlComprobanteUseCase
+  - ReportarPagoUseCase
+- name: gestiones
+  entities:
+  - gestiones
+  - notas_rapidas
+  use_cases:
+  - ListGestionesUseCase
+  - GetReferenciasGestionesUseCase
+  - ListCodigosContribuyenteUseCase
+  - RegistrarGestionUseCase
+  - RegistrarGestionRapidaUseCase
+  - UpdateGestionUseCase
+  - DeleteGestionUseCase
+  - GetNotaRapidaUseCase
+  - SaveNotaRapidaUseCase
+  - FormalizarBitacoraUseCase
+- name: identidad
+  entities:
+  - usuarios
+  - app_users
+  use_cases:
+  - GetMeUseCase
+  - ListAnalistasConCarteraUseCase
+  - PreviewRolUseCase
+  - GoogleAuthorizeUrlUseCase
+  - ConnectGoogleUseCase
+  - ListCalendarEventsUseCase
+- name: jobs
+  entities:
+  - public.pagos_stage
+  - public.pedidos_retenidos_stage
+  - public.sync_log
+  - public.sync_salud
+  - public.cartera
+  - public.facturas
+  - public.saldos_favor
+  - public.maestro_clientes
+  use_cases:
+  - EjecutarTareaProgramadaUseCase
+  - SincronizarTablaUseCase
+  - EncolarSyncManualUseCase
+  - ProcesarSyncManualUseCase
+  - ListarHistorialSyncUseCase
+  - ObtenerEstadoSyncUseCase
+  - IngestarLoteUseCase
+  - ConciliarPromesasManualUseCase
+- name: notificaciones
+  entities:
+  - notificaciones
+  - config_sistema
+  - usuarios
+  use_cases:
+  - ListNotificacionesUseCase
+  - MarcarNotificacionLeidaUseCase
+  - MarcarTodasLeidasUseCase
+  - ListMensajesChatUseCase
+  - EnviarMensajeChatUseCase
+  - GetTipoCambioUseCase
+  - ConsultarHaciendaUseCase
+  - BuscarCabysUseCase
+- name: presupuesto
+  entities:
+  - public.presupuesto_cobro
+  - public.presupuesto_meta_vendedor
+  - public.proyeccion_semana_snapshot
+  use_cases:
+  - GetPresupuestoMesUseCase
+  - CongelarPresupuestoUseCase
+  - AjustarMetaVendedorUseCase
+  - ReasignarClientePresupuestoUseCase
+  - ListVendedoresPresupuestoUseCase
+  - GetDestinatariosPresupuestoUseCase
+  - EnviarCorreoPresupuestoUseCase
+  - GetRecuperacionMesUseCase
+  - GetProyeccionCobroUseCase
+  - GetSinPagoUseCase
+  - GetRecuperacionMomUseCase
+  - GetRecuperacionPeriodoUseCase
+  - GetRecuperacionTramosUseCase
+  - GetMetaAnalistaMesUseCase
+- name: promesas
+  entities:
+  - promesas
+  use_cases:
+  - ListPromesasUseCase
+  - ValidarPromesaUseCase
+  - ReprogramarPromesaUseCase
+  - DeletePromesaUseCase
+- name: reportes
+  entities:
+  - public.historico_bloqueados
+  - public.historico_cierres_cartera
+  - public.historico_pedidos_retenidos
+  - public.ventas_mensuales
+  use_cases:
+  - GetAgingUseCase
+  - GetCeiUseCase
+  - TomarCierreCarteraUseCase
+  - GetEfectividadUseCase
+  - GetIcpVendedorUseCase
+  - GetMigracionMoraUseCase
+  - GetMigracionFiltrosUseCase
+  - GetMoraVendedorUseCase
+  - GetBloqueadosUseCase
+  - GetPlazoEspecialUseCase
+  - GetPortafolioDestinatariosUseCase
+  - ListDimensionOpcionesUseCase
+  - GetEstadosCuentaUseCase
+  - GetCarteraVencidaUseCase
+  - GetGestionesPeriodoUseCase
+  - GetResumenEjecutivoUseCase
+  - GetCierreMensualUseCase
+  - EnviarReporteUseCase
+- name: solicitudes
+  entities:
+  - solicitudes
+  - solicitud_comentarios
+  - solicitud_historial_estados
+  - notificaciones
+  - usuarios
+  - cartera
+  - maestro_clientes
+  - facturas
+  - gestiones
+  use_cases:
+  - ListSolicitudesUseCase
+  - GetSolicitudDetalleUseCase
+  - GetNuevaSolicitudClientesUseCase
+  - GetNuevaSolicitudContextoUseCase
+  - ListFacturasPendientesUseCase
+  - CreateAdjuntoUploadUrlUseCase
+  - CreateSolicitudUseCase
+  - ResolverSolicitudUseCase
+  - CambiarEstadoSolicitudUseCase
+  - AgregarComentarioSolicitudUseCase
+api_endpoints:
+- method: GET
+  path: /analisis-pagos/ranking-clientes
+  function: AnalisisPagosApi
+  handler: entrypoints.lambda_handlers.analisis_pagos.analisis_pagos_handler
+  use_case: GetRankingClientesUseCase
+  module: analisis_pagos
+  auth: cognito
+  timeout: 29
+  source:
+  - src/components/analisis-pagos/TabRankingClientes.tsx:202
+- method: GET
+  path: /analisis-pagos/perfil-vendedor
+  function: AnalisisPagosApi
+  handler: entrypoints.lambda_handlers.analisis_pagos.analisis_pagos_handler
+  use_case: GetPerfilVendedorUseCase
+  module: analisis_pagos
+  auth: cognito
+  timeout: 29
+  source:
+  - src/components/analisis-pagos/TabPerfilVendedor.tsx:56
+- method: GET
+  path: /analisis-pagos/alertas-deterioro
+  function: AnalisisPagosApi
+  handler: entrypoints.lambda_handlers.analisis_pagos.analisis_pagos_handler
+  use_case: GetAlertasDeterioroUseCase
+  module: analisis_pagos
+  auth: cognito
+  timeout: 29
+  source:
+  - src/components/analisis-pagos/TabAlertasDeterioro.tsx:37
+- method: GET
+  path: /analisis-pagos/concentracion
+  function: AnalisisPagosApi
+  handler: entrypoints.lambda_handlers.analisis_pagos.analisis_pagos_handler
+  use_case: GetConcentracionUseCase
+  module: analisis_pagos
+  auth: cognito
+  timeout: 29
+  source:
+  - src/components/analisis-pagos/TabConcentracion.tsx:51
+- method: GET
+  path: /analisis-pagos/pagos-mes
+  function: AnalisisPagosApi
+  handler: entrypoints.lambda_handlers.analisis_pagos.analisis_pagos_handler
+  use_case: GetPagosMesResumenUseCase
+  module: analisis_pagos
+  auth: cognito
+  timeout: 29
+  source:
+  - src/components/analisis-pagos/PagosAplicadosCliente.tsx:107
+- method: POST
+  path: /pagos-anulados
+  function: AnalisisPagosApi
+  handler: entrypoints.lambda_handlers.analisis_pagos.analisis_pagos_handler
+  use_case: MarcarPagosAnuladosUseCase
+  module: analisis_pagos
+  auth: cognito
+  source:
+  - src/app/api/pagos-anulados/route.ts
+  - src/components/analisis-pagos/PagosAplicadosCliente.tsx:490
+- method: DELETE
+  path: /pagos-anulados/{no_recibo}
+  function: AnalisisPagosApi
+  handler: entrypoints.lambda_handlers.analisis_pagos.analisis_pagos_handler
+  use_case: DesmarcarPagoAnuladoUseCase
+  module: analisis_pagos
+  auth: cognito
+  source:
+  - src/app/api/pagos-anulados/[no_recibo]/route.ts
+  - src/components/analisis-pagos/PagosAplicadosCliente.tsx:168
+- method: POST
+  path: /pagos-duplicado-descartado
+  function: AnalisisPagosApi
+  handler: entrypoints.lambda_handlers.analisis_pagos.analisis_pagos_handler
+  use_case: DescartarDuplicadoUseCase
+  module: analisis_pagos
+  auth: cognito
+  source:
+  - src/app/api/pagos-duplicado-descartado/route.ts
+  - src/components/analisis-pagos/PagosAplicadosCliente.tsx:560
+- method: DELETE
+  path: /pagos-duplicado-descartado/{no_recibo}
+  function: AnalisisPagosApi
+  handler: entrypoints.lambda_handlers.analisis_pagos.analisis_pagos_handler
+  use_case: RevertirDescarteDuplicadoUseCase
+  module: analisis_pagos
+  auth: cognito
+  source:
+  - src/app/api/pagos-duplicado-descartado/[no_recibo]/route.ts
+- method: GET
+  path: /garantias
+  function: AuditoriaLegalApi
+  handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler
+  use_case: ListGarantiasUseCase
+  module: auditoria_legal
+  auth: cognito
+  source:
+  - src/app/(app)/auditoria-legal/garantias/garantias-cliente.tsx:500
+- method: POST
+  path: /garantias
+  function: AuditoriaLegalApi
+  handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler
+  use_case: RegistrarGarantiaUseCase
+  module: auditoria_legal
+  auth: cognito
+  source:
+  - src/app/api/auditoria-legal/garantias/route.ts:13
+  - src/app/(app)/auditoria-legal/garantias/ModalRegistrarGarantia.tsx:433
+  - src/app/(app)/auditoria-legal/garantias/ModalEmitirPagare.tsx:463
+  - src/app/api/auditoria-legal/garantias/route.ts:85
+  - src/app/api/auditoria-legal/garantias/route.ts:165
+  - src/app/api/auditoria-legal/garantias/route.ts:270
+- method: GET
+  path: /garantias/sin-garantia
+  function: AuditoriaLegalApi
+  handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler
+  use_case: ListClientesSinGarantiaUseCase
+  module: auditoria_legal
+  auth: cognito
+  source:
+  - src/app/(app)/auditoria-legal/garantias/garantias-cliente.tsx:520
+- method: GET
+  path: /garantias/vendedores
+  function: AuditoriaLegalApi
+  handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler
+  use_case: ListVendedoresActivosUseCase
+  module: auditoria_legal
+  auth: cognito
+  source:
+  - src/app/(app)/auditoria-legal/garantias/garantias-cliente.tsx:446
+- method: GET
+  path: /garantias/contribuyentes
+  function: AuditoriaLegalApi
+  handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler
+  use_case: BuscarContribuyentesUseCase
+  module: auditoria_legal
+  auth: cognito
+  source:
+  - src/app/(app)/auditoria-legal/garantias/ModalRegistrarGarantia.tsx:269
+  - src/app/(app)/auditoria-legal/garantias/ModalEmitirPagare.tsx:222
+- method: GET
+  path: /garantias/contribuyentes/saldo
+  function: AuditoriaLegalApi
+  handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler
+  use_case: GetSaldoContribuyenteUseCase
+  module: auditoria_legal
+  auth: cognito
+  source:
+  - src/app/(app)/auditoria-legal/garantias/ModalRegistrarGarantia.tsx:303
+  - src/app/(app)/auditoria-legal/garantias/ModalEmitirPagare.tsx:254
+- method: GET
+  path: /garantias/contribuyentes/garantia-activa
+  function: AuditoriaLegalApi
+  handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler
+  use_case: GetGarantiaActivaContribuyenteUseCase
+  module: auditoria_legal
+  auth: cognito
+  source:
+  - src/app/(app)/auditoria-legal/garantias/ModalRegistrarGarantia.tsx:312
+  - src/app/(app)/auditoria-legal/garantias/ModalEmitirPagare.tsx:262
+- method: GET
+  path: /garantias/contribuyentes/vendedores
+  function: AuditoriaLegalApi
+  handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler
+  use_case: ListVendedoresContribuyenteUseCase
+  module: auditoria_legal
+  auth: cognito
+  source:
+  - src/app/(app)/auditoria-legal/garantias/ModalEmitirPagare.tsx:275
+- method: GET
+  path: /garantias/personas-legales
+  function: AuditoriaLegalApi
+  handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler
+  use_case: ListPersonasLegalesUseCase
+  module: auditoria_legal
+  auth: cognito
+  source:
+  - src/app/(app)/auditoria-legal/garantias/ModalGenerarPagare.tsx:108
+  - src/app/(app)/auditoria-legal/garantias/ModalGenerarPagare.tsx:161
+  - src/app/(app)/auditoria-legal/garantias/ModalEmitirPagare.tsx:336
+  - src/app/(app)/auditoria-legal/garantias/ModalEmitirPagare.tsx:354
+  - src/app/(app)/auditoria-legal/garantias/ModalEmitirPagare.tsx:373
+- method: GET
+  path: /garantias/config-pagare
+  function: AuditoriaLegalApi
+  handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler
+  use_case: GetConfigPagareUseCase
+  module: auditoria_legal
+  auth: cognito
+  source:
+  - src/app/(app)/auditoria-legal/garantias/ModalGenerarPagare.tsx:97
+  - src/app/(app)/auditoria-legal/garantias/ModalEmitirPagare.tsx:174
+- method: GET
+  path: /garantias/carpetas/conteo
+  function: AuditoriaLegalApi
+  handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler
+  use_case: ContarGarantiasCarpetaUseCase
+  module: auditoria_legal
+  auth: cognito
+  source:
+  - src/app/(app)/auditoria-legal/garantias/ModalRegistrarGarantia.tsx:195
+- method: GET
+  path: /garantias/carpetas/siguiente
+  function: AuditoriaLegalApi
+  handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler
+  use_case: SiguienteCarpetaDisponibleUseCase
+  module: auditoria_legal
+  auth: cognito
+  source:
+  - src/app/(app)/auditoria-legal/garantias/ModalRegistrarGarantia.tsx:215
+- method: PATCH
+  path: /garantias/{id}
+  function: AuditoriaLegalApi
+  handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler
+  use_case: EditarGarantiaUseCase
+  module: auditoria_legal
+  auth: cognito
+  source:
+  - src/app/api/auditoria-legal/garantias/[id]/route.ts:71
+  - src/app/(app)/auditoria-legal/garantias/ModalRegistrarGarantia.tsx:406
+  - src/app/api/auditoria-legal/garantias/[id]/route.ts:104
+  - src/app/api/auditoria-legal/garantias/[id]/route.ts:118
+- method: GET
+  path: /garantias/{id}/vendedor
+  function: AuditoriaLegalApi
+  handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler
+  use_case: GetVendedorGarantiaUseCase
+  module: auditoria_legal
+  auth: cognito
+  source:
+  - src/app/(app)/auditoria-legal/garantias/ModalConfirmarEnvioVendedor.tsx:34
+- method: GET
+  path: /garantias/{id}/eventos
+  function: AuditoriaLegalApi
+  handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler
+  use_case: ListEventosGarantiaUseCase
+  module: auditoria_legal
+  auth: cognito
+  source:
+  - src/app/(app)/auditoria-legal/garantias/ModalHistorialGarantia.tsx:48
+- method: PATCH
+  path: /garantias/{id}/custodia
+  function: AuditoriaLegalApi
+  handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler
+  use_case: CambiarCustodiaGarantiaUseCase
+  module: auditoria_legal
+  auth: cognito
+  timeout: 29
+  source:
+  - src/app/api/auditoria-legal/garantias/[id]/custodia/route.ts:17
+  - src/app/(app)/auditoria-legal/garantias/garantias-cliente.tsx:703
+  - src/app/(app)/auditoria-legal/garantias/garantias-cliente.tsx:704
+  - src/app/(app)/auditoria-legal/garantias/ModalConfirmarEnvioVendedor.tsx:47
+  - src/app/(app)/auditoria-legal/garantias/ModalConfirmarEnvioVendedor.tsx:48
+  - src/app/(app)/auditoria-legal/garantias/ModalConfirmarRecepcion.tsx:44
+  - src/app/(app)/auditoria-legal/garantias/ModalEmitirPagare.tsx:504
+  - src/app/(app)/auditoria-legal/garantias/ModalEmitirPagare.tsx:505
+  - src/app/api/auditoria-legal/garantias/[id]/custodia/route.ts:61
+  - src/app/api/auditoria-legal/garantias/[id]/custodia/route.ts:70
+  - src/app/api/auditoria-legal/garantias/[id]/custodia/route.ts:101
+  - src/app/api/auditoria-legal/garantias/[id]/custodia/route.ts:163
+  - src/app/api/auditoria-legal/garantias/[id]/custodia/route.ts:172
+- method: POST
+  path: /garantias/{id}/documento/upload-url
+  function: AuditoriaLegalApi
+  handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler
+  use_case: CrearUploadDocumentoGarantiaUseCase
+  module: auditoria_legal
+  auth: cognito
+  source:
+  - src/app/api/auditoria-legal/garantias/[id]/documento/route.ts:69
+  - src/app/(app)/auditoria-legal/garantias/garantias-cliente.tsx:738
+  - src/app/api/auditoria-legal/garantias/[id]/documento/route.ts:32
+  - src/app/api/auditoria-legal/garantias/[id]/documento/route.ts:61
+  - src/app/api/auditoria-legal/garantias/[id]/documento/route.ts:70
+- method: POST
+  path: /garantias/{id}/documento
+  function: AuditoriaLegalApi
+  handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler
+  use_case: AdjuntarDocumentoGarantiaUseCase
+  module: auditoria_legal
+  auth: cognito
+  source:
+  - src/app/api/auditoria-legal/garantias/[id]/documento/route.ts:19
+  - src/app/api/auditoria-legal/garantias/[id]/documento/route.ts:74
+- method: GET
+  path: /garantias/{id}/pagare
+  function: AuditoriaLegalApi
+  handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler
+  use_case: GetPagareImprimibleUseCase
+  module: auditoria_legal
+  auth: cognito
+  source:
+  - src/app/(print)/pagare/[id]/page.tsx:23
+  - src/app/(print)/pagare/[id]/page.tsx:42
+  - src/app/(print)/pagare/[id]/page.tsx:46
+  - src/app/(print)/pagare/[id]/page.tsx:54
+  - src/app/(print)/pagare/[id]/page.tsx:62
+- method: POST
+  path: /garantias/{id}/pagare
+  function: AuditoriaLegalApi
+  handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler
+  use_case: GenerarPagareUseCase
+  module: auditoria_legal
+  auth: cognito
+  source:
+  - src/app/api/auditoria-legal/garantias/[id]/pagare/route.ts:42
+  - src/app/(app)/auditoria-legal/garantias/ModalGenerarPagare.tsx:251
+  - src/app/(app)/auditoria-legal/garantias/ModalEmitirPagare.tsx:491
+  - src/app/api/auditoria-legal/garantias/[id]/pagare/route.ts:58
+  - src/app/api/auditoria-legal/garantias/[id]/pagare/route.ts:69
+- method: GET
+  path: /solicitudes-actualizacion
+  function: AuditoriaLegalApi
+  handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler
+  use_case: ListSolicitudesActualizacionUseCase
+  module: auditoria_legal
+  auth: cognito
+  source:
+  - src/app/(app)/auditoria-legal/garantias/garantias-cliente.tsx:402
+- method: POST
+  path: /solicitudes-actualizacion
+  function: AuditoriaLegalApi
+  handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler
+  use_case: CrearSolicitudActualizacionUseCase
+  module: auditoria_legal
+  auth: cognito
+  timeout: 29
+  source:
+  - src/app/api/auditoria-legal/solicitudes-actualizacion/route.ts:15
+  - src/app/(app)/auditoria-legal/garantias/ModalSolicitarActualizacion.tsx:37
+  - src/app/(app)/auditoria-legal/garantias/ModalSolicitarActualizacion.tsx:46
+  - src/app/api/auditoria-legal/solicitudes-actualizacion/route.ts:38
+- method: GET
+  path: /solicitudes-actualizacion/{id}
+  function: AuditoriaLegalApi
+  handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler
+  use_case: GetSolicitudActualizacionUseCase
+  module: auditoria_legal
+  auth: cognito
+  source:
+  - src/app/api/auditoria-legal/solicitudes-actualizacion/[id]/route.ts:29
+  - src/app/(app)/auditoria-legal/garantias/garantias-cliente.tsx:782
+  - src/app/(app)/auditoria-legal/garantias/ModalRevisarActualizacion.tsx:34
+  - src/app/api/auditoria-legal/solicitudes-actualizacion/[id]/route.ts:21
+- method: PATCH
+  path: /solicitudes-actualizacion/{id}
+  function: AuditoriaLegalApi
+  handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler
+  use_case: GestionarSolicitudActualizacionUseCase
+  module: auditoria_legal
+  auth: cognito
+  timeout: 29
+  source:
+  - src/app/api/auditoria-legal/solicitudes-actualizacion/[id]/route.ts:72
+  - src/app/(app)/auditoria-legal/garantias/garantias-cliente.tsx:805
+  - src/app/(app)/auditoria-legal/garantias/ModalRevisarActualizacion.tsx:56
+  - src/app/(app)/auditoria-legal/garantias/ModalRevisarActualizacion.tsx:75
+  - src/app/(app)/auditoria-legal/garantias/ModalSolicitarActualizacion.tsx:41
+- method: GET
+  path: /actualizar-perfil/{token}
+  function: ActualizarPerfilApi
+  handler: entrypoints.lambda_handlers.actualizar_perfil.actualizar_perfil_handler
+  use_case: ValidarTokenActualizacionUseCase
+  module: auditoria_legal
+  auth: none
+  public_reason: Formulario de actualización de datos que recibe el cliente externo (sin cuenta del SIC) por email;
+    autorizado por token de un solo uso (256 bits, se guarda solo su SHA-256) con expiración de 7 días.
+  source:
+  - src/app/api/actualizar-perfil/[token]/route.ts:22
+  - src/app/actualizar-perfil/[token]/page.tsx:9
+  - src/lib/auditoria-legal/validar-token-solicitud.ts:25
+- method: POST
+  path: /actualizar-perfil/{token}/archivos
+  function: ActualizarPerfilApi
+  handler: entrypoints.lambda_handlers.actualizar_perfil.actualizar_perfil_handler
+  use_case: CrearUploadsActualizacionUseCase
+  module: auditoria_legal
+  auth: none
+  public_reason: 'Formulario público de actualización de datos (cliente externo por email): firma las subidas de
+    cédula/personería a S3 solo si el token de un solo uso sigue vigente.'
+  source:
+  - src/app/api/actualizar-perfil/[token]/route.ts:92
+  - src/app/api/actualizar-perfil/[token]/route.ts:102
+- method: POST
+  path: /actualizar-perfil/{token}
+  function: ActualizarPerfilApi
+  handler: entrypoints.lambda_handlers.actualizar_perfil.actualizar_perfil_handler
+  use_case: EnviarActualizacionPerfilUseCase
+  module: auditoria_legal
+  auth: none
+  public_reason: Formulario público de actualización de datos (cliente externo por email), validado por token de
+    un solo uso con expiración; el compare-and-swap ENVIADA→DATOS_RECIBIDOS lo invalida al usarse.
+  source:
+  - src/app/api/actualizar-perfil/[token]/route.ts:37
+  - src/app/actualizar-perfil/[token]/formulario-actualizacion.tsx:88
+- method: GET
+  path: /centro-recursos
+  function: CentroRecursosApi
+  handler: entrypoints.lambda_handlers.centro_recursos.centro_recursos_handler
+  use_case: GetCentroRecursosUseCase
+  module: centro_recursos
+  auth: cognito
+  timeout: 29
+  source:
+  - src/app/(app)/centro-recursos/page.tsx:27
+  - src/app/(app)/centro-recursos/page.tsx:32
+  - src/app/(app)/centro-recursos/page.tsx:34
+  - src/app/(app)/centro-recursos/page.tsx:36
+  - src/app/(app)/centro-recursos/page.tsx:40
+  - src/app/(app)/centro-recursos/page.tsx:45
+  - src/app/(app)/centro-recursos/page.tsx:47
+  - src/app/(app)/centro-recursos/page.tsx:49
+  - src/app/(app)/centro-recursos/page.tsx:51
+- method: GET
+  path: /centro-recursos/aplicaciones
+  function: CentroRecursosApi
+  handler: entrypoints.lambda_handlers.centro_recursos.centro_recursos_handler
+  use_case: ListAplicacionesUseCase
+  module: centro_recursos
+  auth: cognito
+  source:
+  - src/app/api/centro-recursos/aplicaciones/route.ts:6
+- method: POST
+  path: /centro-recursos/aplicaciones
+  function: CentroRecursosApi
+  handler: entrypoints.lambda_handlers.centro_recursos.centro_recursos_handler
+  use_case: CrearAplicacionUseCase
+  module: centro_recursos
+  auth: cognito
+  source:
+  - src/app/api/centro-recursos/aplicaciones/route.ts:24
+  - src/components/centro-recursos/ModalRegistrarAplicacion.tsx:29
+- method: PUT
+  path: /centro-recursos/aplicaciones/{id}
+  function: CentroRecursosApi
+  handler: entrypoints.lambda_handlers.centro_recursos.centro_recursos_handler
+  use_case: ActualizarAplicacionUseCase
+  module: centro_recursos
+  auth: cognito
+  source:
+  - src/app/api/centro-recursos/aplicaciones/[id]/route.ts:7
+  - src/components/centro-recursos/ModalEditarAplicacion.tsx:25
+  - src/components/centro-recursos/TabAplicaciones.tsx:167
+  - src/components/centro-recursos/TabAplicaciones.tsx:170
+- method: GET
+  path: /centro-recursos/documentos
+  function: CentroRecursosApi
+  handler: entrypoints.lambda_handlers.centro_recursos.centro_recursos_handler
+  use_case: ListDocumentosUseCase
+  module: centro_recursos
+  auth: cognito
+  source:
+  - src/app/api/centro-recursos/documentos/route.ts:8
+- method: POST
+  path: /centro-recursos/documentos/upload-url
+  function: CentroRecursosApi
+  handler: entrypoints.lambda_handlers.centro_recursos.centro_recursos_handler
+  use_case: CrearUrlCargaDocumentoUseCase
+  module: centro_recursos
+  auth: cognito
+  source:
+  - src/app/api/centro-recursos/documentos/route.ts:52
+- method: POST
+  path: /centro-recursos/documentos
+  function: CentroRecursosApi
+  handler: entrypoints.lambda_handlers.centro_recursos.centro_recursos_handler
+  use_case: CrearDocumentoUseCase
+  module: centro_recursos
+  auth: cognito
+  source:
+  - src/app/api/centro-recursos/documentos/route.ts:25
+  - src/app/api/centro-recursos/documentos/route.ts:58
+  - src/components/centro-recursos/ModalCargarDocumento.tsx:35
+- method: POST
+  path: /centro-recursos/marcas
+  function: CentroRecursosApi
+  handler: entrypoints.lambda_handlers.centro_recursos.centro_recursos_handler
+  use_case: CrearMarcaUseCase
+  module: centro_recursos
+  auth: cognito
+  source:
+  - src/app/api/centro-recursos/marcas/route.ts:5
+  - src/components/centro-recursos/ModalAgregarMarca.tsx:34
+- method: PUT
+  path: /centro-recursos/marcas/{id}
+  function: CentroRecursosApi
+  handler: entrypoints.lambda_handlers.centro_recursos.centro_recursos_handler
+  use_case: ActualizarMarcaUseCase
+  module: centro_recursos
+  auth: cognito
+  source:
+  - src/app/api/centro-recursos/marcas/[id]/route.ts:8
+  - src/components/centro-recursos/TabDirectorioAgentes.tsx:105
+  - src/components/centro-recursos/TabDirectorioAgentes.tsx:134
+- method: GET
+  path: /clientes
+  function: ClientesApi
+  handler: entrypoints.lambda_handlers.clientes.clientes_handler
+  use_case: ListClientesUseCase
+  module: clientes
+  auth: cognito
+  timeout: 29
+  source:
+  - src/app/(app)/clientes/page.tsx:117
+  - src/app/(app)/clientes/actions.ts:22
+  - src/app/(app)/clientes/actions.ts:27
+- method: GET
+  path: /clientes/buscar
+  function: ClientesApi
+  handler: entrypoints.lambda_handlers.clientes.clientes_handler
+  use_case: BuscarGlobalUseCase
+  module: clientes
+  auth: cognito
+  source:
+  - src/app/api/clientes/buscar/route.ts:28
+  - src/app/api/clientes/buscar/route.ts:47
+  - src/app/api/clientes/buscar/route.ts:55
+  - src/app/api/clientes/buscar/route.ts:64
+- method: GET
+  path: /clientes/{cod}/ficha
+  function: ClientesApi
+  handler: entrypoints.lambda_handlers.clientes.clientes_handler
+  use_case: GetFichaClienteUseCase
+  module: clientes
+  auth: cognito
+  timeout: 29
+  source:
+  - src/app/(app)/clientes/[cod]/page.tsx:35
+  - src/app/(app)/clientes/[cod]/page.tsx:57
+  - src/app/(app)/clientes/[cod]/page.tsx:58
+  - src/app/(app)/clientes/[cod]/page.tsx:59
+  - src/app/(app)/clientes/[cod]/page.tsx:60
+  - src/app/(app)/clientes/[cod]/page.tsx:62
+  - src/app/(app)/clientes/[cod]/page.tsx:68
+  - src/app/(app)/clientes/[cod]/page.tsx:71
+  - src/app/(app)/clientes/[cod]/page.tsx:77
+  - src/app/(app)/clientes/[cod]/page.tsx:80
+  - src/app/(app)/clientes/[cod]/page.tsx:85
+  - src/app/(app)/clientes/[cod]/page.tsx:179
+  - src/app/(app)/clientes/[cod]/page.tsx:184
+  - src/app/(app)/clientes/[cod]/page.tsx:187
+- method: PATCH
+  path: /clientes/contacto
+  function: ClientesApi
+  handler: entrypoints.lambda_handlers.clientes.clientes_handler
+  use_case: ActualizarContactoClienteUseCase
+  module: clientes
+  auth: cognito
+  source:
+  - src/app/api/clientes/contacto/route.ts:5
+  - src/components/clientes/ficha/ficha-cliente.tsx:737
+  - src/app/api/clientes/contacto/route.ts:19
+- method: PATCH
+  path: /clientes/logistica
+  function: ClientesApi
+  handler: entrypoints.lambda_handlers.clientes.clientes_handler
+  use_case: ActualizarLogisticaClienteUseCase
+  module: clientes
+  auth: cognito
+  source:
+  - src/app/api/clientes/logistica/route.ts:8
+  - src/components/clientes/ficha/ficha-cliente.tsx:953
+  - src/app/api/clientes/logistica/route.ts:34
+- method: POST
+  path: /clientes/estado
+  function: ClientesApi
+  handler: entrypoints.lambda_handlers.clientes.clientes_handler
+  use_case: CambiarEstadoClienteUseCase
+  module: clientes
+  auth: cognito
+  source:
+  - src/app/api/clientes/estado/route.ts:7
+  - src/app/api/clientes/estado/route.ts:28
+- method: POST
+  path: /clientes/recordatorio
+  function: ClientesApi
+  handler: entrypoints.lambda_handlers.clientes.clientes_handler
+  use_case: RegistrarRecordatorioUseCase
+  module: clientes
+  auth: cognito
+  source:
+  - src/app/api/clientes/recordatorio/route.ts:6
+  - src/components/clientes/ficha/ficha-cliente.tsx:2702
+- method: GET
+  path: /clientes/estado-cuenta/data
+  function: ClientesApi
+  handler: entrypoints.lambda_handlers.clientes.clientes_handler
+  use_case: GetEstadoCuentaDataUseCase
+  module: clientes
+  auth: cognito
+  source:
+  - src/app/api/clientes/estado-cuenta/data/route.ts:10
+  - src/app/api/clientes/estado-cuenta/data/route.ts:34
+- method: POST
+  path: /clientes/email-cobro
+  function: ClientesApi
+  handler: entrypoints.lambda_handlers.clientes.clientes_handler
+  use_case: EnviarEmailCobroUseCase
+  module: clientes
+  auth: cognito
+  timeout: 29
+  source:
+  - src/app/api/clientes/email-cobro/route.ts:12
+  - src/components/clientes/ficha/ficha-cliente.tsx:1458
+  - src/components/clientes/ficha/ficha-cliente.tsx:1539
+  - src/app/api/clientes/email-cobro/route.ts:65
+- method: POST
+  path: /clientes/estado-cuenta
+  function: ClientesApi
+  handler: entrypoints.lambda_handlers.clientes.clientes_handler
+  use_case: EnviarEstadoCuentaUseCase
+  module: clientes
+  auth: cognito
+  timeout: 29
+  source:
+  - src/app/api/clientes/estado-cuenta/route.ts:14
+  - src/components/clientes/ficha/ficha-cliente.tsx:1711
+  - src/app/api/clientes/estado-cuenta/route.ts:69
+  - src/app/api/clientes/estado-cuenta/route.ts:92
+- method: POST
+  path: /ai/generate-email
+  function: ClientesApi
+  handler: entrypoints.lambda_handlers.clientes.clientes_handler
+  use_case: GenerarEmailCobroIAUseCase
+  module: clientes
+  auth: cognito
+  timeout: 29
+  source:
+  - src/app/api/ai/generate-email/route.ts:28
+- method: GET
+  path: /configuracion
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: GetConfiguracionPantallaUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/(app)/configuracion/page.tsx:2
+  - src/app/(app)/configuracion/page.tsx:60
+  - src/app/(app)/configuracion/page.tsx:64
+  - src/app/(app)/configuracion/page.tsx:67
+  - src/app/(app)/configuracion/page.tsx:71
+  - src/app/(app)/configuracion/page.tsx:74
+  - src/app/(app)/configuracion/page.tsx:77
+  - src/app/(app)/configuracion/page.tsx:81
+  - src/app/(app)/configuracion/page.tsx:84
+  - src/app/(app)/configuracion/page.tsx:86
+  - src/app/(app)/configuracion/page.tsx:90
+  - src/app/(app)/configuracion/page.tsx:95
+  - src/app/(app)/configuracion/page.tsx:101
+  - src/lib/automatizaciones/obtener-datos.ts:11
+  - src/lib/automatizaciones/obtener-datos.ts:13
+  - src/lib/configuracion/admin.ts:28
+  timeout: 29
+- method: GET
+  path: /configuracion/parametros
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: GetParametrosUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/parametros/route.ts:15
+- method: PUT
+  path: /configuracion/parametros
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: UpdateParametroUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/parametros/route.ts:32
+- method: GET
+  path: /configuracion/semaforo
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: GetSemaforoUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/semaforo/route.ts:25
+- method: PUT
+  path: /configuracion/semaforo
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: UpdateSemaforoUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/semaforo/route.ts:49
+- method: GET
+  path: /configuracion/sla
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: GetSlaUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/sla/route.ts:6
+- method: PUT
+  path: /configuracion/sla
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: UpdateSlaUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/sla/route.ts:29
+- method: GET
+  path: /configuracion/automatizaciones
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: GetAutomatizacionesUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/automatizaciones/route.ts:7
+  - src/lib/automatizaciones/obtener-datos.ts:11
+  - src/lib/automatizaciones/obtener-datos.ts:13
+- method: PUT
+  path: /configuracion/automatizaciones
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: ToggleAutomatizacionUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/automatizaciones/route.ts:23
+- method: GET
+  path: /configuracion/automatizaciones/feed
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: ListAutomatizacionesFeedUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/automatizaciones/feed/route.ts:5
+- method: PATCH
+  path: /configuracion/automatizaciones/feed/{id}
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: MarcarEventoLeidoUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/automatizaciones/feed/[id]/route.ts:7
+- method: GET
+  path: /configuracion/cierre-mes
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: ListVentasMensualesUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/cierre-mes/route.ts:12
+- method: PUT
+  path: /configuracion/cierre-mes
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: GuardarCierreMesUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/cierre-mes/route.ts:31
+- method: GET
+  path: /configuracion/log
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: ListAuditLogUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/log/route.ts:5
+- method: GET
+  path: /configuracion/usuarios
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: ListUsuariosConfigUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/usuarios/route.ts:9
+- method: POST
+  path: /configuracion/usuarios
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: CreateUsuarioUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/usuarios/route.ts:25
+- method: PUT
+  path: /configuracion/usuarios/{id}
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: UpdateUsuarioUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/usuarios/[id]/route.ts:12
+- method: GET
+  path: /configuracion/vendedores
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: ListVendedoresConfigUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/vendedores/route.ts:5
+- method: POST
+  path: /configuracion/vendedores
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: CreateVendedorUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/vendedores/route.ts:37
+- method: PUT
+  path: /configuracion/vendedores/{cod}
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: UpdateVendedorUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/vendedores/[cod]/route.ts:10
+- method: DELETE
+  path: /configuracion/vendedores/{cod}
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: DeactivateVendedorUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/vendedores/[cod]/route.ts:92
+- method: GET
+  path: /configuracion/supervisores
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: ListSupervisoresConfigUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/supervisores/route.ts:5
+- method: POST
+  path: /configuracion/supervisores
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: CreateSupervisorUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/supervisores/route.ts:39
+- method: PUT
+  path: /configuracion/supervisores/{cod}
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: UpdateSupervisorUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/supervisores/[cod]/route.ts:7
+- method: DELETE
+  path: /configuracion/supervisores/{cod}
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: DeactivateSupervisorUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/supervisores/[cod]/route.ts:59
+- method: GET
+  path: /configuracion/directorio
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: ListDirectorioUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/directorio/route.ts:10
+- method: POST
+  path: /configuracion/directorio
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: CreateContactoUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/directorio/route.ts:34
+- method: PUT
+  path: /configuracion/directorio/{id}
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: UpdateContactoUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/directorio/[id]/route.ts:12
+- method: DELETE
+  path: /configuracion/directorio/{id}
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: DeactivateContactoUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/directorio/[id]/route.ts:60
+- method: GET
+  path: /configuracion/directorio-activo
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: ListContactosDirectorioUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/components/ui/DirectorioInput.tsx:4
+  - src/components/ui/DirectorioInput.tsx:21
+  - src/components/ui/DirectorioInput.tsx:24
+  - src/lib/utils/directorio.ts:9
+  - src/lib/utils/directorio.ts:24
+  - src/lib/utils/directorio.ts:27
+  - src/lib/utils/directorio.ts:41
+  - src/lib/utils/directorio.ts:44
+- method: GET
+  path: /configuracion/portafolio-acotado
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: ListRutasUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/portafolio-acotado/route.ts:5
+- method: POST
+  path: /configuracion/portafolio-acotado
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: CreateRutaUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/portafolio-acotado/route.ts:48
+- method: PUT
+  path: /configuracion/portafolio-acotado/{principal_cod}
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: UpdateRutaUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/portafolio-acotado/[principal_cod]/route.ts:9
+- method: DELETE
+  path: /configuracion/portafolio-acotado/{principal_cod}
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: DeactivateRutaUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/portafolio-acotado/[principal_cod]/route.ts:89
+- method: GET
+  path: /dashboard/coordinador
+  function: DashboardApi
+  handler: entrypoints.lambda_handlers.dashboard.dashboard_handler
+  use_case: GetDashboardCoordinadorUseCase
+  module: dashboard
+  auth: cognito
+  timeout: 29
+  source:
+  - src/app/(app)/dashboard/page.tsx:66
+  - src/app/(app)/dashboard/page.tsx:116
+  - src/app/(app)/dashboard/page.tsx:117
+  - src/app/(app)/dashboard/page.tsx:122
+  - src/app/(app)/dashboard/page.tsx:127
+  - src/app/(app)/dashboard/page.tsx:130
+  - src/app/(app)/dashboard/page.tsx:131
+  - src/app/(app)/dashboard/page.tsx:132
+  - src/app/(app)/dashboard/page.tsx:134
+  - src/app/(app)/dashboard/page.tsx:135
+  - src/app/(app)/dashboard/page.tsx:145
+  - src/app/(app)/dashboard/page.tsx:269
+- method: GET
+  path: /dashboard/analista
+  function: DashboardApi
+  handler: entrypoints.lambda_handlers.dashboard.dashboard_handler
+  use_case: GetDashboardAnalistaUseCase
+  module: dashboard
+  auth: cognito
+  timeout: 29
+  source:
+  - src/app/(app)/dashboard/page.tsx:439
+  - src/app/(app)/dashboard/page.tsx:454
+  - src/app/(app)/dashboard/page.tsx:458
+  - src/app/(app)/dashboard/page.tsx:461
+  - src/app/(app)/dashboard/page.tsx:464
+  - src/app/(app)/dashboard/page.tsx:473
+  - src/app/(app)/dashboard/page.tsx:482
+  - src/app/(app)/dashboard/page.tsx:495
+  - src/app/(app)/dashboard/page.tsx:506
+  - src/app/(app)/dashboard/page.tsx:510
+  - src/app/(app)/dashboard/page.tsx:560
+  - src/lib/utils/cola-analista.ts:282
+  - src/lib/utils/cola-analista.ts:283
+  - src/lib/utils/cola-analista.ts:302
+  - src/lib/utils/cola-analista.ts:310
+  - src/lib/utils/cola-analista.ts:315
+  - src/lib/utils/cola-analista.ts:319
+  - src/lib/utils/cola-analista.ts:325
+  - src/lib/utils/cola-analista.ts:327
+- method: GET
+  path: /dashboard/mi-cartera
+  function: DashboardApi
+  handler: entrypoints.lambda_handlers.dashboard.dashboard_handler
+  use_case: GetMiCarteraUseCase
+  module: dashboard
+  auth: cognito
+  timeout: 29
+  source:
+  - src/app/(app)/mi-cartera/page.tsx:22
+  - src/app/(app)/mi-cartera/page.tsx:45
+  - src/lib/utils/cola-analista.ts:282
+  - src/lib/utils/cola-analista.ts:283
+  - src/lib/utils/cola-analista.ts:302
+  - src/lib/utils/cola-analista.ts:310
+  - src/lib/utils/cola-analista.ts:315
+  - src/lib/utils/cola-analista.ts:319
+  - src/lib/utils/cola-analista.ts:325
+  - src/lib/utils/cola-analista.ts:327
+- method: GET
+  path: /pedidos-retenidos
+  function: GestionCarteraApi
+  handler: entrypoints.lambda_handlers.gestion_cartera.gestion_cartera_handler
+  use_case: GetPedidosRetenidosUseCase
+  module: gestion_cartera
+  auth: cognito
+  timeout: 29
+  source:
+  - src/app/(app)/gestion-cartera/pedidos-retenidos/pedidos-retenidos-cliente.tsx:187
+- method: PUT
+  path: /pedidos-retenidos/{id}
+  function: GestionCarteraApi
+  handler: entrypoints.lambda_handlers.gestion_cartera.gestion_cartera_handler
+  use_case: ActualizarPedidoRetenidoUseCase
+  module: gestion_cartera
+  auth: cognito
+  source:
+  - src/app/api/gestion-cartera/pedidos-retenidos/[id]/route.ts
+  - src/app/(app)/gestion-cartera/pedidos-retenidos/pedidos-retenidos-cliente.tsx:247
+  - src/app/(app)/gestion-cartera/pedidos-retenidos/pedidos-retenidos-cliente.tsx:272
+  - src/app/api/gestion-cartera/pedidos-retenidos/[id]/route.ts:20
+- method: GET
+  path: /saldos-favor
+  function: GestionCarteraApi
+  handler: entrypoints.lambda_handlers.gestion_cartera.gestion_cartera_handler
+  use_case: ListSaldosFavorUseCase
+  module: gestion_cartera
+  auth: cognito
+  source:
+  - src/app/(app)/gestion-cartera/saldos-favor/page.tsx:29
+  - src/app/(app)/gestion-cartera/saldos-favor/page.tsx:32
+- method: GET
+  path: /saldos-favor/por-cliente
+  function: GestionCarteraApi
+  handler: entrypoints.lambda_handlers.gestion_cartera.gestion_cartera_handler
+  use_case: ListSaldosFavorClienteUseCase
+  module: gestion_cartera
+  auth: cognito
+  source:
+  - src/components/saldos-favor/tab-saldos-favor.tsx:40
+- method: POST
+  path: /saldos-favor/{id}/aplicar
+  function: GestionCarteraApi
+  handler: entrypoints.lambda_handlers.gestion_cartera.gestion_cartera_handler
+  use_case: AplicarSaldoFavorUseCase
+  module: gestion_cartera
+  auth: cognito
+  source:
+  - src/components/saldos-favor/saldos-favor-tabla.tsx:143
+- method: GET
+  path: /saldos-favor/matching
+  function: GestionCarteraApi
+  handler: entrypoints.lambda_handlers.gestion_cartera.gestion_cartera_handler
+  use_case: MatchingSaldosFavorUseCase
+  module: gestion_cartera
+  auth: cognito
+  timeout: 29
+  source:
+  - src/app/api/saldos-favor/matching/route.ts
+  - src/app/(app)/gestion-cartera/saldos-favor/saldos-favor-cliente.tsx:44
+  - src/components/saldos-favor/tab-saldos-favor.tsx:27
+  - src/app/api/saldos-favor/matching/route.ts:15
+  - src/app/api/saldos-favor/matching/route.ts:28
+- method: POST
+  path: /gestion-cartera/comprobantes/upload-url
+  function: GestionCarteraApi
+  handler: entrypoints.lambda_handlers.gestion_cartera.gestion_cartera_handler
+  use_case: CrearUrlSubidaComprobanteUseCase
+  module: gestion_cartera
+  auth: cognito
+  source:
+  - src/components/clientes/ficha/tab-reportar-pago.tsx:510
+- method: GET
+  path: /gestion-cartera/comprobantes/download-url
+  function: GestionCarteraApi
+  handler: entrypoints.lambda_handlers.gestion_cartera.gestion_cartera_handler
+  use_case: ObtenerUrlComprobanteUseCase
+  module: gestion_cartera
+  auth: cognito
+  source:
+  - src/components/clientes/ficha/tab-reportar-pago.tsx:519
+- method: POST
+  path: /clientes/pagos/reportar
+  function: GestionCarteraApi
+  handler: entrypoints.lambda_handlers.gestion_cartera.gestion_cartera_handler
+  use_case: ReportarPagoUseCase
+  module: gestion_cartera
+  auth: cognito
+  source:
+  - src/app/api/clientes/pagos/reportar/route.ts
+  - src/components/clientes/ficha/tab-reportar-pago.tsx:526
+- method: GET
+  path: /gestiones
+  function: GestionesApi
+  handler: entrypoints.lambda_handlers.gestiones.gestiones_handler
+  use_case: ListGestionesUseCase
+  module: gestiones
+  auth: cognito
+  source:
+  - src/app/(app)/gestiones/page.tsx:35
+  - src/app/(app)/gestiones/page.tsx:60
+  timeout: 29
+- method: GET
+  path: /gestiones/referencias
+  function: GestionesApi
+  handler: entrypoints.lambda_handlers.gestiones.gestiones_handler
+  use_case: GetReferenciasGestionesUseCase
+  module: gestiones
+  auth: cognito
+  source:
+  - src/app/(app)/gestiones/page.tsx:57
+  - src/app/(app)/gestiones/page.tsx:74
+  - src/app/(app)/gestiones/page.tsx:79
+  - src/app/(app)/gestiones/page.tsx:84
+  timeout: 29
+- method: GET
+  path: /gestiones/codigos-contribuyente
+  function: GestionesApi
+  handler: entrypoints.lambda_handlers.gestiones.gestiones_handler
+  use_case: ListCodigosContribuyenteUseCase
+  module: gestiones
+  auth: cognito
+  source:
+  - src/components/clientes/ficha/form-nueva-gestion.tsx:199
+  timeout: 29
+- method: POST
+  path: /gestiones/rapida
+  function: GestionesApi
+  handler: entrypoints.lambda_handlers.gestiones.gestiones_handler
+  use_case: RegistrarGestionRapidaUseCase
+  module: gestiones
+  auth: cognito
+  source:
+  - src/components/clientes/ficha/modal-gestion.tsx:89
+  - src/components/clientes/ficha/modal-gestion.tsx:115
+  timeout: 29
+- method: PATCH
+  path: /clientes/gestiones
+  function: GestionesApi
+  handler: entrypoints.lambda_handlers.gestiones.gestiones_handler
+  use_case: UpdateGestionUseCase
+  module: gestiones
+  auth: cognito
+  source:
+  - src/app/api/clientes/gestiones/route.ts:5
+  - src/app/api/clientes/gestiones/route.ts:26
+  - src/app/api/clientes/gestiones/route.ts:65
+  timeout: 29
+- method: DELETE
+  path: /clientes/gestiones
+  function: GestionesApi
+  handler: entrypoints.lambda_handlers.gestiones.gestiones_handler
+  use_case: DeleteGestionUseCase
+  module: gestiones
+  auth: cognito
+  source:
+  - src/app/api/clientes/gestiones/route.ts:52
+  timeout: 29
+- method: POST
+  path: /clientes/gestiones/nueva
+  function: GestionesApi
+  handler: entrypoints.lambda_handlers.gestiones.gestiones_handler
+  use_case: RegistrarGestionUseCase
+  module: gestiones
+  auth: cognito
+  source:
+  - src/app/api/clientes/gestiones/nueva/route.ts:42
+  - src/app/api/clientes/gestiones/nueva/route.ts:83
+  - src/app/api/clientes/gestiones/nueva/route.ts:132
+  timeout: 29
+- method: GET
+  path: /notas-rapidas
+  function: GestionesApi
+  handler: entrypoints.lambda_handlers.gestiones.gestiones_handler
+  use_case: GetNotaRapidaUseCase
+  module: gestiones
+  auth: cognito
+  source:
+  - src/app/api/notas-rapidas/route.ts:5
+  - src/app/api/notas-rapidas/route.ts:16
+  - src/app/api/notas-rapidas/route.ts:55
+  timeout: 29
+- method: POST
+  path: /notas-rapidas
+  function: GestionesApi
+  handler: entrypoints.lambda_handlers.gestiones.gestiones_handler
+  use_case: SaveNotaRapidaUseCase
+  module: gestiones
+  auth: cognito
+  source:
+  - src/app/api/notas-rapidas/route.ts:36
+  timeout: 29
+- method: POST
+  path: /ai/formalizar-bitacora
+  function: GestionesApi
+  handler: entrypoints.lambda_handlers.gestiones.gestiones_handler
+  use_case: FormalizarBitacoraUseCase
+  module: gestiones
+  auth: cognito
+  source:
+  - src/app/api/ai/formalizar-bitacora/route.ts:7
+  timeout: 29
+- method: GET
+  path: /me
+  function: MeApi
+  handler: entrypoints.lambda_handlers.me.me_handler
+  use_case: GetMeUseCase
+  module: identidad
+  auth: cognito
+  source:
+  - src/lib/utils/usuario-actual.ts:42
+  - src/lib/utils/usuario-actual.ts:48
+  - src/app/(app)/layout.tsx:36
+  - src/app/(app)/layout.tsx:52
+  - src/app/auth/callback/route.ts:46
+  - src/app/auth/denegado/route.ts:11
+  - src/app/login/page.tsx:52
+  - src/app/login/page.tsx:96
+  - src/middleware.ts:33
+  - src/middleware.ts:56
+  - src/lib/supabase/server.ts:7
+  - src/lib/supabase/client.ts:4
+  - src/hooks/useSessionTimeout.ts:51
+  - src/lib/utils/usuario-actual.ts:49
+- method: GET
+  path: /me/analistas-con-cartera
+  function: MeApi
+  handler: entrypoints.lambda_handlers.me.me_handler
+  use_case: ListAnalistasConCarteraUseCase
+  module: identidad
+  auth: cognito
+  source:
+  - src/lib/utils/analistas-equipo.ts:28
+  - src/lib/utils/analistas-equipo.ts:29
+- method: POST
+  path: /me/preview-rol
+  function: MeApi
+  handler: entrypoints.lambda_handlers.me.me_handler
+  use_case: PreviewRolUseCase
+  module: identidad
+  auth: cognito
+  source:
+  - src/app/api/preview-rol/route.ts:11
+  - src/app/api/preview-rol/route.ts:14
+  - src/app/api/preview-rol/route.ts:16
+- method: GET
+  path: /me/google/authorize-url
+  function: MeApi
+  handler: entrypoints.lambda_handlers.me.me_handler
+  use_case: GoogleAuthorizeUrlUseCase
+  module: identidad
+  auth: cognito
+  source:
+  - src/app/login/page.tsx:63
+  - src/lib/utils/gmail-token.ts:45
+  - src/lib/utils/gmail-token.ts:50
+- method: POST
+  path: /me/google/connect
+  function: MeApi
+  handler: entrypoints.lambda_handlers.me.me_handler
+  use_case: ConnectGoogleUseCase
+  module: identidad
+  auth: cognito
+  source:
+  - src/app/auth/callback/route.ts:63
+  - src/app/auth/callback/route.ts:81
+- method: GET
+  path: /me/calendar/events
+  function: MeApi
+  handler: entrypoints.lambda_handlers.me.me_handler
+  use_case: ListCalendarEventsUseCase
+  module: identidad
+  auth: cognito
+  source:
+  - src/lib/services/googleCalendarService.ts:1
+- method: POST
+  path: /sync/pagos
+  function: JobsApi
+  handler: entrypoints.lambda_handlers.jobs.jobs_handler
+  use_case: EncolarSyncManualUseCase
+  module: jobs
+  auth: cognito
+  source:
+  - src/components/configuracion/TabSincronizacion.tsx:157
+  - src/app/api/sync/pagos/route.ts:36
+  - src/app/api/sync/pagos/route.ts:54
+  - src/app/api/sync/pagos/route.ts:21
+  timeout: 10
+- method: POST
+  path: /sync/pedidos-retenidos
+  function: JobsApi
+  handler: entrypoints.lambda_handlers.jobs.jobs_handler
+  use_case: EncolarSyncManualUseCase
+  module: jobs
+  auth: cognito
+  source:
+  - src/components/configuracion/TabSincronizacion.tsx:204
+  - src/app/api/sync/pedidos-retenidos/route.ts:40
+  - src/app/api/sync/pedidos-retenidos/route.ts:57
+  - src/app/api/sync/pedidos-retenidos/route.ts:24
+  timeout: 10
+- method: POST
+  path: /sync/cartera
+  function: JobsApi
+  handler: entrypoints.lambda_handlers.jobs.jobs_handler
+  use_case: SincronizarTablaUseCase
+  module: jobs
+  auth: cognito
+  source:
+  - src/components/configuracion/TabSincronizacion.tsx:171
+  - src/app/api/sync/cartera/route.ts:31
+  - src/app/api/sync/cartera/route.ts:15
+  timeout: 29
+- method: POST
+  path: /sync/facturas
+  function: JobsApi
+  handler: entrypoints.lambda_handlers.jobs.jobs_handler
+  use_case: SincronizarTablaUseCase
+  module: jobs
+  auth: cognito
+  source:
+  - src/components/configuracion/TabSincronizacion.tsx:182
+  - src/app/api/sync/facturas/route.ts:31
+  - src/app/api/sync/facturas/route.ts:15
+  timeout: 29
+- method: POST
+  path: /sync/saldos_favor
+  function: JobsApi
+  handler: entrypoints.lambda_handlers.jobs.jobs_handler
+  use_case: SincronizarTablaUseCase
+  module: jobs
+  auth: cognito
+  source:
+  - src/components/configuracion/TabSincronizacion.tsx:193
+  - src/app/api/sync/saldos_favor/route.ts:31
+  - src/app/api/sync/saldos_favor/route.ts:15
+  timeout: 29
+- method: GET
+  path: /sync/historial
+  function: JobsApi
+  handler: entrypoints.lambda_handlers.jobs.jobs_handler
+  use_case: ListarHistorialSyncUseCase
+  module: jobs
+  auth: cognito
+  source:
+  - src/components/configuracion/TabSincronizacion.tsx:125
+  timeout: 10
+- method: GET
+  path: /sync/estado
+  function: JobsApi
+  handler: entrypoints.lambda_handlers.jobs.jobs_handler
+  use_case: ObtenerEstadoSyncUseCase
+  module: jobs
+  auth: cognito
+  source:
+  - src/components/configuracion/TabSincronizacion.tsx:125
+  - src/components/configuracion/TabSincronizacion.tsx:157
+  - src/components/configuracion/TabSincronizacion.tsx:204
+  timeout: 10
+- method: POST
+  path: /ingesta/{tabla}
+  function: IngestaApi
+  handler: entrypoints.lambda_handlers.ingesta.ingesta_handler
+  use_case: IngestarLoteUseCase
+  module: jobs
+  auth: none
+  public_reason: integración máquina a máquina N8N/GAS; autenticada con header x-ingesta-key comparado en tiempo
+    constante contra ingesta_api_key de Secrets Manager; WAF + throttling
+  source:
+  - CLAUDE.md:82
+  - CLAUDE.md:87
+  - CLAUDE.md:90
+  - CLAUDE.md:91
+  - supabase/migrations/20260615_saldos_favor_unique.sql:3
+  - supabase/migrations/20260717_pedidos_retenidos.sql:29
+  - supabase/migrations/20260722_maestro_clientes_sincronizar_analista_nombre.sql:2
+  - supabase/migrations/20260714_logistica_despacho_maestro_clientes.sql:2
+  timeout: 29
+  memory: 1024
+- method: POST
+  path: /jobs/conciliar-promesas
+  function: JobsApi
+  handler: entrypoints.lambda_handlers.jobs.jobs_handler
+  use_case: ConciliarPromesasManualUseCase
+  module: jobs
+  auth: cognito
+  source:
+  - supabase/functions/mark-promesas-incumplidas/index.ts:1
+- method: GET
+  path: /notificaciones
+  function: NotificacionesApi
+  handler: entrypoints.lambda_handlers.notificaciones.notificaciones_handler
+  use_case: ListNotificacionesUseCase
+  module: notificaciones
+  auth: cognito
+  source:
+  - src/components/topbar.tsx:192
+  - src/components/topbar.tsx:201
+- method: PATCH
+  path: /notificaciones/{id}
+  function: NotificacionesApi
+  handler: entrypoints.lambda_handlers.notificaciones.notificaciones_handler
+  use_case: MarcarNotificacionLeidaUseCase
+  module: notificaciones
+  auth: cognito
+  source:
+  - src/components/topbar.tsx:224
+  - src/components/notificaciones/panel-notificaciones.tsx:54
+- method: POST
+  path: /notificaciones/leer-todas
+  function: NotificacionesApi
+  handler: entrypoints.lambda_handlers.notificaciones.notificaciones_handler
+  use_case: MarcarTodasLeidasUseCase
+  module: notificaciones
+  auth: cognito
+  source:
+  - src/components/topbar.tsx:233
+  - src/components/notificaciones/panel-notificaciones.tsx:63
+- method: GET
+  path: /chat
+  function: NotificacionesApi
+  handler: entrypoints.lambda_handlers.notificaciones.notificaciones_handler
+  use_case: ListMensajesChatUseCase
+  module: notificaciones
+  auth: cognito
+  source:
+  - src/hooks/useChat.ts:51
+  - src/hooks/useChat.ts:73
+  - src/hooks/useChat.ts:103
+  - src/hooks/useChat.ts:136
+- method: POST
+  path: /chat
+  function: NotificacionesApi
+  handler: entrypoints.lambda_handlers.notificaciones.notificaciones_handler
+  use_case: EnviarMensajeChatUseCase
+  module: notificaciones
+  auth: cognito
+  source:
+  - src/app/api/chat/route.ts:14
+  - src/hooks/useChat.ts:166
+  - src/app/api/chat/route.ts:38
+- method: GET
+  path: /tipo-cambio
+  function: NotificacionesApi
+  handler: entrypoints.lambda_handlers.notificaciones.notificaciones_handler
+  use_case: GetTipoCambioUseCase
+  module: notificaciones
+  auth: cognito
+  timeout: 29
+  source:
+  - src/app/api/tipo-cambio/route.ts:71
+  - src/app/api/tipo-cambio/route.ts:47
+  - src/app/api/tipo-cambio/route.ts:88
+  - src/components/tipo-cambio-topbar.tsx:25
+- method: GET
+  path: /hacienda
+  function: NotificacionesApi
+  handler: entrypoints.lambda_handlers.notificaciones.notificaciones_handler
+  use_case: ConsultarHaciendaUseCase
+  module: notificaciones
+  auth: cognito
+  timeout: 29
+  source:
+  - src/app/api/hacienda/route.ts:18
+  - src/components/centro-recursos/TabAplicaciones.tsx:76
+- method: GET
+  path: /hacienda/cabys
+  function: NotificacionesApi
+  handler: entrypoints.lambda_handlers.notificaciones.notificaciones_handler
+  use_case: BuscarCabysUseCase
+  module: notificaciones
+  auth: cognito
+  timeout: 29
+  source:
+  - src/app/api/hacienda/cabys/route.ts:13
+  - src/components/centro-recursos/TabAplicaciones.tsx:99
+- method: GET
+  path: /presupuesto/mes
+  function: PresupuestoApi
+  handler: entrypoints.lambda_handlers.presupuesto.presupuesto_handler
+  use_case: GetPresupuestoMesUseCase
+  module: presupuesto
+  auth: cognito
+  timeout: 29
+  source:
+  - src/app/(app)/reportes/presupuesto-cobro/tab-presupuesto.tsx:62
+  - src/app/(app)/reportes/presupuesto-cobro/tab-presupuesto.tsx:67
+- method: POST
+  path: /presupuesto/mes/congelar
+  function: PresupuestoApi
+  handler: entrypoints.lambda_handlers.presupuesto.presupuesto_handler
+  use_case: CongelarPresupuestoUseCase
+  module: presupuesto
+  auth: cognito
+  timeout: 29
+  source:
+  - src/app/(app)/reportes/presupuesto-cobro/tab-presupuesto.tsx:90
+  - src/app/(app)/reportes/presupuesto-cobro/tab-presupuesto.tsx:99
+  - src/app/(app)/reportes/presupuesto-cobro/tab-presupuesto.tsx:103
+- method: POST
+  path: /presupuesto/mes/meta
+  function: PresupuestoApi
+  handler: entrypoints.lambda_handlers.presupuesto.presupuesto_handler
+  use_case: AjustarMetaVendedorUseCase
+  module: presupuesto
+  auth: cognito
+  source:
+  - src/app/(app)/reportes/presupuesto-cobro/tab-presupuesto.tsx:111
+- method: POST
+  path: /presupuesto/mes/reasignar
+  function: PresupuestoApi
+  handler: entrypoints.lambda_handlers.presupuesto.presupuesto_handler
+  use_case: ReasignarClientePresupuestoUseCase
+  module: presupuesto
+  auth: cognito
+  source:
+  - src/app/(app)/reportes/presupuesto-cobro/tab-presupuesto.tsx:106
+- method: GET
+  path: /presupuesto/vendedores
+  function: PresupuestoApi
+  handler: entrypoints.lambda_handlers.presupuesto.presupuesto_handler
+  use_case: ListVendedoresPresupuestoUseCase
+  module: presupuesto
+  auth: cognito
+  source:
+  - src/app/(app)/reportes/presupuesto-cobro/tab-presupuesto.tsx:81
+- method: GET
+  path: /presupuesto/destinatarios
+  function: PresupuestoApi
+  handler: entrypoints.lambda_handlers.presupuesto.presupuesto_handler
+  use_case: GetDestinatariosPresupuestoUseCase
+  module: presupuesto
+  auth: cognito
+  source:
+  - src/app/(app)/reportes/presupuesto-cobro/tab-presupuesto.tsx:304
+  - src/app/(app)/reportes/presupuesto-cobro/tab-presupuesto.tsx:305
+  - src/app/(app)/reportes/presupuesto-cobro/tab-presupuesto.tsx:307
+  - src/app/(app)/reportes/presupuesto-cobro/tab-presupuesto.tsx:308
+- method: POST
+  path: /presupuesto/enviar
+  function: PresupuestoApi
+  handler: entrypoints.lambda_handlers.presupuesto.presupuesto_handler
+  use_case: EnviarCorreoPresupuestoUseCase
+  module: presupuesto
+  auth: cognito
+  timeout: 29
+  source:
+  - src/app/(app)/reportes/presupuesto-cobro/tab-presupuesto.tsx:364
+  - src/app/(app)/reportes/presupuesto-cobro/tab-presupuesto.tsx:365
+  - src/app/(app)/reportes/presupuesto-cobro/tab-recuperacion.tsx:181
+  - src/app/(app)/reportes/presupuesto-cobro/tab-recuperacion.tsx:182
+- method: GET
+  path: /presupuesto/recuperacion
+  function: PresupuestoApi
+  handler: entrypoints.lambda_handlers.presupuesto.presupuesto_handler
+  use_case: GetRecuperacionMesUseCase
+  module: presupuesto
+  auth: cognito
+  timeout: 29
+  source:
+  - src/app/(app)/reportes/presupuesto-cobro/tab-recuperacion.tsx:100
+- method: GET
+  path: /presupuesto/proyeccion
+  function: PresupuestoApi
+  handler: entrypoints.lambda_handlers.presupuesto.presupuesto_handler
+  use_case: GetProyeccionCobroUseCase
+  module: presupuesto
+  auth: cognito
+  timeout: 29
+  source:
+  - src/app/(app)/reportes/presupuesto-cobro/tab-proyeccion.tsx:80
+- method: GET
+  path: /presupuesto/sin-pago
+  function: PresupuestoApi
+  handler: entrypoints.lambda_handlers.presupuesto.presupuesto_handler
+  use_case: GetSinPagoUseCase
+  module: presupuesto
+  auth: cognito
+  source:
+  - src/app/(app)/reportes/presupuesto-cobro/tab-sin-pago.tsx:45
+  - src/app/(app)/reportes/presupuesto-cobro/tab-sin-pago.tsx:50
+- method: GET
+  path: /presupuesto/recuperacion-mom
+  function: PresupuestoApi
+  handler: entrypoints.lambda_handlers.presupuesto.presupuesto_handler
+  use_case: GetRecuperacionMomUseCase
+  module: presupuesto
+  auth: cognito
+  timeout: 29
+  source:
+  - src/components/reportes/RecuperacionMom.tsx:57
+- method: GET
+  path: /presupuesto/recuperacion-periodo
+  function: PresupuestoApi
+  handler: entrypoints.lambda_handlers.presupuesto.presupuesto_handler
+  use_case: GetRecuperacionPeriodoUseCase
+  module: presupuesto
+  auth: cognito
+  timeout: 29
+  source:
+  - src/components/reportes/RecuperacionPeriodoCliente.tsx:57
+- method: GET
+  path: /presupuesto/recuperacion-tramos
+  function: PresupuestoApi
+  handler: entrypoints.lambda_handlers.presupuesto.presupuesto_handler
+  use_case: GetRecuperacionTramosUseCase
+  module: presupuesto
+  auth: cognito
+  timeout: 29
+  source:
+  - src/components/reportes/RecuperacionTramos.tsx:50
+- method: GET
+  path: /presupuesto/meta-analista
+  function: PresupuestoApi
+  handler: entrypoints.lambda_handlers.presupuesto.presupuesto_handler
+  use_case: GetMetaAnalistaMesUseCase
+  module: presupuesto
+  auth: cognito
+  source:
+  - src/components/reportes/RecuperacionPeriodoCliente.tsx:65
+- method: GET
+  path: /promesas
+  function: PromesasApi
+  handler: entrypoints.lambda_handlers.promesas.promesas_handler
+  use_case: ListPromesasUseCase
+  module: promesas
+  auth: cognito
+  source:
+  - src/app/(app)/promesas/page.tsx:38
+  - src/app/(app)/promesas/page.tsx:73
+  - src/app/(app)/promesas/page.tsx:55
+  timeout: 29
+- method: PATCH
+  path: /clientes/promesas
+  function: PromesasApi
+  handler: entrypoints.lambda_handlers.promesas.promesas_handler
+  use_case: ValidarPromesaUseCase
+  module: promesas
+  auth: cognito
+  source:
+  - src/app/api/clientes/promesas/route.ts:30
+  - src/app/api/clientes/promesas/route.ts:71
+  - src/app/api/clientes/promesas/route.ts:154
+  timeout: 29
+- method: DELETE
+  path: /clientes/promesas
+  function: PromesasApi
+  handler: entrypoints.lambda_handlers.promesas.promesas_handler
+  use_case: DeletePromesaUseCase
+  module: promesas
+  auth: cognito
+  source:
+  - src/app/api/clientes/promesas/route.ts:141
+  timeout: 29
+- method: POST
+  path: /clientes/promesas/reprogramar
+  function: PromesasApi
+  handler: entrypoints.lambda_handlers.promesas.promesas_handler
+  use_case: ReprogramarPromesaUseCase
+  module: promesas
+  auth: cognito
+  source:
+  - src/app/api/clientes/promesas/reprogramar/route.ts:22
+  - src/app/api/clientes/promesas/reprogramar/route.ts:49
+  timeout: 29
+- method: GET
+  path: /reportes/aging
+  function: ReportesApi
+  handler: entrypoints.lambda_handlers.reportes.reportes_handler
+  use_case: GetAgingUseCase
+  module: reportes
+  auth: cognito
+  source:
+  - src/app/(app)/reportes/aging-consolidado/aging-cliente.tsx:52
+  timeout: 29
+- method: GET
+  path: /reportes/cei
+  function: ReportesApi
+  handler: entrypoints.lambda_handlers.reportes.reportes_handler
+  use_case: GetCeiUseCase
+  module: reportes
+  auth: cognito
+  source:
+  - src/app/(app)/reportes/cei/cei-cliente.tsx:47
+  timeout: 29
+- method: POST
+  path: /reportes/cei/cierre
+  function: ReportesApi
+  handler: entrypoints.lambda_handlers.reportes.reportes_handler
+  use_case: TomarCierreCarteraUseCase
+  module: reportes
+  auth: cognito
+  source:
+  - src/app/(app)/reportes/cei/cei-cliente.tsx:65
+  timeout: 29
+- method: GET
+  path: /reportes/efectividad
+  function: ReportesApi
+  handler: entrypoints.lambda_handlers.reportes.reportes_handler
+  use_case: GetEfectividadUseCase
+  module: reportes
+  auth: cognito
+  source:
+  - src/app/(app)/reportes/efectividad-gestiones/efectividad-cliente.tsx:144
+  timeout: 29
+- method: GET
+  path: /reportes/icp-vendedor
+  function: ReportesApi
+  handler: entrypoints.lambda_handlers.reportes.reportes_handler
+  use_case: GetIcpVendedorUseCase
+  module: reportes
+  auth: cognito
+  source:
+  - src/app/(app)/reportes/icp-vendedor/icp-vendedor-cliente.tsx:54
+  timeout: 29
+- method: GET
+  path: /reportes/migracion-mora
+  function: ReportesApi
+  handler: entrypoints.lambda_handlers.reportes.reportes_handler
+  use_case: GetMigracionMoraUseCase
+  module: reportes
+  auth: cognito
+  source:
+  - src/app/(app)/reportes/migracion-mora/migracion-cliente.tsx:66
+  timeout: 29
+- method: GET
+  path: /reportes/migracion-mora/filtros
+  function: ReportesApi
+  handler: entrypoints.lambda_handlers.reportes.reportes_handler
+  use_case: GetMigracionFiltrosUseCase
+  module: reportes
+  auth: cognito
+  source:
+  - src/app/(app)/reportes/migracion-mora/migracion-cliente.tsx:56
+  - src/app/(app)/reportes/migracion-mora/migracion-cliente.tsx:57
+  timeout: 29
+- method: GET
+  path: /reportes/mora-vendedor
+  function: ReportesApi
+  handler: entrypoints.lambda_handlers.reportes.reportes_handler
+  use_case: GetMoraVendedorUseCase
+  module: reportes
+  auth: cognito
+  source:
+  - src/app/(app)/reportes/mora-vendedor/mora-vendedor-cliente.tsx:146
+  timeout: 29
+- method: GET
+  path: /reportes/bloqueados
+  function: ReportesApi
+  handler: entrypoints.lambda_handlers.reportes.reportes_handler
+  use_case: GetBloqueadosUseCase
+  module: reportes
+  auth: cognito
+  source:
+  - src/app/(app)/reportes/mora-vendedor/detalle-bloqueados.tsx:75
+  - src/app/(app)/reportes/mora-vendedor/detalle-bloqueados.tsx:80
+  timeout: 29
+- method: GET
+  path: /reportes/plazo-especial
+  function: ReportesApi
+  handler: entrypoints.lambda_handlers.reportes.reportes_handler
+  use_case: GetPlazoEspecialUseCase
+  module: reportes
+  auth: cognito
+  source:
+  - src/app/(app)/reportes/facturas-plazo-especial/plazo-especial-cliente.tsx:46
+  timeout: 29
+- method: GET
+  path: /reportes/portafolio-destinatarios
+  function: ReportesApi
+  handler: entrypoints.lambda_handlers.reportes.reportes_handler
+  use_case: GetPortafolioDestinatariosUseCase
+  module: reportes
+  auth: cognito
+  source:
+  - src/components/reportes/VendedorEnvioPanel.tsx:47
+  timeout: 29
+- method: GET
+  path: /reportes/dimensiones
+  function: ReportesApi
+  handler: entrypoints.lambda_handlers.reportes.reportes_handler
+  use_case: ListDimensionOpcionesUseCase
+  module: reportes
+  auth: cognito
+  source:
+  - src/components/reportes/DimensionFilter.tsx:18
+  timeout: 29
+- method: GET
+  path: /reportes/estados-cuenta
+  function: ReportesApi
+  handler: entrypoints.lambda_handlers.reportes.reportes_handler
+  use_case: GetEstadosCuentaUseCase
+  module: reportes
+  auth: cognito
+  source:
+  - src/app/(app)/reportes/estados-cuenta/page.tsx:38
+  - src/app/(app)/reportes/estados-cuenta/page.tsx:57
+  - src/app/(app)/reportes/estados-cuenta/page.tsx:41
+  timeout: 29
+- method: GET
+  path: /reportes/cartera-vencida
+  function: ReportesApi
+  handler: entrypoints.lambda_handlers.reportes.reportes_handler
+  use_case: GetCarteraVencidaUseCase
+  module: reportes
+  auth: cognito
+  source:
+  - src/app/(app)/reportes/cartera-vencida/page.tsx:51
+  - src/app/(app)/reportes/cartera-vencida/page.tsx:82
+  - src/app/(app)/reportes/cartera-vencida/page.tsx:104
+  timeout: 29
+- method: GET
+  path: /reportes/gestiones-periodo
+  function: ReportesApi
+  handler: entrypoints.lambda_handlers.reportes.reportes_handler
+  use_case: GetGestionesPeriodoUseCase
+  module: reportes
+  auth: cognito
+  source:
+  - src/app/(app)/reportes/gestiones-periodo/page.tsx:37
+  - src/app/(app)/reportes/gestiones-periodo/gestiones-periodo-cliente.tsx:81
+  timeout: 29
+- method: GET
+  path: /reportes/resumen-ejecutivo
+  function: ReportesApi
+  handler: entrypoints.lambda_handlers.reportes.reportes_handler
+  use_case: GetResumenEjecutivoUseCase
+  module: reportes
+  auth: cognito
+  source:
+  - src/app/(app)/reportes/resumen-ejecutivo/page.tsx:46
+  - src/app/(app)/reportes/resumen-ejecutivo/page.tsx:47
+  - src/app/(app)/reportes/resumen-ejecutivo/page.tsx:52
+  - src/app/(app)/reportes/resumen-ejecutivo/page.tsx:54
+  - src/app/(app)/reportes/resumen-ejecutivo/page.tsx:55
+  timeout: 29
+- method: GET
+  path: /reportes/cierre-mensual
+  function: ReportesApi
+  handler: entrypoints.lambda_handlers.reportes.reportes_handler
+  use_case: GetCierreMensualUseCase
+  module: reportes
+  auth: cognito
+  source:
+  - src/app/(app)/reportes/cierre-mensual/page.tsx:128
+  - src/app/(app)/reportes/cierre-mensual/page.tsx:129
+  - src/app/(app)/reportes/cierre-mensual/page.tsx:130
+  - src/app/(app)/reportes/cierre-mensual/page.tsx:131
+  - src/app/(app)/reportes/cierre-mensual/page.tsx:133
+  - src/app/(app)/reportes/cierre-mensual/page.tsx:137
+  - src/app/(app)/reportes/cierre-mensual/page.tsx:138
+  - src/app/(app)/reportes/cierre-mensual/page.tsx:139
+  - src/app/(app)/reportes/cierre-mensual/page.tsx:140
+  timeout: 29
+- method: POST
+  path: /reportes/enviar
+  function: ReportesApi
+  handler: entrypoints.lambda_handlers.reportes.reportes_handler
+  use_case: EnviarReporteUseCase
+  module: reportes
+  auth: cognito
+  source:
+  - src/app/api/reportes/enviar/route.ts
+  - src/components/reportes/VendedorEnvioPanel.tsx:84
+  - src/components/reportes/VendedorEnvioPanel.tsx:100
+  - src/app/(app)/reportes/mora-vendedor/detalle-bloqueados.tsx:99
+  - src/app/(app)/reportes/mora-vendedor/detalle-bloqueados.tsx:100
+  - src/app/(app)/reportes/resumen-ejecutivo/resumen-ejecutivo-cliente.tsx:181
+  - src/app/(app)/reportes/resumen-ejecutivo/resumen-ejecutivo-cliente.tsx:182
+  - src/app/api/reportes/enviar/route.ts:41
+  timeout: 29
+- method: GET
+  path: /solicitudes
+  function: SolicitudesApi
+  handler: entrypoints.lambda_handlers.solicitudes.solicitudes_handler
+  use_case: ListSolicitudesUseCase
+  module: solicitudes
+  auth: cognito
+  source:
+  - src/app/(app)/solicitudes/page.tsx:28
+  - src/app/(app)/solicitudes/page.tsx:44
+- method: POST
+  path: /solicitudes
+  function: SolicitudesApi
+  handler: entrypoints.lambda_handlers.solicitudes.solicitudes_handler
+  use_case: CreateSolicitudUseCase
+  module: solicitudes
+  auth: cognito
+  timeout: 29
+  source:
+  - src/app/api/solicitudes/route.ts:10
+  - src/components/solicitudes/form-solicitud-nueva.tsx:247
+  - src/components/solicitudes/wizard-nueva-solicitud.tsx:798
+  - src/components/clientes/ficha/modal-nueva-solicitud.tsx:831
+  - src/app/api/solicitudes/route.ts:62
+  - src/app/api/solicitudes/route.ts:158
+  - src/app/api/solicitudes/route.ts:169
+  - src/app/api/solicitudes/route.ts:349
+  - src/app/api/solicitudes/route.ts:383
+- method: GET
+  path: /solicitudes/nueva-clientes
+  function: SolicitudesApi
+  handler: entrypoints.lambda_handlers.solicitudes.solicitudes_handler
+  use_case: GetNuevaSolicitudClientesUseCase
+  module: solicitudes
+  auth: cognito
+  source:
+  - src/app/(app)/solicitudes/nueva/page.tsx:49
+  - src/app/(app)/solicitudes/nueva/page.tsx:55
+  - src/app/(app)/solicitudes/nueva/page.tsx:63
+  - src/app/(app)/solicitudes/nueva/page.tsx:95
+- method: GET
+  path: /solicitudes/nueva-contexto
+  function: SolicitudesApi
+  handler: entrypoints.lambda_handlers.solicitudes.solicitudes_handler
+  use_case: GetNuevaSolicitudContextoUseCase
+  module: solicitudes
+  auth: cognito
+  source:
+  - src/app/(app)/clientes/[cod]/solicitudes/nueva/page.tsx:24
+  - src/app/(app)/clientes/[cod]/solicitudes/nueva/page.tsx:25
+  - src/app/(app)/clientes/[cod]/solicitudes/nueva/page.tsx:35
+  - src/components/solicitudes/form-nueva-solicitud.tsx:118
+  - src/components/solicitudes/form-nueva-solicitud.tsx:134
+- method: GET
+  path: /solicitudes/facturas
+  function: SolicitudesApi
+  handler: entrypoints.lambda_handlers.solicitudes.solicitudes_handler
+  use_case: ListFacturasPendientesUseCase
+  module: solicitudes
+  auth: cognito
+  source:
+  - src/components/solicitudes/form-solicitud-nueva.tsx:125
+- method: POST
+  path: /solicitudes/adjuntos/upload-url
+  function: SolicitudesApi
+  handler: entrypoints.lambda_handlers.solicitudes.solicitudes_handler
+  use_case: CreateAdjuntoUploadUrlUseCase
+  module: solicitudes
+  auth: cognito
+  source:
+  - src/components/solicitudes/form-solicitud-nueva.tsx:267
+  - src/components/solicitudes/form-solicitud-nueva.tsx:273
+- method: GET
+  path: /solicitudes/{id}
+  function: SolicitudesApi
+  handler: entrypoints.lambda_handlers.solicitudes.solicitudes_handler
+  use_case: GetSolicitudDetalleUseCase
+  module: solicitudes
+  auth: cognito
+  source:
+  - src/app/(app)/solicitudes/[id]/page.tsx:41
+  - src/app/(app)/solicitudes/[id]/page.tsx:43
+  - src/app/(app)/solicitudes/[id]/page.tsx:46
+  - src/app/(app)/solicitudes/[id]/page.tsx:64
+  - src/app/(app)/solicitudes/[id]/page.tsx:67
+- method: PATCH
+  path: /solicitudes/{id}
+  function: SolicitudesApi
+  handler: entrypoints.lambda_handlers.solicitudes.solicitudes_handler
+  use_case: ResolverSolicitudUseCase
+  module: solicitudes
+  auth: cognito
+  source:
+  - src/app/api/solicitudes/[id]/route.ts:5
+  - src/app/api/solicitudes/[id]/route.ts:23
+- method: PATCH
+  path: /solicitudes/{id}/estado
+  function: SolicitudesApi
+  handler: entrypoints.lambda_handlers.solicitudes.solicitudes_handler
+  use_case: CambiarEstadoSolicitudUseCase
+  module: solicitudes
+  auth: cognito
+  source:
+  - src/app/api/solicitudes/[id]/estado/route.ts:9
+  - src/components/solicitudes/detalle-solicitud.tsx:81
+  - src/app/api/solicitudes/[id]/estado/route.ts:36
+- method: POST
+  path: /solicitudes/{id}/comentarios
+  function: SolicitudesApi
+  handler: entrypoints.lambda_handlers.solicitudes.solicitudes_handler
+  use_case: AgregarComentarioSolicitudUseCase
+  module: solicitudes
+  auth: cognito
+  source:
+  - src/app/api/solicitudes/[id]/comentarios/route.ts:7
+  - src/components/solicitudes/detalle-solicitud.tsx:113
+  - src/app/api/solicitudes/[id]/comentarios/route.ts:27
+async_workers:
+- name: sync-manual
+  queue: sync-manual
+  function: sync-manual-worker
+  handler: entrypoints.lambda_handlers.jobs.sync_manual_worker_handler
+  batch_size: 1
+  timeout: 90
+  max_receive_count: 5
+  producers:
+  - JobsApi
+storage_buckets:
+- name: comprobantes-pago
+  public: false
+  functions:
+  - GestionCarteraApi
+  - SolicitudesApi
+- name: documentos-recursos
+  public: false
+  functions:
+  - CentroRecursosApi
+- name: expedientes-clientes
+  public: false
+  functions:
+  - ActualizarPerfilApi
+  - AuditoriaLegalApi
+- name: garantias-legal
+  public: false
+  functions:
+  - AuditoriaLegalApi
+realtime:
+  enabled: false
+  tables: []
+  publishers: []
+scheduled_jobs:
+- name: check-recibos-reversion
+  schedule: cron(15 23 ? * MON-FRI *)
+  function: job-check-recibos-reversion
+  handler: entrypoints.lambda_handlers.jobs_programados.check_recibos_reversion_job
+  timeout: 120
+  source: 'pg_cron: check_recibos_reversion ''15 23 * * 1-5'''
+- name: check-sync-salud
+  schedule: cron(15 13-23 ? * MON-FRI *)
+  function: job-check-sync-salud
+  handler: entrypoints.lambda_handlers.jobs_programados.check_sync_salud_job
+  timeout: 120
+  source: 'pg_cron: check_sync_salud ''15 13-23 * * 1-5'''
+- name: cierre-cartera-mensual
+  schedule: cron(50 5 * * ? *)
+  function: job-cierre-cartera-mensual
+  handler: entrypoints.lambda_handlers.jobs_programados.cierre_cartera_mensual_job
+  timeout: 300
+  source: 'pg_cron: cierre-cartera-mensual ''50 5 * * *'''
+- name: cierre-mensual-pedidos-retenidos
+  schedule: cron(59 5 * * ? *)
+  function: job-cierre-mensual-pedidos-retenidos
+  handler: entrypoints.lambda_handlers.jobs_programados.cierre_mensual_pedidos_retenidos_job
+  timeout: 300
+  source: 'pg_cron: cierre-mensual-pedidos-retenidos ''59 5 * * *'''
+- name: conciliar-promesas
+  schedule: cron(30 23 * * ? *)
+  function: job-conciliar-promesas
+  handler: entrypoints.lambda_handlers.jobs_programados.conciliar_promesas_job
+  timeout: 300
+  source: 'pg_cron: evening-conciliar-promesas ''30 23 * * *'''
+- name: expirar-solicitudes-actualizacion
+  schedule: cron(0 12 * * ? *)
+  function: job-expirar-solicitudes-actualizacion
+  handler: entrypoints.lambda_handlers.jobs_programados.expirar_solicitudes_actualizacion_job
+  timeout: 120
+  source: 'pg_cron: expirar_solicitudes_actualizacion_diario ''0 12 * * *'''
+- name: historico-cartera
+  schedule: cron(30 23 * * ? *)
+  function: job-historico-cartera
+  handler: entrypoints.lambda_handlers.jobs_programados.historico_cartera_job
+  timeout: 300
+  source: 'pg_cron: historico_cartera_diario ''30 23 * * *'''
+- name: notificar-pedido-en-regla
+  schedule: cron(25 13-23 ? * MON-FRI *)
+  function: job-notificar-pedido-en-regla
+  handler: entrypoints.lambda_handlers.jobs_programados.notificar_pedido_en_regla_job
+  timeout: 120
+  source: 'pg_cron: notificar-pedido-en-regla ''25 13-23 * * 1-5'''
+- name: notificar-promesas-hoy
+  schedule: cron(0 13 ? * MON-FRI *)
+  function: job-notificar-promesas-hoy
+  handler: entrypoints.lambda_handlers.jobs_programados.notificar_promesas_hoy_job
+  timeout: 120
+  source: 'pg_cron: notificar-promesas-hoy ''0 13 * * 1-5'''
+- name: notificar-sin-gestion
+  schedule: cron(10 13 ? * MON-FRI *)
+  function: job-notificar-sin-gestion
+  handler: entrypoints.lambda_handlers.jobs_programados.notificar_sin_gestion_job
+  timeout: 120
+  source: 'pg_cron: notificar-sin-gestion ''10 13 * * 1-5'''
+- name: notificar-sla-vencido
+  schedule: cron(20 13-23 ? * MON-FRI *)
+  function: job-notificar-sla-vencido
+  handler: entrypoints.lambda_handlers.jobs_programados.notificar_sla_vencido_job
+  timeout: 120
+  source: 'pg_cron: notificar-sla-vencido ''20 13-23 * * 1-5'''
+- name: snapshot-proyeccion-semana
+  schedule: cron(5 13 ? * MON *)
+  function: job-snapshot-proyeccion-semana
+  handler: entrypoints.lambda_handlers.jobs_programados.snapshot_proyeccion_semana_job
+  timeout: 300
+  source: 'pg_cron: snapshot_proyeccion_lunes ''5 13 * * 1'''
+- name: sync-pagos
+  schedule: cron(5 13-23 * * ? *)
+  function: job-sync-pagos
+  handler: entrypoints.lambda_handlers.jobs_programados.sync_pagos_job
+  timeout: 120
+  source: 'pg_cron: sync_pagos_0705cr..1705cr (11 jobs ''5 13..23 * * *'', 07:05–17:05 CR)'
+- name: sync-cartera
+  schedule: cron(5 13-23 * * ? *)
+  function: job-sync-cartera
+  handler: entrypoints.lambda_handlers.jobs_programados.sync_cartera_job
+  timeout: 60
+  source: 'pg_cron: sync_cartera_0705cr..1705cr (11 jobs ''5 13..23 * * *'', 07:05–17:05 CR)'
+- name: sync-facturas
+  schedule: cron(5 13-23 * * ? *)
+  function: job-sync-facturas
+  handler: entrypoints.lambda_handlers.jobs_programados.sync_facturas_job
+  timeout: 60
+  source: 'pg_cron: sync_facturas_0705cr..1705cr (11 jobs ''5 13..23 * * *'', 07:05–17:05 CR)'
+- name: sync-saldos-favor
+  schedule: cron(5 13-23 * * ? *)
+  function: job-sync-saldos-favor
+  handler: entrypoints.lambda_handlers.jobs_programados.sync_saldos_favor_job
+  timeout: 60
+  source: 'pg_cron: sync_saldos_0705cr..1705cr (11 jobs ''5 13..23 * * *'', 07:05–17:05 CR)'
+- name: sync-pedidos-retenidos
+  schedule: cron(5 13-23 * * ? *)
+  function: job-sync-pedidos-retenidos
+  handler: entrypoints.lambda_handlers.jobs_programados.sync_pedidos_retenidos_job
+  timeout: 120
+  source: 'pg_cron: sync_pedidos_retenidos_0705cr..1705cr (11 jobs ''5 13..23 * * *'', 07:05–17:05 CR)'
+database_objects:
+  naming_map: database/naming-map.json
+  generation_report: database/generation-report.json
+environment_variables:
+  backend:
+  - ENVIRONMENT
+  - SERVICE_NAME
+  - LOG_LEVEL
+  - DB_SECRET_NAME
+  - DB_NAME
+  - DB_PROXY_ENDPOINT
+  - DB_PORT
+  - DB_SSLMODE
+  - ALLOWED_ORIGINS
+  frontend:
+  - NEXT_PUBLIC_API_BASE_URL
+  - NEXT_PUBLIC_COGNITO_USER_POOL_ID
+  - NEXT_PUBLIC_COGNITO_CLIENT_ID
+  - NEXT_PUBLIC_COGNITO_DOMAIN
+  - NEXT_PUBLIC_APP_EXPOSURE
+  - NEXT_PUBLIC_REALTIME_ENABLED
+authorization_rules:
+- table: public.pagos
+  policy: pagos_select_usuarios_activos
+  command: SELECT
+  enforced_in: 'GetRankingClientesUseCase / GetPerfilVendedorUseCase / GetAlertasDeterioroUseCase (require_usuario
+    + scope_email: ANALISTA o ANALISTA_RIESGO con cartera solo su email), GetConcentracionUseCase (require_usuario;
+    ForbiddenError para quien gestiona cartera propia), GetPagosMesResumenUseCase (require_roles COORDINADOR|GERENCIA)'
+  roles:
+  - public
+  using: "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.activo\
+    \ = true))))"
+  with_check: null
+- table: public.pagos
+  policy: pagos_write_coordinador
+  command: ALL
+  enforced_in: 'Sin escrituras desde la API: tbl_pagos solo la escribe la sincronización (fn_sync_pagos / módulo
+    jobs). Este módulo solo lee pagos vía fn_* SECURITY DEFINER.'
+  roles:
+  - public
+  using: "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol\
+    \ = 'COORDINADOR'::text) AND (usuarios.activo = true))))"
+  with_check: null
+- table: public.pagos_anulados
+  policy: Solo coordinador accede a pagos_anulados
+  command: ALL
+  enforced_in: 'MarcarPagosAnuladosUseCase / DesmarcarPagoAnuladoUseCase (require_usuario + require_coordinador,
+    ''Acceso restringido al coordinador''); la lectura solo ocurre dentro de fn_pagos_mes_resumen (GetPagosMesResumenUseCase:
+    COORDINADOR|GERENCIA)'
+  roles:
+  - public
+  using: "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol\
+    \ = 'COORDINADOR'::text) AND (usuarios.activo = true))))"
+  with_check: null
+- table: public.pagos_duplicado_descartado
+  policy: Solo coordinador accede a pagos_duplicado_descartado
+  command: ALL
+  enforced_in: 'DescartarDuplicadoUseCase / RevertirDescarteDuplicadoUseCase (require_usuario + require_coordinador);
+    la lectura solo ocurre dentro de fn_pagos_mes_resumen (GetPagosMesResumenUseCase: COORDINADOR|GERENCIA)'
+  roles:
+  - public
+  using: "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol\
+    \ = 'COORDINADOR'::text) AND (usuarios.activo = true))))"
+  with_check: null
+- table: public.garantias
+  policy: garantias_select_activos
+  command: SELECT
+  enforced_in: List/Get*UseCase de auditoria_legal (require_modulo = require_usuario activo; ANALISTA_RIESGO 403)
+  roles:
+  - public
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.garantias
+  policy: garantias_insert_activos
+  command: INSERT
+  enforced_in: 'RegistrarGarantiaUseCase (require_escritura_modulo: usuario activo, no ANALISTA_RIESGO, no GERENCIA)'
+  roles:
+  - public
+  using: null
+  with_check: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+- table: public.garantias
+  policy: garantias_update_activos
+  command: UPDATE
+  enforced_in: EditarGarantiaUseCase, CambiarCustodiaGarantiaUseCase, AdjuntarDocumentoGarantiaUseCase, GenerarPagareUseCase,
+    RegistrarGarantiaUseCase (sustitución) — require_escritura_modulo
+  roles:
+  - public
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.garantia_eventos
+  policy: garantia_eventos_select_activos
+  command: SELECT
+  enforced_in: ListEventosGarantiaUseCase (require_modulo)
+  roles:
+  - public
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.garantia_eventos
+  policy: garantia_eventos_insert_activos
+  command: INSERT
+  enforced_in: Use cases de escritura de garantías (require_escritura_modulo); usuario_id = perfil del principal
+  roles:
+  - public
+  using: null
+  with_check: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+- table: public.garantias_consecutivo_anual
+  policy: garantias_consecutivo_anual_bloqueada
+  command: ALL
+  enforced_in: 'Sin acceso directo: solo fn_siguiente_consecutivo_garantia desde RegistrarGarantiaUseCase (repository)'
+  roles:
+  - public
+  using: 'false'
+  with_check: 'false'
+- table: public.personas_legales
+  policy: personas_legales_select_activos
+  command: SELECT
+  enforced_in: ListPersonasLegalesUseCase (require_modulo)
+  roles:
+  - public
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.personas_legales
+  policy: personas_legales_insert_activos
+  command: INSERT
+  enforced_in: GenerarPagareUseCase y GestionarSolicitudActualizacionUseCase APROBAR (require_escritura_modulo)
+  roles:
+  - public
+  using: null
+  with_check: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+- table: public.personas_legales
+  policy: personas_legales_update_activos
+  command: UPDATE
+  enforced_in: GenerarPagareUseCase y GestionarSolicitudActualizacionUseCase APROBAR (upsert, require_escritura_modulo)
+  roles:
+  - public
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.solicitudes_actualizacion
+  policy: solicitudes_actualizacion_select_activos
+  command: SELECT
+  enforced_in: 'ListSolicitudesActualizacionUseCase, GetSolicitudActualizacionUseCase (require_modulo); portal público:
+    solo por SHA-256 del token vigente (ValidarTokenActualizacionUseCase)'
+  roles:
+  - public
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.solicitudes_actualizacion
+  policy: solicitudes_actualizacion_insert_activos
+  command: INSERT
+  enforced_in: CrearSolicitudActualizacionUseCase (require_escritura_modulo + límite 30/hora por usuario)
+  roles:
+  - public
+  using: null
+  with_check: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+- table: public.solicitudes_actualizacion
+  policy: solicitudes_actualizacion_update_activos
+  command: UPDATE
+  enforced_in: GestionarSolicitudActualizacionUseCase (require_escritura_modulo); EnviarActualizacionPerfilUseCase
+    (token vigente + CAS estado ENVIADA)
+  roles:
+  - public
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: storage.objects
+  policy: usuarios_activos_suben_garantias_legal
+  command: INSERT
+  enforced_in: CrearUploadDocumentoGarantiaUseCase (require_escritura_modulo antes de firmar la URL PUT; key generada
+    por el backend `<id>_<ms>.pdf`, PDF ≤4MB)
+  roles:
+  - authenticated
+  using: null
+  with_check: ((bucket_id = 'garantias-legal'::text) AND fn_es_usuario_activo())
+- table: public.centro_recursos_aplicaciones
+  policy: authenticated_read_aplicaciones
+  command: SELECT
+  enforced_in: GetCentroRecursosUseCase / ListAplicacionesUseCase (require_usuario = usuario activo); escritura
+    solo CrearAplicacionUseCase / ActualizarAplicacionUseCase (require_coordinador, rol real)
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.centro_recursos_documentos
+  policy: authenticated_read_documentos
+  command: SELECT
+  enforced_in: GetCentroRecursosUseCase / ListDocumentosUseCase (require_usuario = usuario activo); escritura solo
+    CrearUrlCargaDocumentoUseCase / CrearDocumentoUseCase (require_coordinador)
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.marcas
+  policy: authenticated_read_marcas
+  command: SELECT
+  enforced_in: GetCentroRecursosUseCase (require_usuario = usuario activo); escritura solo CrearMarcaUseCase / ActualizarMarcaUseCase
+    (require_coordinador)
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.cartera
+  policy: cartera_select_autenticados
+  command: SELECT
+  enforced_in: 'ListClientesUseCase / GetFichaClienteUseCase (require_usuario: usuario activo; sin scope por analista,
+    igual que el origen)'
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.cuentas_bancarias
+  policy: authenticated_read_cuentas_bancarias
+  command: SELECT
+  enforced_in: GetEstadoCuentaDataUseCase / EnviarEstadoCuentaUseCase (require_usuario)
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.facturas
+  policy: facturas_select_usuarios_activos
+  command: SELECT
+  enforced_in: GetFichaClienteUseCase / BuscarGlobalUseCase / GetEstadoCuentaDataUseCase / EnviarEstadoCuentaUseCase
+    (require_usuario)
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.historico_aging_factura
+  policy: solo_usuarios_activos
+  command: ALL
+  enforced_in: Sin uso en el alcance de clientes; quien la lea (reportes/jobs) debe exigir require_usuario. Escrituras
+    solo por jobs (service_role)
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.historico_cartera
+  policy: read_historico_cartera
+  command: SELECT
+  enforced_in: 'Sin uso en el alcance de clientes (la leen dashboard/reportes: require_usuario en sus casos de uso)'
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.maestro_clientes
+  policy: maestro_clientes_select_autenticados
+  command: SELECT
+  enforced_in: ListClientesUseCase / BuscarGlobalUseCase / GetFichaClienteUseCase / GetEstadoCuentaDataUseCase (require_usuario)
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.maestro_clientes
+  policy: maestro_clientes_update_autenticados
+  command: UPDATE
+  enforced_in: 'ActualizarContactoClienteUseCase / ActualizarLogisticaClienteUseCase (_require_editor_cliente: COORDINADOR
+    o analista_email = usuario) y CambiarEstadoClienteUseCase (require_coordinador)'
+  roles:
+  - authenticated
+  using: "((( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo) AND (analista_email = (auth.jwt() ->> 'email'::text)))\
+    \ OR (EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol\
+    \ = 'COORDINADOR'::text) AND (usuarios.activo = true)))))"
+  with_check: "((( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo) AND (analista_email = (auth.jwt() ->>\
+    \ 'email'::text))) OR (EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text))\
+    \ AND (usuarios.rol = 'COORDINADOR'::text) AND (usuarios.activo = true)))))"
+- table: public.config_audit_log
+  policy: Solo coordinador accede al log
+  command: ALL
+  enforced_in: ListAuditLogUseCase / GetConfiguracionPantallaUseCase (require_usuario + require_coordinador); las
+    escrituras solo vía registrar_auditoria() dentro de casos de uso de coordinador
+  roles:
+  - public
+  using: "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol\
+    \ = 'COORDINADOR'::text) AND (usuarios.activo = true))))"
+  with_check: null
+- table: public.config_sistema
+  policy: config_sistema_select_usuarios_activos
+  command: SELECT
+  enforced_in: 'Get{Parametros,Semaforo,Sla,Automatizaciones}UseCase y GetConfiguracionPantallaUseCase (require_usuario
+    activo + require_coordinador, más estricto que la política: en el origen estas lecturas también exigían COORDINADOR
+    vía checkCoordinador); escrituras: Update{Parametro,Semaforo,Sla}UseCase / ToggleAutomatizacionUseCase (solo
+    coordinador)'
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.directorio_empresa
+  policy: Coordinador gestiona directorio
+  command: ALL
+  enforced_in: ListDirectorioUseCase, CreateContactoUseCase, UpdateContactoUseCase, DeactivateContactoUseCase (require_usuario
+    + require_coordinador)
+  roles:
+  - public
+  using: "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol\
+    \ = 'COORDINADOR'::text) AND (usuarios.activo = true))))"
+  with_check: null
+- table: public.directorio_empresa
+  policy: Todos leen directorio para autocomplete
+  command: SELECT
+  enforced_in: ListContactosDirectorioUseCase (require_usuario activo; solo contactos activos y columnas id, nombre,
+    email, cargo, area)
+  roles:
+  - public
+  using: "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.activo\
+    \ = true))))"
+  with_check: null
+- table: public.portafolio_acotado
+  policy: solo_usuarios_activos
+  command: ALL
+  enforced_in: ListRutasUseCase, CreateRutaUseCase, UpdateRutaUseCase, DeactivateRutaUseCase, GetConfiguracionPantallaUseCase
+    (require_usuario activo + require_coordinador; en el origen se escribía con service_role tras checkCoordinador)
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.portafolio_grupos
+  policy: solo_usuarios_activos
+  command: ALL
+  enforced_in: ListRutasUseCase, CreateRutaUseCase, UpdateRutaUseCase, DeactivateRutaUseCase, UpdateVendedorUseCase/DeactivateVendedorUseCase
+    (lectura de ruta activa) (require_usuario activo + require_coordinador)
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.supervisores
+  policy: Analistas leen supervisores
+  command: SELECT
+  enforced_in: ListSupervisoresConfigUseCase / ListVendedoresConfigUseCase / GetConfiguracionPantallaUseCase (require_usuario
+    activo + require_coordinador; las lecturas de supervisores de otros módulos aplican require_usuario en su propio
+    caso de uso)
+  roles:
+  - public
+  using: "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.activo\
+    \ = true))))"
+  with_check: null
+- table: public.supervisores
+  policy: Coordinador gestiona supervisores
+  command: ALL
+  enforced_in: CreateSupervisorUseCase, UpdateSupervisorUseCase, DeactivateSupervisorUseCase (require_usuario +
+    require_coordinador)
+  roles:
+  - public
+  using: "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol\
+    \ = 'COORDINADOR'::text) AND (usuarios.activo = true))))"
+  with_check: null
+- table: public.usuarios
+  policy: usuarios_select_autenticados
+  command: SELECT
+  enforced_in: 'ListUsuariosConfigUseCase / GetConfiguracionPantallaUseCase (require_usuario activo + require_coordinador;
+    nunca devuelve google_refresh_token); altas/ediciones: CreateUsuarioUseCase / UpdateUsuarioUseCase (solo coordinador,
+    antes service_role)'
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.vendedores
+  policy: Analistas leen vendedores
+  command: SELECT
+  enforced_in: ListVendedoresConfigUseCase / ListRutasUseCase / GetConfiguracionPantallaUseCase (require_usuario
+    activo + require_coordinador)
+  roles:
+  - public
+  using: "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.activo\
+    \ = true))))"
+  with_check: null
+- table: public.vendedores
+  policy: Coordinador gestiona vendedores
+  command: ALL
+  enforced_in: CreateVendedorUseCase, UpdateVendedorUseCase, DeactivateVendedorUseCase (require_usuario + require_coordinador)
+  roles:
+  - public
+  using: "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol\
+    \ = 'COORDINADOR'::text) AND (usuarios.activo = true))))"
+  with_check: null
+- table: public.pedidos_retenidos
+  policy: pedidos_retenidos_select_activos
+  command: SELECT
+  enforced_in: 'GetPedidosRetenidosUseCase (require_usuario: cualquier usuario activo; email opcional = Vista Global)'
+  roles:
+  - public
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.pedidos_retenidos
+  policy: pedidos_retenidos_update_activos
+  command: UPDATE
+  enforced_in: 'ActualizarPedidoRetenidoUseCase (require_usuario + require_escritura: Gerencia 403 ''Sin permisos
+    para modificar pedidos retenidos'')'
+  roles:
+  - public
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.saldos_favor
+  policy: saldos_favor_select
+  command: SELECT
+  enforced_in: ListSaldosFavorUseCase (analista/riesgo con cartera → su email forzado), ListSaldosFavorClienteUseCase
+    (global o cliente de maestro_clientes.analista_email = email), MatchingSaldosFavorUseCase (filtra por clientes_de_analista)
+  roles:
+  - authenticated
+  using: "((EXISTS ( SELECT 1\n   FROM usuarios u\n  WHERE ((u.email = (auth.jwt() ->> 'email'::text)) AND (u.rol\
+    \ = 'COORDINADOR'::text)))) OR (cliente_cod IN ( SELECT m.cliente_cod\n   FROM maestro_clientes m\n  WHERE (m.analista_email\
+    \ = (auth.jwt() ->> 'email'::text)))))"
+  with_check: null
+- table: public.saldos_favor
+  policy: saldos_favor_update
+  command: UPDATE
+  enforced_in: AplicarSaldoFavorUseCase (require_usuario + require_escritura + COORDINADOR o cliente en la cartera
+    del analista)
+  roles:
+  - authenticated
+  using: "((EXISTS ( SELECT 1\n   FROM usuarios u\n  WHERE ((u.email = (auth.jwt() ->> 'email'::text)) AND (u.rol\
+    \ = 'COORDINADOR'::text)))) OR (cliente_cod IN ( SELECT m.cliente_cod\n   FROM maestro_clientes m\n  WHERE (m.analista_email\
+    \ = (auth.jwt() ->> 'email'::text)))))"
+  with_check: null
+- table: storage.objects
+  policy: usuarios_activos_suben_comprobantes
+  command: INSERT
+  enforced_in: CrearUrlSubidaComprobanteUseCase (require_usuario antes de firmar la URL PUT; content-type limitado
+    a image/webp|jpeg|png; key safe_key(cliente_cod, <ms>_<nombre>.<ext>))
+  roles:
+  - authenticated
+  using: null
+  with_check: ((bucket_id = 'comprobantes-pago'::text) AND fn_es_usuario_activo())
+- table: public.gestiones
+  policy: gestiones_select_autenticados
+  command: SELECT
+  enforced_in: 'ListGestionesUseCase / GetReferenciasGestionesUseCase (require_usuario activo + require_gestor_cartera
+    + analista_scope: ANALISTA/ANALISTA_RIESGO solo las propias, COORDINADOR todas o la del filtro); ListPromesasUseCase
+    lee la gestion origen bajo el mismo guard'
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.gestiones
+  policy: gestiones_insert_autenticados
+  command: INSERT
+  enforced_in: RegistrarGestionUseCase (require_usuario activo + require_escritura + require_gestor_cartera; analista_email
+    = usuario actual siempre) / RegistrarGestionRapidaUseCase (analista_email propio salvo COORDINADOR)
+  roles:
+  - authenticated
+  using: null
+  with_check: "((( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo) AND (analista_email = (auth.jwt() ->>\
+    \ 'email'::text))) OR (EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text))\
+    \ AND (usuarios.rol = 'COORDINADOR'::text) AND (usuarios.activo = true)))))"
+- table: public.gestiones
+  policy: gestiones_update_autenticados
+  command: UPDATE
+  enforced_in: UpdateGestionUseCase (dueno de la gestion o COORDINADOR + require_escritura + require_gestor_cartera;
+    lista blanca de columnas) / DeleteGestionUseCase (solo COORDINADOR, soft-delete activo=false)
+  roles:
+  - authenticated
+  using: "((( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo) AND (analista_email = (auth.jwt() ->> 'email'::text)))\
+    \ OR (EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol\
+    \ = 'COORDINADOR'::text) AND (usuarios.activo = true)))))"
+  with_check: "((( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo) AND (analista_email = (auth.jwt() ->>\
+    \ 'email'::text))) OR (EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text))\
+    \ AND (usuarios.rol = 'COORDINADOR'::text) AND (usuarios.activo = true)))))"
+- table: public.notas_rapidas
+  policy: notas_select_own
+  command: SELECT
+  enforced_in: GetNotaRapidaUseCase (usuario_id = id del perfil activo del principal; el cliente no envia usuario_id)
+  roles:
+  - public
+  using: "(usuario_id = ( SELECT usuarios.id\n   FROM usuarios\n  WHERE (usuarios.email = (auth.jwt() ->> 'email'::text))\n\
+    \ LIMIT 1))"
+  with_check: null
+- table: public.notas_rapidas
+  policy: notas_insert_own
+  command: INSERT
+  enforced_in: SaveNotaRapidaUseCase (upsert con usuario_id = id del perfil activo del principal)
+  roles:
+  - public
+  using: null
+  with_check: "(usuario_id = ( SELECT usuarios.id\n   FROM usuarios\n  WHERE (usuarios.email = (auth.jwt() ->> 'email'::text))\n\
+    \ LIMIT 1))"
+- table: public.notas_rapidas
+  policy: notas_update_own
+  command: UPDATE
+  enforced_in: SaveNotaRapidaUseCase (ON CONFLICT (usuario_id, fecha) solo sobre la fila del propio usuario)
+  roles:
+  - public
+  using: "(usuario_id = ( SELECT usuarios.id\n   FROM usuarios\n  WHERE (usuarios.email = (auth.jwt() ->> 'email'::text))\n\
+    \ LIMIT 1))"
+  with_check: "(usuario_id = ( SELECT usuarios.id\n   FROM usuarios\n  WHERE (usuarios.email = (auth.jwt() ->> 'email'::text))\n\
+    \ LIMIT 1))"
+- table: public.notas_rapidas
+  policy: notas_delete_own
+  command: DELETE
+  enforced_in: Sin endpoint de borrado (el original tampoco borraba notas); cualquier borrado futuro debe filtrar
+    por usuario_id del principal
+  roles:
+  - public
+  using: "(usuario_id = ( SELECT usuarios.id\n   FROM usuarios\n  WHERE (usuarios.email = (auth.jwt() ->> 'email'::text))\n\
+    \ LIMIT 1))"
+  with_check: null
+- table: public.pagos_stage
+  policy: solo_usuarios_activos
+  command: ALL
+  enforced_in: IngestarLoteUseCase (x-ingesta-key, service_role) + EjecutarTareaProgramadaUseCase / ProcesarSyncManualUseCase
+    (service_role vía fn_sync_pagos); ningún endpoint de usuario lee ni escribe el stage
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.pedidos_retenidos_stage
+  policy: pedidos_retenidos_stage_activos
+  command: ALL
+  enforced_in: IngestarLoteUseCase (x-ingesta-key, service_role) + EjecutarTareaProgramadaUseCase / ProcesarSyncManualUseCase
+    (service_role vía fn_sync_pedidos_retenidos); ningún endpoint de usuario lo expone
+  roles:
+  - public
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.sync_log
+  policy: sync_log_insert_usuarios_activos
+  command: INSERT
+  enforced_in: 'Solo las fn_sync_* insertan (SECURITY DEFINER): SincronizarTablaUseCase / EncolarSyncManualUseCase
+    (require_usuario + require_coordinador) y jobs programados (service_role); no hay INSERT directo desde el API'
+  roles:
+  - authenticated
+  using: null
+  with_check: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+- table: public.sync_log
+  policy: sync_log_select_usuarios_activos
+  command: SELECT
+  enforced_in: 'ListarHistorialSyncUseCase / ObtenerEstadoSyncUseCase (require_usuario: usuario activo)'
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.sync_salud
+  policy: Solo coordinador lee sync_salud
+  command: SELECT
+  enforced_in: Sin endpoint de lectura (el front original no la consultaba); solo la usa fn_check_sync_salud desde
+    el job check-sync-salud (service_role). Un futuro GET debe usar require_coordinador
+  roles:
+  - public
+  using: "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol\
+    \ = 'COORDINADOR'::text) AND (usuarios.activo = true))))"
+  with_check: null
+- table: public.notificaciones
+  policy: Usuario ve sus propias notificaciones
+  command: SELECT
+  enforced_in: ListNotificacionesUseCase (require_usuario; WHERE usuario_id = perfil.id del principal, se ignora
+    cualquier id del front)
+  roles:
+  - public
+  using: "(usuario_id = ( SELECT usuarios.id\n   FROM usuarios\n  WHERE (usuarios.email = (auth.jwt() ->> 'email'::text))\n\
+    \ LIMIT 1))"
+  with_check: null
+- table: public.notificaciones
+  policy: Usuario actualiza sus notificaciones
+  command: UPDATE
+  enforced_in: MarcarNotificacionLeidaUseCase / MarcarTodasLeidasUseCase (require_usuario; UPDATE ... WHERE usuario_id
+    = perfil.id; solo leida = true)
+  roles:
+  - public
+  using: "(usuario_id = ( SELECT usuarios.id\n   FROM usuarios\n  WHERE (usuarios.email = (auth.jwt() ->> 'email'::text))\n\
+    \ LIMIT 1))"
+  with_check: null
+- table: public.notificaciones
+  policy: notificaciones_insert_usuarios_activos
+  command: INSERT
+  enforced_in: NotificacionesApi no expone inserción; los INSERT los hacen funciones SQL/cron (service_role) y los
+    casos de uso de otros módulos (solicitudes, clientes, auditoria_legal) después de require_usuario (= fn_es_usuario_activo)
+  roles:
+  - authenticated
+  using: null
+  with_check: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+- table: public.presupuesto_cobro
+  policy: solo_usuarios_activos
+  command: ALL
+  enforced_in: 'Todos los casos de uso de presupuesto (require_usuario = usuario activo). Lectura: GetPresupuestoMesUseCase
+    / GetRecuperacionMesUseCase (require_roles COORDINADOR|GERENCIA), GetSinPagoUseCase (cualquier usuario activo).
+    Escritura (fn_presupuesto_guardar / fn_presupuesto_reasignar): CongelarPresupuestoUseCase y ReasignarClientePresupuestoUseCase
+    (require_coordinador; GERENCIA solo lectura)'
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.presupuesto_meta_vendedor
+  policy: solo_usuarios_activos
+  command: ALL
+  enforced_in: 'GetPresupuestoMesUseCase (require_usuario + require_roles COORDINADOR|GERENCIA), GetMetaAnalistaMesUseCase
+    (require_usuario + scope_email: ANALISTA solo su email), AjustarMetaVendedorUseCase / CongelarPresupuestoUseCase
+    / ReasignarClientePresupuestoUseCase (require_coordinador; fn_presupuesto_meta / fn__recalc_metas)'
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.proyeccion_semana_snapshot
+  policy: solo_usuarios_activos
+  command: ALL
+  enforced_in: GetProyeccionCobroUseCase (require_usuario + require_roles COORDINADOR|GERENCIA; fn_proyeccion_cobro
+    escribe el snapshot vía fn_snapshot_proyeccion_semana y el caso de uso hace commit)
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.promesas
+  policy: promesas_select_autenticados
+  command: SELECT
+  enforced_in: 'ListPromesasUseCase (require_usuario activo + require_gestor_cartera + analista_scope: ANALISTA/ANALISTA_RIESGO
+    solo las propias, COORDINADOR todas o la del filtro); RegistrarGestionUseCase solo consulta duplicados'
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.promesas
+  policy: promesas_insert_autenticados
+  command: INSERT
+  enforced_in: RegistrarGestionUseCase / RegistrarGestionRapidaUseCase (analista_email = usuario actual, o el indicado
+    solo si es COORDINADOR) y ReprogramarPromesaUseCase (dueno de la original o COORDINADOR; la nueva conserva el
+    analista_email de la original)
+  roles:
+  - authenticated
+  using: null
+  with_check: "((( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo) AND (analista_email = (auth.jwt() ->>\
+    \ 'email'::text))) OR (EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text))\
+    \ AND (usuarios.rol = 'COORDINADOR'::text) AND (usuarios.activo = true)))))"
+- table: public.promesas
+  policy: promesas_update_autenticados
+  command: UPDATE
+  enforced_in: ValidarPromesaUseCase / ReprogramarPromesaUseCase (dueno por analista_email o COORDINADOR + require_escritura
+    + require_gestor_cartera; fila bloqueada FOR UPDATE) y DeletePromesaUseCase (solo COORDINADOR, soft-delete activo=false)
+  roles:
+  - authenticated
+  using: "((( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo) AND (analista_email = (auth.jwt() ->> 'email'::text)))\
+    \ OR (EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol\
+    \ = 'COORDINADOR'::text) AND (usuarios.activo = true)))))"
+  with_check: "((( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo) AND (analista_email = (auth.jwt() ->>\
+    \ 'email'::text))) OR (EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text))\
+    \ AND (usuarios.rol = 'COORDINADOR'::text) AND (usuarios.activo = true)))))"
+- table: public.historico_bloqueados
+  policy: solo_usuarios_activos
+  command: ALL
+  enforced_in: GetBloqueadosUseCase (require_usuario + roles mora-vendedor; el INSERT via fn_snapshot_bloqueados_semana
+    solo si el usuario real es COORDINADOR)
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.historico_cierres_cartera
+  policy: solo_usuarios_activos
+  command: ALL
+  enforced_in: TomarCierreCarteraUseCase (require_usuario + roles cei + require_escritura) / GetCeiUseCase, GetMigracionMoraUseCase
+    (require_usuario + roles del registry, lectura via fn_reporte_*)
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.historico_pedidos_retenidos
+  policy: historico_pedidos_retenidos_select_activos
+  command: SELECT
+  enforced_in: Sin acceso directo desde el front de reportes; solo lo leen fn_* SECURITY DEFINER invocadas tras
+    require_usuario (GetCierreMensualUseCase y demás casos de uso del módulo)
+  roles:
+  - public
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.ventas_mensuales
+  policy: Coordinador gestiona ventas mensuales
+  command: ALL
+  enforced_in: El módulo reportes no escribe ventas_mensuales (solo lectura); escritura no expuesta por ReportesApi
+  roles:
+  - public
+  using: "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol\
+    \ = 'COORDINADOR'::text) AND (usuarios.activo = true))))"
+  with_check: null
+- table: public.ventas_mensuales
+  policy: Todos leen ventas mensuales
+  command: SELECT
+  enforced_in: GetResumenEjecutivoUseCase (require_usuario + roles resumen-ejecutivo COORDINADOR/GERENCIA)
+  roles:
+  - public
+  using: "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.activo\
+    \ = true))))"
+  with_check: null
+- table: public.solicitudes
+  policy: Analista lee sus propias solicitudes
+  command: SELECT
+  enforced_in: ListSolicitudesUseCase / GetSolicitudDetalleUseCase (require_usuario + scope solicitante_id = usuario.id
+    si no es COORDINADOR/GERENCIA; ajena → 404)
+  roles:
+  - authenticated
+  using: (solicitante_id = get_usuario_id())
+  with_check: null
+- table: public.solicitudes
+  policy: Coordinador lee todas las solicitudes
+  command: SELECT
+  enforced_in: ListSolicitudesUseCase / GetSolicitudDetalleUseCase (usuario.es_global → sin filtro)
+  roles:
+  - authenticated
+  using: (get_mi_rol() = 'COORDINADOR'::text)
+  with_check: null
+- table: public.solicitudes
+  policy: Gerencia lee todas las solicitudes
+  command: SELECT
+  enforced_in: ListSolicitudesUseCase / GetSolicitudDetalleUseCase (usuario.es_global → sin filtro; escrituras bloqueadas
+    con require_escritura)
+  roles:
+  - authenticated
+  using: (get_mi_rol() = 'GERENCIA'::text)
+  with_check: null
+- table: public.solicitudes
+  policy: solicitudes_insert_usuarios_activos
+  command: INSERT
+  enforced_in: CreateSolicitudUseCase (require_usuario activo + require_acceso_modulo + GERENCIA 403; solicitante_id
+    = usuario.id)
+  roles:
+  - authenticated
+  using: null
+  with_check: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+- table: public.solicitudes
+  policy: Analista actualiza sus solicitudes pendientes
+  command: UPDATE
+  enforced_in: 'CambiarEstadoSolicitudUseCase / ResolverSolicitudUseCase (no coordinador: solo propias y con estado
+    = ''PENDIENTE'', si no 403/404)'
+  roles:
+  - authenticated
+  using: ((solicitante_id = get_usuario_id()) AND (estado = 'PENDIENTE'::text))
+  with_check: null
+- table: public.solicitudes
+  policy: Coordinador actualiza solicitudes
+  command: UPDATE
+  enforced_in: CambiarEstadoSolicitudUseCase / ResolverSolicitudUseCase (usuario.es_coordinador → cualquier solicitud)
+  roles:
+  - authenticated
+  using: (get_mi_rol() = 'COORDINADOR'::text)
+  with_check: null
+- table: public.solicitud_comentarios
+  policy: sol_com_insert
+  command: INSERT
+  enforced_in: AgregarComentarioSolicitudUseCase (require_usuario activo; usuario_id = usuario.id del principal)
+  roles:
+  - authenticated
+  using: null
+  with_check: (( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo) AND (usuario_id = get_usuario_id()))
+- table: public.solicitud_comentarios
+  policy: sol_com_select
+  command: SELECT
+  enforced_in: GetSolicitudDetalleUseCase (require_usuario activo)
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+- table: public.solicitud_historial_estados
+  policy: sol_hist_insert
+  command: INSERT
+  enforced_in: CreateSolicitudUseCase / CambiarEstadoSolicitudUseCase (require_usuario activo; usuario_id = usuario.id
+    del principal)
+  roles:
+  - authenticated
+  using: null
+  with_check: (( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo) AND (usuario_id = get_usuario_id()))
+- table: public.solicitud_historial_estados
+  policy: sol_hist_select
+  command: SELECT
+  enforced_in: GetSolicitudDetalleUseCase (require_usuario activo)
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+structural_changes:
+- '[analisis_pagos] Las 4 API Routes de Next (pagos-anulados, pagos-anulados/[no_recibo], pagos-duplicado-descartado,
+  pagos-duplicado-descartado/[no_recibo]) se borraron y quedan como endpoints de AnalisisPagosApi con el mismo método,
+  body y respuesta ({ok, marcados} / {ok}); el upsert con service role pasa a INSERT ... ON CONFLICT en el repository
+  y la auditoría a tbl_config_audit_log dentro de un SAVEPOINT (un fallo de auditoría no aborta, como insertAuditLog).'
+- '[analisis_pagos] Los RPC fn_analisis_ranking_clientes / perfil_vendedor / alertas_deterioro / concentracion y
+  fn_pagos_mes_resumen pasan a GET /analisis-pagos/* con los mismos parámetros (query string) y la misma forma JSON.'
+- '[analisis_pagos] Frontend: módulo src/views/analisis-pagos (api/analisis-pagos-api.ts, hooks/use-analisis-icp-controller.ts,
+  hooks/use-pagos-aplicados-controller.ts, use-remote-resource.ts, types.ts). Tab*/PagosAplicadosCliente conservan
+  su JSX; los modales Anular/Descartar usan controllers propios. Los tipos ReciboRow/ResumenResult salieron del
+  componente a views/analisis-pagos/types.ts.'
+- '[analisis_pagos] Las páginas host (gestion-pagos/analisis/page.tsx y reportes/pagos-aplicados/page.tsx) no usaban
+  Supabase (getUsuarioActual ya migrado): no se modificaron.'
+- '[auditoria_legal] Las 8 API Routes de /api/auditoria-legal/** y /api/actualizar-perfil/[token] pasan a la Lambda
+  AuditoriaLegalApi (paths /garantias*, /solicitudes-actualizacion*) y a la Lambda pública ActualizarPerfilApi (/actualizar-perfil/{token}*).
+  Mismos cuerpos, respuestas y textos de error.'
+- '[auditoria_legal] Las consultas directas de supabase-js de la pantalla de Garantías y sus modales (fn_garantias_lista,
+  fn_garantias_clientes_sin_garantia, fn_buscar_contribuyentes, fn_saldo_contribuyente, fn_vendedores_por_contribuyente,
+  fn_contar_garantias_en_carpeta, fn_siguiente_carpeta_disponible, garantia_eventos+usuarios, personas_legales,
+  config_sistema, vendedores, solicitudes_actualizacion) son endpoints GET con intención bajo /garantias/* y /solicitudes-actualizacion.'
+- '[auditoria_legal] Subidas: el PDF firmado (antes multipart a la API Route → bucket público) y los archivos del
+  portal público (antes multipart) ahora van directo a S3 con URL prefirmada PUT emitida por el backend, y un segundo
+  POST confirma (el backend verifica existencia, prefijo de la key y tamaño con list()).'
+- '[auditoria_legal] garantias.documento_pdf_url guarda ahora la key S3 (`<id>_<ms>.pdf`); al listar se devuelve
+  una URL prefirmada GET (1 h). Las filas migradas con la URL pública de Supabase se resuelven extrayendo la key
+  tras ''/garantias-legal/''.'
+- '[auditoria_legal] Gmail (correo al vendedor en ENTREGAR, correo de Auditoría Anual al crear/reenviar solicitud)
+  lo envía el backend con UsuarioMailer; el front ya no manda providerToken/providerRefreshToken.'
+- '[auditoria_legal] POST /garantias corre en una sola transacción (consecutivo, desactivar anterior, insertar,
+  eventos, vínculo, notificación al coordinador): ya no hace falta la compensación manual de reactivar la anterior.'
+- '[auditoria_legal] fetchSolicitudes: el backend devuelve todas las solicitudes ENVIADA/DATOS_RECIBIDOS/APROBADA/EXPIRADA
+  y el front filtra por los contribuyentes del tab (antes .in(''contribuyente'', [...]) con cientos de valores,
+  que no cabe en una query string).'
+- '[auditoria_legal] Hacienda: los modales usan useHaciendaController (módulo notificaciones, GET /hacienda) en
+  vez de fetch(''/api/hacienda'').'
+- '[auditoria_legal] Borrados del front (solo servidor, ya en el backend): lib/auditoria-legal/token-solicitud.ts,
+  validar-token-solicitud.ts, storage-expedientes.ts; email-actualizacion-perfil.ts queda solo con el asunto (vista
+  previa del modal); el HTML vive en domain/services/auditoria_legal_correos.py.'
+- '[centro_recursos] El Server Component /centro-recursos hacía 9 consultas en paralelo con service_role; ahora
+  llama a UN endpoint agregado GET /centro-recursos que devuelve las mismas filas crudas (vendedores, supervisores,
+  usuarios, documentos, aplicaciones, grupos, miembros, directorio, marcas). El armado del directorio/árbol/compradores
+  sigue en el page.tsx sin cambios.'
+- '[centro_recursos] Carga de documentos: antes multipart/form-data a la API Route que subía a Storage; ahora 2
+  pasos: POST /centro-recursos/documentos/upload-url (URL prefirmada PUT, key `${ms}_${nombre_saneado}` como el
+  path original) → uploadToPresignedUrl → POST /centro-recursos/documentos {key, titulo, descripcion, categoria},
+  que valida que el objeto exista y registra la fila + auditoría.'
+- '[centro_recursos] Bucket documentos-recursos pasa de público (getPublicUrl) a privado: en BD (columna url) se
+  guarda la key del objeto y al leer se devuelve una URL prefirmada GET (1 h) en el mismo campo `url`. Filas migradas
+  con la URL pública de Supabase se resuelven extrayendo la key después de ''/documentos-recursos/''; enlaces externos
+  se devuelven tal cual.'
+- '[centro_recursos] checkCoordinador + insertAuditLog (src/lib/configuracion/admin.ts) se reimplementan en los
+  casos de uso (require_coordinador con el rol real) y en PostgresCentroRecursosRepository.registrar_auditoria (tbl_config_audit_log
+  dentro de un SAVEPOINT para que un fallo de auditoría no aborte la operación, igual que el try/catch original).'
+- '[centro_recursos] Los componentes (modales, TabAplicaciones, TabDirectorioAgentes) usan useCentroRecursosController
+  (src/views/centro-recursos/hooks); TabAplicaciones usa useHaciendaController (módulo notificaciones) para Hacienda/CABYS.'
+- '[clientes] La Ficha 360° (/clientes/[cod]) hacía ~11 consultas a Supabase en dos tandas; ahora es un solo GET
+  /clientes/{cod}/ficha?volver=... que devuelve cartera (o la cartera sintética en ₡0), maestro, facturas, gestiones,
+  promesas, solicitudes + solicitante_map, ICP, tendencia, pedidos retenidos, contacto del analista asignado y Anterior/Siguiente
+  (calculado en el backend a partir de los filtros de `volver`). El rol/usuario sale de getUsuarioActual().'
+- '[clientes] La Server Action fetchTodosLosClientes (actions.ts) se eliminó: el Excel usa GET /clientes?todos=true
+  desde useExportarClientesController.'
+- '[clientes] Los tipos ClienteRow/KPIsClientes/FiltrosClientes/... se movieron a src/views/clientes/types.ts (page.tsx
+  los re-exporta); ClienteResultado/FacturaResultado/MarcaResultado (antes exportados por la route.ts de buscar)
+  también.'
+- '[clientes] Email de cobro: la gestión tipo CORREO que el navegador insertaba con supabase.from(''gestiones'').insert
+  ahora la registra el backend dentro de POST /clientes/email-cobro tras un envío exitoso (mismo texto de nota;
+  el body agrega `contribuyente`).'
+- '[clientes] El front ya no manda providerToken/providerRefreshToken: el envío usa UsuarioMailer con el refresh
+  token guardado del usuario.'
+- '[clientes] El texto libre del usuario (mensaje, observaciones, nombres) se escapa como HTML en los correos (render
+  idéntico para texto normal; evita inyección de HTML).'
+- '[clientes] Editar gestión desde la ficha usa gestionesApi.actualizar (PATCH /clientes/gestiones del módulo Gestiones);
+  ClientesApi no registra rutas /clientes/gestiones*, /clientes/promesas* ni /clientes/pagos/reportar.'
+- '[clientes] Errores de carga en /clientes y /clientes/[cod] ya no lanzan (pantalla de error de Next): se muestra
+  un mensaje en rojo (regla 8); 404 de la ficha sigue llamando notFound().'
+- '[configuracion] Las 18 API Routes de /api/configuracion/** pasan a la Lambda ConfiguracionApi con los mismos
+  paths sin /api, mismo método, mismo body y misma forma de respuesta ({data}, {ok}, {data,total,page,pageSize},
+  {data,mostrados,truncado}); 201 en las altas. checkCoordinador() + insertAuditLog() de src/lib/configuracion/admin.ts
+  quedan en coordinador()/registrar_auditoria() del caso de uso (mismo texto ''Acceso restringido al coordinador'');
+  el archivo admin.ts se eliminó (los demás módulos ya no lo importan).'
+- '[configuracion] Altas de usuarios: siguen restringidas a @cofersa.cr / @mayoreo.biz y la fila en tbl_usuarios
+  es la que da acceso. Con Cognito + Google federado NO se crea nada en el User Pool desde Configuración: en el
+  primer login con Google, Cognito crea el usuario federado y ResolveCurrentUserUseCase/GET /me lo vincula por email
+  verificado con tbl_usuarios (tbl_app_users). Desactivar un usuario (activo=false) corta el acceso en el siguiente
+  request (require_usuario exige fila activa), aunque la sesión de Cognito siga viva.'
+- '[configuracion] configuracion/page.tsx: las 12 consultas con service_role + el armado (n_clientes, supervisor_nombre,
+  n_vendedores, semáforo con defaults, SLA, rutas, mes de cierre sugerido) se reemplazan por GET /configuracion
+  (GetConfiguracionPantallaUseCase), que devuelve ConfigTabsData ya procesado. Si fn_automatizaciones_resumen falla,
+  el tab Automatizaciones viene vacío sin tumbar la pantalla (igual que el .catch original).'
+- '[configuracion] Registro de automatizaciones (REGLAS, DEFAULTS_AUTOMATIZACIONES) y el cálculo de última/próxima
+  corrida pg_cron (cron.ts) se movieron a backend/src/domain/entities/configuracion.py; src/lib/automatizaciones/registry.ts
+  queda solo con los tipos (ReglaId) y se borraron cron.ts y obtener-datos.ts.'
+- '[configuracion] DirectorioInput (autocomplete usado en Ficha 360°, Solicitudes y reportes) y lib/utils/directorio.ts
+  leían directorio_empresa directo con la sesión del usuario; ahora usan GET /configuracion/directorio-activo (cualquier
+  usuario activo; solo contactos activos) vía useDirectorioContactosController (misma caché de módulo, una consulta
+  por sesión) y createConfiguracionApi(getServerHttp()) en server.'
+- '[configuracion] Log del Sistema → Exportar CSV: antes window.open de la API Route (respuesta text/csv); ahora
+  GET /configuracion/log?format=csv devuelve todas las filas en JSON y el navegador arma el mismo CSV (mismas columnas
+  y formato de fecha es-CR/America/Costa_Rica) y lo descarga como audit-log-AAAA-MM-DD.csv.'
+- '[configuracion] Las escrituras multi-paso (crear/editar ruta con sus miembros, upserts de semáforo/SLA) ahora
+  son transaccionales: si una parte falla se revierte todo. La auditoría corre en un SAVEPOINT para que un fallo
+  de config_audit_log no aborte la operación principal.'
+- '[configuracion] GET /configuracion/usuarios y la pantalla devuelven columnas explícitas de tbl_usuarios (sin
+  google_refresh_token); antes PUT/POST devolvían select() completo.'
+- '[dashboard] Regla de scope (antes RLS de solo lectura fn_es_usuario_activo + filtros por analista_email en el
+  front): todo endpoint exige perfil activo (require_usuario). GET /dashboard/coordinador solo COORDINADOR o GERENCIA
+  (403 al resto). GET /dashboard/analista y /dashboard/mi-cartera: COORDINADOR/GERENCIA pueden pedir ?email= de
+  cualquier analista (por defecto el propio); ANALISTA/ANALISTA_RIESGO siempre quedan limitados a su propio email
+  aunque pidan otro (analista_scope).'
+- '[dashboard] Guard de Mi Cartera duplicado en el backend con el rol REAL: GERENCIA → 403; ANALISTA_RIESGO sin
+  tiene_cartera_asignada → 403; COORDINADOR y ANALISTA entran (Usuario.puede_gestionar_cartera). El page.tsx conserva
+  el redirect por rolEfectivo (''Ver como'') y además redirige a /dashboard si el API responde 403.'
+- '[dashboard] computarColaDia (7 consultas + Algoritmo V4) pasa al backend: domain/services/cola_dia.py (calcular_agenda,
+  construir_cola, puro y con tests) + application/use_cases/dashboard.py: computar_cola_dia (lecturas vía DashboardRepository).
+  cola-analista.ts queda solo con los tipos CarteraRow/KPIs e icpColor/icpLabel (usados por mi-cartera-view y DashboardResumen).
+  Se replican Math.round (mitades hacia +inf), fmtCRC y el formato numérico de JS en los motivos.'
+- '[dashboard] Dashboard coordinador: 10 consultas → 1 endpoint agregado; los conteos de gestiones Hoy/Semana/Mes
+  de ''Mi Equipo'' se agregan en SQL (count FILTER) en vez de traer filas; el fallback config_sistema.meta_mensual
+  solo se consulta si fn_recuperacion no trae meta (igual que antes). La página cruza ''equipo'' (elegibles por
+  rol) con analistasConCarteraReal (GET /me/analistas-con-cartera) en lugar de leer maestro_clientes.range(0,4999).
+  Los cálculos de presentación (DSO, avalúo, días hábiles, proyección) siguen en el page.tsx.'
+- '[dashboard] Dashboard analista: 9 consultas + enriquecimiento de nombres → 1 endpoint agregado. La cola llega
+  ya filtrada (en_agenda && !gestionado_hoy); el nombre del cliente de la agenda se resuelve en SQL (subconsulta
+  a maestro_clientes, última fila por id); las etiquetas PROXIMA_ACCION_LABELS y el fallback de meta_gestiones_diarias
+  (15) siguen en el page.tsx.'
+- '[dashboard] Tareas sugeridas (notificaciones ALERTA ''Sin gestión ≥%'' no leídas) ya no usan el cliente service_role
+  del front: el backend las lee por el usuarios.id del analista consultado (ya no hay mezcla de espacios de UUID
+  Auth vs usuarios).'
+- '[dashboard] googleCalendarService.fetchCalendarEvents(timeMin, timeMax[, api]) usa identidadApi.calendarEvents
+  (GET /me/calendar/events, refresh token guardado) en lugar del provider_token; se elimina el parámetro accessToken
+  y se conserva el mapeo a CalendarEvent y el rango RFC 3339 con -06:00. No tenía consumidores en el código.'
+- '[dashboard] Nuevo módulo frontend src/views/dashboard/ (api/dashboard-api.ts + types.ts). No hay controller hooks:
+  todas las pantallas del alcance son Server Components (page.tsx con createDashboardApi(await getServerHttp()));
+  los componentes de src/components/analista|cartera|dashboard no hacían consultas y quedan intactos. equipo/page.tsx
+  es estático (sin consultas).'
+- '[gestion_cartera] reportes_pago y reporte_pago_detalles tienen RLS habilitado SIN políticas en Supabase (deny-all
+  para authenticated): la regla se define en ReportarPagoUseCase = usuario activo (require_usuario) y no Gerencia
+  (require_escritura); analista_email = email del principal (no lo manda el front).'
+- '[gestion_cartera] POST /clientes/pagos/reportar: cabecera + detalles se insertan en UNA transacción real (antes
+  INSERT + INSERT + DELETE de rollback manual); la referencia duplicada sigue respondiendo 409 con el mismo texto
+  y además la protege uq_reportes_pago_referencia.'
+- '[gestion_cartera] Bucket comprobantes-pago pasa de público (getPublicUrl) a privado: el front pide POST /gestion-cartera/comprobantes/upload-url,
+  sube con uploadToPresignedUrl y guarda la KEY S3 en reportes_pago.url_comprobante; la lectura se hace con GET
+  /gestion-cartera/comprobantes/download-url?key= (acepta también la URL pública legada de Supabase y extrae la
+  key).'
+- '[gestion_cartera] La compresión de imágenes sigue en el navegador (lib/utils/comprimir-imagen, Canvas → WebP/JPEG)
+  antes de pedir la URL prefirmada; la key la arma el backend con el mismo patrón `${cliente_cod}/${Date.now()}_${base}.${ext}`.'
+- '[gestion_cartera] Saldos a favor: el UPDATE directo a saldos_favor desde el navegador pasa a POST /saldos-favor/{id}/aplicar
+  (aplicado_por = email del principal, aplicado_en = now() en BD).'
+- '[gestion_cartera] Tab Saldos a Favor de la Ficha 360°: GERENCIA ahora ve los saldos del cliente (es_global) en
+  solo lectura; con la RLS original (solo rol COORDINADOR exacto) veía la lista vacía. Consistente con CLAUDE.md
+  (Gerencia = alcance de Coordinador, sin editar).'
+- '[gestion_cartera] Matching (GET /saldos-favor/matching): el scope por cartera se aplica a ANALISTA y a ANALISTA_RIESGO
+  con tiene_cartera_asignada (puede_gestionar_cartera), igual que la página de Saldos a Favor; antes solo rol ===
+  ''ANALISTA''. Se quitaron los headers Cache-Control privados (API Gateway/Lambda).'
+- '[gestion_cartera] GET /saldos-favor: el email pedido solo se respeta para roles globales y ANALISTA_RIESGO sin
+  cartera; ANALISTA (y riesgo con cartera) siempre recibe su propia cartera (antes lo decidía el Server Component
+  con el rol efectivo).'
+- '[gestion_cartera] Página Saldos a Favor: si falla la carga muestra un mensaje de error visible (regla 8) en vez
+  de una tabla vacía; la lista de analistas usa analistasConCarteraReal (GET /me/analistas-con-cartera).'
+- '[gestion_cartera] bandeja-pagos y recibos-ruta (placeholders) solo verificaban sesión con supabase.auth.getUser():
+  ahora usan getUsuarioActual(). gestion-pagos/* no tenía acceso a Supabase (sin cambios).'
+- '[gestion_cartera] fn_get_kpis_saldos_favor no tiene consumidores en el front (ni en el src original): no se expuso
+  endpoint.'
+- '[gestion_cartera] Front: src/views/gestion-cartera/ (api/gestion-cartera-api.ts, types.ts, hooks use-pedidos-retenidos
+  / use-saldos-favor-cliente / use-saldos-favor-matching / use-aplicar-saldo / use-reportar-pago -controller.ts).
+  Borradas las 3 route.ts del alcance.'
+- '[gestiones] La bandeja /gestiones (Server Component) ya no hace 6 consultas a Supabase: GET /gestiones (lotes
+  de 1000 con offset, mismo orden fecha/hora/id desc; el front itera como antes con .range) + GET /gestiones/referencias
+  (solicitudes ligadas, estado de promesas, nombres de maestro_clientes y codigos con cartera, resueltos en SQL
+  con el mismo alcance). La lista de analistas del filtro viene de analistasConCarteraReal (GET /me/analistas-con-cartera).'
+- '[gestiones] POST /clientes/gestiones/nueva: gestion + promesa + vinculo promesa_id en UNA transaccion (antes
+  3 escrituras con rollback manual via DELETE, que ademas fallaba en silencio porque gestiones no tiene politica
+  DELETE).'
+- '[gestiones] modal-gestion.tsx insertaba directo en gestiones y promesas desde el navegador: ahora POST /gestiones/rapida
+  (misma forma de datos, atomico). El componente no esta importado en ninguna pantalla hoy; se migro igual.'
+- '[gestiones] form-nueva-gestion.tsx: la consulta directa a maestro_clientes (otros codigos del contribuyente)
+  pasa a GET /gestiones/codigos-contribuyente; las llamadas viven en useNuevaGestionController (src/views/gestiones/hooks).
+  El tipo NuevaGestionBody se movio de la API Route a src/views/gestiones/types.ts.'
+- '[gestiones] NotasRapidas.tsx: carga/guardado en useNotasRapidasController (GET/POST /notas-rapidas); JSX igual.'
+- '[gestiones] DELETE /clientes/gestiones recibe el id por query (?id=) porque HttpClient.delete no envia cuerpo;
+  el handler acepta tambien {id} en el body (forma original).'
+- '[gestiones] /ai/formalizar-bitacora usa container.language_model() (Anthropic Messages API, clave anthropic_api_key
+  del secreto) con el mismo modelo claude-haiku-4-5-20251001, mismo system prompt y max_tokens 512.'
+- '[gestiones] Guard server-side replicado: page.tsx redirige (GERENCIA y ANALISTA_RIESGO sin cartera -> /dashboard;
+  COORDINADOR entra) y los use cases aplican require_gestor_cartera (COORDINADOR o puede_gestionar_cartera) + require_escritura
+  en escrituras.'
+- '[identidad] Supabase Auth (Google OAuth) → Cognito User Pool con Google como IdP federado (Hosted UI). El acceso
+  real sigue dado por tener fila activa en `usuarios` (GET /me responde 403 acceso_denegado si no), igual que el
+  layout original + /auth/denegado. El primer login vincula el sub de Cognito con tbl_app_users por email verificado
+  (mismos ids que auth.users).'
+- '[identidad] Gmail/Calendar: Supabase entregaba provider_token/provider_refresh_token de Google en la sesión;
+  Cognito no los expone. Se agregó un consentimiento de Google propio (/me/google/authorize-url → /auth/google →
+  /me/google/connect) que guarda el refresh token en usuarios.google_refresh_token (la misma columna que ya usaba
+  /auth/callback). Los envíos de correo se hacen en el backend con ese refresh token (UsuarioMailer). Los refresh
+  tokens existentes siguen sirviendo si se usa el mismo cliente OAuth de Google (google_client_id/secret).'
+- '[identidad] ''Ver como'': la cookie sic_ver_como la fija ahora el navegador (no httpOnly) después de que POST
+  /me/preview-rol valida que el rol real es COORDINADOR. Solo cambia qué se renderiza; el API autoriza siempre con
+  el rol real (igual que el original).'
+- '[identidad] Layout: totalEquipo y última sincronización vienen en GET /me (antes 2 consultas con service_role
+  y unstable_cache).'
+- '[identidad] Server Components llaman al API Gateway con el ID token de la sesión (cookies de Amplify, @aws-amplify/adapter-nextjs);
+  nunca a la base.'
+- '[jobs] pg_cron → EventBridge Scheduler (ScheduleV2, UTC): 17 Lambdas programadas, una por job lógico (handlers
+  en entrypoints/lambda_handlers/jobs_programados.py → EjecutarTareaProgramadaUseCase con uow_factory(None) = service_role).
+  Mismos horarios UTC; los 55 jobs sync_*_HHMMcr (5 tipos × 11 horas) se consolidan en 5 reglas cron(5 13-23 * *
+  ? *) todos los días, igual que el original. Las fn_* siguen leyendo sus toggles tbl_config_sistema.automatizacion_*_activa.'
+- '[jobs] POST /api/sync/{pagos,pedidos-retenidos} esperaban a N8N (hasta 30 s) + 12 s (> 29 s de API Gateway):
+  ahora POST /sync/pagos y /sync/pedidos-retenidos validan COORDINADOR, encolan en SQS sync-manual y responden 202
+  {ok, encolado, tipo, solicitado_en, n8n_configurado}. El worker sync-manual-worker (timeout 90 s, visibility 540
+  s, DLQ, maxReceive 5, ReportBatchItemFailures, idempotencia DynamoDB) llama al webhook N8N (n8n_webhook_pagos_url
+  con fallback https://n8n.mayoreo.biz/webhook/Flujos_SIC; n8n_webhook_pedidos_retenidos_url, sin fallback como
+  el original), espera 12 s y ejecuta fn_sync_* con p_ejecutado_por = email del coordinador.'
+- '[jobs] UI (TabSincronizacion.tsx): mismo JSX; los datos salen de views/sincronizacion (sincronizacionApi + useSincronizacionController).
+  Para pagos/pedidos mantiene el estado ''en proceso'' (fases originales) y consulta GET /sync/estado?tipo=&desde=solicitado_en
+  cada 4 s (máx. 120 s) hasta ver la fila nueva de sync_log; luego arma el mismo mensaje y refresca GET /sync/historial
+  (antes supabase.from(''sync_log'') limit 600).'
+- '[jobs] cartera/facturas/saldos_favor manuales siguen síncronos: POST /sync/{cartera,facturas,saldos_favor} →
+  fn_sync_*(p_ejecutado_por) → {ok, resultado}. Se borraron las 5 route.ts de src/app/api/sync/.'
+- '[jobs] Ingesta externa: N8N y Google Apps Script ya NO pueden escribir directo en la base (Aurora en VPC privada,
+  sin PostgREST). Nuevo POST /ingesta/{tabla} (Lambda IngestaApi, sin Cognito, header x-ingesta-key validado con
+  hmac.compare_digest contra ingesta_api_key del secreto) para pagos_stage, pedidos_retenidos_stage, cartera, facturas,
+  saldos_favor y maestro_clientes. Cuerpo {modo: reemplazar|agregar|actualizar, lote, total_lotes, sync_id?, purgar_anteriores?,
+  filas:[...]}; lista blanca de columnas por tabla (domain/entities/jobs.py TABLAS_INGESTA; columna desconocida
+  = 400, igual que PostgREST); todas las filas del lote con las mismas columnas; máx. 5000 filas/lote; cada lote
+  es UNA transacción. reemplazar: DELETE de la tabla destino en el lote 1 y luego INSERT. actualizar: INSERT ...
+  ON CONFLICT (clave natural) DO UPDATE de las columnas recibidas (+ updated_at = now()); con purgar_anteriores
+  en el último lote borra las filas de otro sync_id (equivale al upsert + ''DELETE por sync_id'' que hacía N8N en
+  saldos_favor). El sync_id del cuerpo se agrega a las filas que no lo traen. En las tablas stage los valores se
+  guardan como texto (fn_cargar_pagos_stage / fn_sync_pedidos_retenidos castean igual que antes).'
+- '[jobs] Modos por tabla: pagos_stage y pedidos_retenidos_stage → reemplazar|agregar; cartera y facturas → reemplazar|agregar|actualizar
+  (clave contribuyente+cliente_cod / contribuyente+documento); saldos_favor → agregar|actualizar (clave documento;
+  sin reemplazar para no perder estado_manual/aplicado_por/aplicado_en del SIC); maestro_clientes → agregar|actualizar
+  (clave cliente_cod, upsert diario del GAS; sin reemplazar: tbl_solicitudes.cliente_id ON DELETE SET NULL y columnas
+  SIC-exclusivas). maestro_clientes no acepta estado_manual, asignacion_manual ni la logística SIC (dia_visita,
+  dia_pago, metodo_pago, observaciones_logistica, hora_recibo_*, persona_recibe); los triggers fn_proteger_contacto_manual,
+  fn_asignar_analista_por_vendedor y fn_sincronizar_analista_nombre siguen activos.'
+- '[jobs] Se copiaron tal cual los assets de la skill (assets/backend-async): application/ports/message_queue.py,
+  application/ports/idempotency_store.py, entrypoints/lambda_handlers/sqs_adapter.py, infrastructure/aws/sqs_message_queue.py,
+  infrastructure/aws/dynamodb_idempotency_store.py, tests/unit/test_sqs_adapter.py. Como container.py es base compartida,
+  jobs.py arma localmente SqsMessageQueue(SYNC_MANUAL_QUEUE_URL) y DynamoDbIdempotencyStore(IDEMPOTENCY_TABLE_NAME)
+  (nombres de env que genera generate_sam.py).'
+- '[jobs] Edge Function mark-promesas-incumplidas (HTTP, obsoleta en el origen) → POST /jobs/conciliar-promesas
+  (solo COORDINADOR) que ejecuta fn_conciliar_promesas a pedido; la ejecución diaria sigue en el job job-evening-conciliar-promesas.'
+- '[notificaciones] REALTIME: el canal Supabase postgres_changes (INSERT en notificaciones filtrado por usuario_id)
+  se reemplazó por polling en useNotificacionesController: carga al montar, cada 60 s y al volver a enfocar/mostrar
+  la ventana. No se usa WebSocket porque las notificaciones las insertan funciones SQL/cron (fn_check_sync_salud,
+  fn_check_recibos_reversion, triggers) y no la API, así que un publisher en el backend no las vería. Badge, panel
+  y tabs se conservan; marcar leída/todas sigue siendo optimista.'
+- '[notificaciones] El usuario_id de las notificaciones ya no viene del front: el backend usa siempre el perfil
+  (tbl_usuarios.id) del principal Cognito (equivale a las políticas RLS por email del JWT).'
+- '[notificaciones] Marcar como leída: supabase.update → PATCH /notificaciones/{id} {leida: true}; marcar todas
+  → POST /notificaciones/leer-todas.'
+- '[notificaciones] Topbar: ''Ver como'' usa useVerComoController (POST /me/preview-rol + cookie en el front) en
+  lugar de fetch(''/api/preview-rol''); cerrar sesión usa signOutUser() de Cognito. ClientWrapper usa onAuthStateChange
+  de src/shared/auth/cognito-auth.ts (SIGNED_OUT o SESSION_EXPIRED → /login; Supabase emitía SIGNED_OUT también
+  cuando fallaba el refresh).'
+- '[notificaciones] Tipo de cambio: BCCR_TOKEN (env de Vercel) pasa a la clave bccr_token del secreto de integraciones
+  (container.integration_config()); las llamadas HTTP salen por container.external_http(); el respaldo sigue en
+  config_sistema (tipo_cambio_compra/venta/fecha). bccr_email no lo usaba el origen y no se usa.'
+- '[notificaciones] Hacienda (estado tributario y CABYS) pasa de API Routes de Next a NotificacionesApi vía external_http,
+  con el mismo User-Agent de navegador, timeout de 8 s y la misma forma de respuesta ({data, notFound, error} /
+  {data, error}).'
+- '[notificaciones] useChat (src/hooks/useChat.ts) re-exporta useChatController (src/views/notificaciones/hooks)
+  que usa GET/POST /chat.'
+- '[presupuesto] tab-presupuesto: las dos llamadas fn_presupuesto_frozen + fn_presupuesto_preview pasan a un único
+  GET /presupuesto/mes que devuelve el congelado o el estimado con congelado:false (misma forma que el estado `Data`
+  del componente).'
+- '[presupuesto] Congelar, regenerar, editar meta y reasignar (antes rpc genérico con p_email del front) son POST
+  /presupuesto/mes/{congelar|meta|reasignar}; el email que se guarda en generado_por/updated_por es el del usuario
+  autenticado (no el que mande el front). La prop userEmail de TabPresupuesto queda sin uso.'
+- '[presupuesto] Modal ''Enviar Presupuesto General'': las 5 lecturas (vendedores, supervisores, usuarios+cartera
+  real, portafolio_grupos, portafolio_acotado) pasan a GET /presupuesto/destinatarios + analistasConCarteraReal
+  (GET /me/analistas-con-cartera); el cruce de destinatarios y filas del correo se conserva idéntico en use-envio-presupuesto-general-controller.'
+- '[presupuesto] Envío por correo de tab-presupuesto y tab-recuperacion (antes fetch a /api/reportes/enviar con
+  providerToken) pasa a POST /presupuesto/enviar → EnviarCorreoPresupuestoUseCase → UsuarioMailer (refresh token
+  guardado). Mismas validaciones y textos (''to, subject y html son requeridos'', ''Dirección de correo inválida:
+  x'', ''No tenés permiso para enviar estos reportes''); respuesta {ok, email_sent, to}.'
+- '[presupuesto] tab-sin-pago: fn_sin_pago_cliente + SUM(presupuesto_cobro.ppto_cartera) en un único GET /presupuesto/sin-pago
+  → {filas, ppto_total}.'
+- '[presupuesto] RecuperacionPeriodoCliente: fn_recuperacion_periodo → GET /presupuesto/recuperacion-periodo y fn_meta_analista_mes
+  → GET /presupuesto/meta-analista ({meta}); un fallo al leer la meta deja 0 como en el original.'
+- '[presupuesto] Frontend: módulo src/views/presupuesto (api/presupuesto-api.ts, hooks/use-*-controller.ts, use-remote-resource.ts
+  con AbortController, types.ts). Los componentes conservan su JSX; solo cambian las fuentes de datos.'
+- '[presupuesto] fn_presupuesto_calc y fn__recalc_metas no se exponen: se ejecutan dentro de fn_presupuesto_guardar
+  / fn_presupuesto_preview / fn_presupuesto_reasignar (SECURITY DEFINER en Aurora).'
+- '[promesas] La bandeja /promesas (Server Component) hacia 2 consultas a Supabase (promesas activas tope 800 +
+  gestion origen); ahora GET /promesas devuelve {promesas, gestionesMap} con la misma forma. Analistas del filtro:
+  analistasConCarteraReal.'
+- '[promesas] Reprogramar: INSERT de la promesa nueva + UPDATE de la original a REPROGRAMADA en UNA transaccion
+  (antes 2 escrituras con rollback manual via DELETE, que fallaba por falta de politica DELETE).'
+- '[promesas] Validar/Reprogramar leen la promesa con SELECT ... FOR UPDATE antes de anexar el evento al JSONB eventos
+  (evita perder eventos con dos validaciones simultaneas).'
+- '[promesas] DELETE /clientes/promesas recibe el id por query (?id=); el handler acepta tambien {id} en el body.
+  Hoy ninguna pantalla lo llama.'
+- '[promesas] Edge Function supabase/functions/mark-promesas-incumplidas NO se porta: esta OBSOLETA desde 2026-06-15
+  (reemplazada por fn_conciliar_promesas via cron, que migra el modulo jobs). No tiene endpoint ni job en este modulo.'
+- '[promesas] El modal de accion de tabla-promesas.tsx usa useAccionPromesaController (src/views/promesas/hooks)
+  -> promesasApi; JSX, validaciones de cliente y textos sin cambios. GestionOrigen se movio a src/views/promesas/types.ts
+  (re-exportado desde page.tsx).'
+- '[reportes] Roles por reporte de src/lib/reportes/registry.ts replicados en domain/entities/reportes.py (REPORTE_ROLES)
+  y aplicados en cada caso de uso (antes solo redirect en page.tsx; las RPC SECURITY DEFINER respondían a cualquier
+  usuario activo). Los reportes exclusivos de ANALISTA (gestiones-periodo, cartera-vencida) también admiten COORDINADOR
+  para ''Ver como'' y siempre se acotan al email del propio usuario.'
+- '[reportes] Scope por analista en backend: mora-vendedor, bloqueados, plazo-especial y estados-cuenta usan analista_scope
+  (un ANALISTA / ANALISTA_RIESGO con cartera siempre queda limitado a su email aunque mande otro).'
+- '[reportes] Server Components resumen-ejecutivo y cierre-mensual: las 5 / 9 consultas paralelas pasan a UN endpoint
+  agregado cada uno, con los datos crudos de la misma forma; el cálculo de KPIs/tops sigue en page.tsx. Las ventanas
+  de fechas ICP del cierre se calculan en el backend (GetCierreMensualUseCase).'
+- '[reportes] estados-cuenta/page.tsx: enriquecimiento con vendedor del código representativo se hace en el backend;
+  filtro ''por analista'' usa analistasConCarteraReal (GET /me/analistas-con-cartera). El envío/descarga por cliente
+  usa clientesApi (/clientes/estado-cuenta[/data], módulo clientes).'
+- '[reportes] cartera-vencida: maestro + cartera + última gestión en una sola consulta SQL (subselect max(fecha)).'
+- '[reportes] DimensionFilter, VendedorEnvioPanel, detalle-bloqueados, resumen-ejecutivo-cliente: datos y envío
+  vía hooks de src/views/reportes/hooks; ya no se manda providerToken.'
+- '[reportes] Borrada src/app/api/reportes/enviar/route.ts → POST /reportes/enviar (UsuarioMailer, adjunto base64
+  → EmailAttachment).'
+- '[solicitudes] Las 4 API Routes (/api/solicitudes, /[id], /[id]/estado, /[id]/comentarios) pasan a SolicitudesApi
+  con los mismos paths sin /api, mismos bodies y misma forma de respuesta (ok, id, numero, email_sent, email_to,
+  email_error...).'
+- '[solicitudes] Las consultas directas de los Server Components se agrupan en un endpoint por pantalla: GET /solicitudes
+  (lista + solicitante_map), GET /solicitudes/{id} (solicitud + comentarios + historial con autor_nombre + gestion_origen
+  + solicitante_nombre), GET /solicitudes/nueva-clientes (cartera + maestro + analista_nombres + gestion_origen)
+  y GET /solicitudes/nueva-contexto?cod= (cartera + maestro + facturas del cliente).'
+- '[solicitudes] Los tipos ClienteConDatos, GestionOrigenPreload, ComentarioConAutor, HistorialConAutor y GestionOrigenLink
+  se movieron a src/views/solicitudes/types.ts; los page.tsx los re-exportan para no romper imports.'
+- '[solicitudes] DetalleSolicitud usa useDetalleSolicitudController (estado, historial optimista y comentarios);
+  los 3 formularios de creación usan useCrearSolicitudController; form-solicitud-nueva usa useFacturasClienteController
+  (AbortController).'
+- '[solicitudes] Guard del módulo también en backend: todos los endpoints exigen COORDINADOR/GERENCIA o puede_gestionar_cartera
+  (ANALISTA, o ANALISTA_RIESGO con cartera); GERENCIA no escribe. Las páginas detalle y nueva (incluida /clientes/[cod]/solicitudes/nueva)
+  aplican el mismo redirect que el listado.'
+- '[solicitudes] El correo (ambas ramas) sale con UsuarioMailer (refresh token guardado del solicitante); el front
+  ya no envía providerToken/providerRefreshToken. EMAIL_COORDINADOR → integration_config(''email_coordinador'')
+  con fallback jdiaz@cofersa.cr; NEXT_PUBLIC_APP_URL → integration_config(''app_url'') con fallback https://cyc-cartera-cofersa.vercel.app.'
+- '[solicitudes] El correo se envía después del commit (la solicitud no se deshace si Gmail falla, igual que el
+  original).'
+incompatibilities:
+- '[analisis_pagos] Antes el p_email del análisis lo decidía el front (esAnalista); ahora el backend lo fuerza al
+  email propio para ANALISTA / ANALISTA_RIESGO con cartera aunque se pida otro, y bloquea Concentración para ellos
+  (antes solo lo ocultaba la UI).'
+- '[analisis_pagos] checkCoordinador no exigía usuarios.activo; require_usuario sí (usuario inactivo → 403 acceso_denegado).'
+- '[auditoria_legal] Rate limit de solicitudes (30/hora): antes respondía 429; ahora 422 (BusinessRuleViolation
+  code rate_limited) con el mismo mensaje — el adaptador HTTP no tiene 429.'
+- '[auditoria_legal] Usuario sin fila en usuarios: antes 400 ''Tu usuario no está registrado en el sistema.''; ahora
+  403 acceso_denegado de require_usuario (el layout ya no deja entrar a esos usuarios).'
+- '[auditoria_legal] Error de Gmail: antes se distinguía 401/403 de Gmail con textos propios; ahora email_error
+  trae el mensaje de UsuarioMailer (''No se pudo obtener acceso a Gmail...'' sin refresh token, o ''Gmail rechazó
+  el envío: ...'').'
+- '[auditoria_legal] GET /actualizar-perfil/{token} con token inválido devuelve 404 {error:{message:''Este enlace
+  ya no es válido.''}} en vez de {valido:false}; la página pública lo trata igual (muestra ''Este enlace ya no es
+  válido'').'
+- '[auditoria_legal] El tope de tamaño de la subida a S3 no se puede imponer en una URL PUT prefirmada: se valida
+  el tamaño declarado al firmar y el real al confirmar (si excede se borra el objeto y se responde el mismo error).'
+- '[centro_recursos] Las URLs de documentos ya no son permanentes: caducan a la hora. Si el usuario deja la pantalla
+  abierta más de 1 h, el enlace de descarga expira y debe recargar la página.'
+- '[centro_recursos] Errores de base de datos que antes devolvían error.message de PostgREST (500) ahora devuelven
+  el mensaje genérico del adaptador (500) o el de translate_db_error (p. ej. FK inválida de comprador → 409).'
+- '[centro_recursos] PUT /centro-recursos/aplicaciones/{id} sin campos editables devuelve la fila actual (en el
+  origen el update vacío de PostgREST era indefinido).'
+- '[clientes] Límite de 30 correos/hora: el original respondía 429; ahora BusinessRuleViolation (422) con el mismo
+  mensaje (''Límite de 30 correos por hora alcanzado. Esperá unos minutos.'').'
+- '[clientes] Sin Gmail conectado el mensaje ahora es el de UsuarioMailer (gmail_no_conectado) en lugar de ''Sesión
+  de Google expirada. Cerrá sesión y volvé a ingresar.''; un rechazo de Gmail en email-cobro llega como ''Gmail
+  rechazó el envío: ...'' (antes ''Error Gmail API: ...''); en estado-cuenta se sigue devolviendo en email_error
+  con 200.'
+- '[clientes] POST /api/clientes/estado estaba roto en el origen (hacía .select(''analista_id, nombre'') sobre maestro_clientes,
+  columnas inexistentes) y no tenía llamadores en el front. Se implementó el comportamiento intencionado: actualiza
+  estado_manual, registra gestión SISTEMA y notifica al analista asignado resolviendo su id por maestro_clientes.analista_email
+  (solo usuarios activos). Cliente inexistente → 404 ''Cliente no encontrado''.'
+- '[clientes] La hora/fecha de la gestión SISTEMA de cambio de estado ahora es hora Costa Rica (el original usaba
+  la hora del servidor/UTC).'
+- '[clientes] GERENCIA ya no puede enviar email de cobro/estado de cuenta ni registrar recordatorios (require_escritura);
+  en el origen solo lo impedía la UI.'
+- '[clientes] Un usuario autenticado sin fila activa en usuarios recibe 403 en /clientes/buscar (antes RLS devolvía
+  listas vacías); el buscador muestra listas vacías igual.'
+- '[clientes] Los adjuntos PDF/Excel siguen viajando en base64 en el JSON: API Gateway/Lambda limitan el payload
+  (~6 MB en Lambda síncrona).'
+- '[configuracion] Errores de base de datos: antes la UI mostraba error.message de PostgREST (p. ej. ''duplicate
+  key value violates unique constraint ...''); ahora los errores de unicidad/FK/NOT NULL llegan traducidos por el
+  adaptador (''El registro ya existe.'', ''La operación viola una referencia entre registros.'', ''Los datos no
+  cumplen las reglas de la base de datos.''). Ej.: crear un supervisor sin email (tbl_supervisores.email es NOT
+  NULL, igual que en Supabase) sigue fallando, con el mensaje genérico.'
+- '[configuracion] El filtro q del directorio escapa % y _ (antes se interpolaban crudos en el .or() de PostgREST).'
+- '[configuracion] PUT /configuracion/portafolio-acotado/{principal_cod} con el principal dentro de miembros: antes
+  los cambios de nombre/rol ya quedaban guardados antes del 400; ahora el 400 revierte toda la operación.'
+- '[configuracion] Ids inválidos: PUT usuarios/directorio con id no-UUID responde 404 con el mismo texto (''Usuario
+  no encontrado'' / ''Contacto no encontrado''); DELETE directorio y PATCH feed con id no-UUID responden 400 (antes
+  500 con el error de PostgreSQL).'
+- '[dashboard] Antes cada consulta tenía fallback silencioso (Promise.allSettled → ceros/listas vacías). Ahora el
+  endpoint agregado corre en una sola transacción: si falla, la página muestra ''No se pudo cargar el dashboard:
+  <mensaje>'' (regla 8) en vez de KPIs en cero. La lista de analistas con cartera sí conserva el fallback (Mi Equipo
+  vacío).'
+- '[dashboard] La vista icp_por_cliente se toleraba ausente en el origen; en Aurora vw_icp_por_cliente existe, así
+  que se consulta directo.'
+- '[dashboard] tbl_cartera no tiene columna dias_mora (tampoco la tenía cartera en Supabase): el origen leía c.dias_mora
+  → undefined → 0; el backend replica dias_mora = 0 para que el scoring dé exactamente los mismos resultados.'
+- '[dashboard] Los conteos de gestiones de Mi Equipo y la lista de clientes de la cola ya no sufren el tope de 1000
+  filas de PostgREST (antes gMes podía quedar truncado en analistas con >1000 gestiones/mes).'
+- '[dashboard] Orden de desempate de la cola: el origen ordenaba por score/mora con orden base Object.values() (claves
+  numéricas primero); el backend usa el orden de lectura de la BD. Solo afecta empates exactos de score y mora.'
+- '[gestion_cartera] En Supabase el reporte de pago fallaba siempre por RLS (reportes_pago sin políticas + cliente
+  de sesión); en AWS funciona con la regla de ReportarPagoUseCase. El toast dice ''el coordinador recibirá una notificación''
+  pero no existe trigger de notificación sobre tbl_reportes_pago (tampoco en el origen): se conservó el texto.'
+- '[gestion_cartera] Las URLs públicas de comprobantes ya guardadas en url_comprobante dejan de funcionar al apagar
+  Supabase Storage; ObtenerUrlComprobanteUseCase extrae la key de esas URLs, pero los objetos deben copiarse al
+  bucket S3 con la misma ruta (cliente_cod/archivo).'
+- '[gestion_cartera] El update de un saldo de otra cartera antes ''tenía éxito'' en silencio (RLS filtraba 0 filas);
+  ahora responde 403 y la UI muestra ''No se pudo marcar como aplicado. Intentá de nuevo.''.'
+- '[gestion_cartera] PUT /pedidos-retenidos/{id} con un id inexistente responde 404 ''Pedido retenido no encontrado''
+  (antes 500 con el error de .single()).'
+- '[gestiones] El 401/503 que la API Route distinguia (sesion vencida vs. Supabase Auth caido) ahora lo emite API
+  Gateway/Cognito antes de la Lambda: useNuevaGestionController mapea 401 -> ''Su sesion vencio...'' y error de
+  red/503 -> ''El servicio de autenticacion no esta respondiendo...'' (mismos textos que el original).'
+- '[gestiones] El monto en el mensaje de promesa duplicada usaba toLocaleString(''es-CR''); ahora usa el formato
+  fmtCRC (simbolo de colon + punto de miles, redondeado) por la regla 4 del CLAUDE.md.'
+- '[gestiones] La consulta de solicitudes ligadas en la bandeja dependia de la RLS de solicitudes; ahora se limita
+  a solicitudes cuyas gestiones estan en el alcance del usuario (misma informacion para la UI).'
+- '[identidad] Login silencioso de Google (login_hint + prompt=none desde la app): el Hosted UI de Cognito no permite
+  pasar esos parámetros al IdP; el usuario hace clic en ''Ingresar con Google'' (Cognito recuerda la sesión del
+  IdP).'
+- '[identidad] Login correo/contraseña: en Supabase existía para cuentas no-Google; en Cognito requiere crear esos
+  usuarios en el User Pool (las contraseñas de Supabase no se pueden migrar).'
+- '[jobs] El 202 de /sync/pagos y /sync/pedidos-retenidos ya no trae resultado ni n8n_status: la UI lo reconstruye
+  de la fila de sync_log (insertados, en_stage, omitidos, total_tabla). Para pedidos, ''actualizados'' no se guarda
+  en sync_log: se deriva como max(en_stage - insertados - omitidos, 0) (exacto salvo duplicados en el stage).'
+- '[jobs] Si el worker tarda más de 120 s la UI muestra ''La sincronización sigue en proceso; el historial se actualizará
+  al terminar.'' en vez de bloquear el botón.'
+- '[jobs] Un fallo de conexión/BD en el worker se reintenta (SQS, hasta 5 veces y luego DLQ) y vuelve a llamar al
+  webhook N8N; el original fallaba una sola vez con 500. Los errores de negocio de fn_sync_* no reintentan: la función
+  los registra en sync_log.error y devuelve {error}, como antes.'
+- '[jobs] EventBridge Scheduler no tiene equivalente a cron.job_run_details: el historial de ejecuciones queda en
+  CloudWatch Logs/Metrics de cada Lambda (y en sync_log para los sync_*).'
+- '[jobs] La ingesta no es el upsert genérico de PostgREST (on_conflict libre): la clave de conflicto es fija por
+  tabla y el modo actualizar es explícito.'
+- '[notificaciones] Las notificaciones nuevas aparecen con hasta 60 s de demora (o al enfocar la ventana) en lugar
+  de instantáneamente por Realtime.'
+- '[notificaciones] Chat del equipo: sin Supabase Realtime ni Presence no hay mensajes en vivo ni lista de conectados
+  (conectados = []). El ChatPanel está desmontado en ClientWrapper (''ChatPanel desactivado''), así que no hay impacto
+  visible.'
+- '[notificaciones] /api/tipo-cambio tenía revalidate = 3600 (caché de Next); en la Lambda cada GET /tipo-cambio
+  consulta al BCCR (el topbar lo pide una vez al montar, y persiste entre navegaciones).'
+- '[notificaciones] /api/tipo-cambio era público (sin sesión); GET /tipo-cambio exige token Cognito (solo lo usa
+  el topbar autenticado).'
+- '[notificaciones] MarcarNotificacionLeida sobre una notificación ajena o inexistente responde 404 (antes el UPDATE
+  con RLS afectaba 0 filas en silencio); el controller ignora el error igual que el original.'
+- '[presupuesto] El original devolvía HTTP 200 con {ok:false, email_sent:false, error} cuando Gmail rechazaba el
+  envío; ahora UsuarioMailer lanza BusinessRuleViolation (422) y la UI muestra el mismo mensaje vía ApiError.message
+  en el mismo recuadro de resultado.'
+- '[presupuesto] Sin provider_token de Supabase: el envío usa siempre el refresh token de Gmail persistido; si no
+  existe se muestra MSG_GMAIL_NO_CONECTADO (antes ''Sesión de Google expirada...'').'
+- '[presupuesto] GERENCIA podía (por RLS solo_usuarios_activos) congelar/editar el presupuesto desde la UI; ahora
+  las escrituras exigen COORDINADOR (regla de solo lectura de GERENCIA del CLAUDE.md). La UI sigue mostrando los
+  botones; el error se muestra con el mismo alert(''Error al aplicar el cambio.'').'
+- '[promesas] mark-promesas-incumplidas (Edge Function Deno con service role) no tiene equivalente en este modulo:
+  su funcion la cumple fn_conciliar_promesas via el cron del modulo jobs.'
+- '[promesas] Los montos en las descripciones de eventos (abono, reprogramacion) usaban toLocaleString(''es-CR'');
+  ahora fmtCRC (simbolo de colon + punto de miles) por la regla 4 del CLAUDE.md. Los eventos historicos ya guardados
+  no cambian.'
+- '[promesas] El texto ''Para reprogramar use /api/promesas/reprogramar'' del error de estado invalido se conserva
+  literal aunque el path real es /clientes/promesas/reprogramar.'
+- '[reportes] POST /reportes/enviar: el origen respondía 200 {ok:false, email_sent:false, error} si Gmail fallaba;
+  ahora el fallo de Gmail es 422 (BusinessRuleViolation) y el front muestra ApiError.message. En éxito se mantiene
+  {ok:true, email_sent:true, to}. Sin refresh token de Gmail el mensaje es el de UsuarioMailer (antes ''Sesión de
+  Google expirada...'').'
+- '[reportes] Cierre manual del CEI (fn_snapshot_cierre_cartera): antes cualquier usuario activo (incluida GERENCIA)
+  podía dispararlo; ahora require_escritura → solo COORDINADOR (GERENCIA recibe 403 y ve el alert ''No se pudo guardar
+  el cierre de cartera.'').'
+- '[reportes] resumen-ejecutivo / cierre-mensual: el origen degradaba por consulta (Promise.allSettled / errores
+  ignorados); ahora si el endpoint agregado falla la página muestra un mensaje de error (regla 8) en vez de datos
+  parciales.'
+- '[reportes] Snapshot semanal de bloqueados: se ejecuta en una transacción propia; si falla (DomainError) se ignora
+  igual que el origen.'
+- '[solicitudes] Adjuntos: el bucket comprobantes-pago era público (getPublicUrl) y en AWS es privado. El front
+  pide URL prefirmada (POST /solicitudes/adjuntos/upload-url) y guarda la key en datos.adjuntos[].path con url=null;
+  GET /solicitudes/{id} firma cada adjunto (1 h). Para filas migradas con URL pública de Supabase se extrae la key
+  de la URL (/storage/v1/object/public/comprobantes-pago/<key>) y se firma igual.'
+- '[solicitudes] Los links de adjuntos en el correo son URLs prefirmadas (pedido de 7 días); con credenciales temporales
+  del rol de la Lambda caducan antes (al expirar la sesión). Antes eran URLs públicas permanentes. El adjunto sigue
+  accesible desde el detalle de la solicitud en el SIC.'
+- '[solicitudes] Rama legacy sin acceso a Gmail: antes 401 ''Sesión de Google expirada...''; ahora 422 (gmail_no_conectado)
+  con el MISMO texto, para no disparar el cierre de sesión de Cognito que hace el cliente HTTP ante un 401. Sigue
+  sin insertar la solicitud.'
+- '[solicitudes] Errores de Gmail: GmailApiSender no distingue 401/403, así que email_error muestra ''Gmail rechazó
+  el envío: <detalle>'' en vez de los textos específicos 401/403 del original; sin refresh token (rama catálogo)
+  se mantiene ''Token de Google no disponible y no se pudo renovar...''.'
+- '[solicitudes] PATCH /solicitudes/{id}/estado: en el original, un analista sobre una solicitud propia que no estuviera
+  en ''PENDIENTE'' (p. ej. las del catálogo nuevo, que nacen ''Pendiente'') recibía ok=true y se insertaba historial,
+  pero el UPDATE quedaba anulado en silencio por RLS. Ahora se responde 403 ''Sin permisos para cambiar el estado
+  de la solicitud'' y no se escribe historial.'
+- '[solicitudes] PATCH /solicitudes/{id} con una accion desconocida ahora responde 400 ''accion inválida'' (antes
+  hacía un update parcial).'
+- '[solicitudes] Comentarios: ahora la solicitud tiene que ser visible para el usuario (404 si no); antes RLS dejaba
+  comentar cualquier solicitud por id.'
+migration_risks:
+- '[analisis_pagos] fn_analisis_* recalculan ICP sobre 9 meses de tbl_pagos: vigilar el límite de 29 s de API Gateway
+  con el volumen real.'
+- '[analisis_pagos] path param {no_recibo}: recibos con caracteres especiales viajan codificados (seg()) y API Gateway
+  los entrega decodificados; el recibo ''—'' (sin número) también se puede desmarcar.'
+- '[auditoria_legal] Archivos huérfanos en expedientes-clientes / garantias-legal si el cliente sube a S3 y nunca
+  confirma; conviene una regla de ciclo de vida o limpieza periódica.'
+- '[auditoria_legal] Migración de datos de Storage: copiar los objetos de los buckets de Supabase garantias-legal
+  y expedientes-clientes a S3 con la MISMA key (las filas guardan esa ruta); documento_pdf_url con URL pública de
+  Supabase sigue funcionando por la extracción de la key.'
+- '[auditoria_legal] El link del correo usa integration_config ''app_url'' (fallback https://cyc-cartera-cofersa.vercel.app);
+  si no se configura con el dominio de Amplify, los links apuntarán a Vercel.'
+- '[auditoria_legal] La Lambda pública ActualizarPerfilApi no tiene autenticación: conviene throttling en API Gateway
+  (usage plan / WAF) para el path /actualizar-perfil/*.'
+- '[centro_recursos] Los objetos existentes del bucket documentos-recursos de Supabase deben copiarse a S3 con la
+  MISMA key (path después de /documentos-recursos/); database/data_migration.sh no cubre Storage. Si no se copian,
+  los documentos migrados devolverán URLs prefirmadas a objetos inexistentes (403/404 de S3).'
+- '[centro_recursos] El CORS del bucket S3 documentos-recursos debe permitir PUT desde el origen del frontend (subida
+  prefirmada) con header Content-Type.'
+- '[clientes] GET /clientes/{cod}/ficha con `volver` del listado ejecuta fn_clientes_lista completa (sin paginar)
+  para Anterior/Siguiente, igual que el original; con ~1.400 clientes es aceptable pero conviene vigilar la latencia
+  (timeout 29 s).'
+- '[clientes] pathParameters de API Gateway: el use case aplica unquote() al código del cliente (equivale al decodeURIComponent
+  del page.tsx); un código con ''%'' literal se decodificaría dos veces.'
+- '[clientes] Los envíos de correo dependen de que cada analista haya conectado Gmail en el SIC (refresh token en
+  usuarios.google_refresh_token).'
+- '[clientes] fn_actualizar_contacto_cliente / fn_actualizar_logistica_cliente no son SECURITY DEFINER: el usuario
+  de la app necesita UPDATE sobre tbl_maestro_clientes (y el trigger de protección del sync GAS debe respetar app.contacto_manual
+  / app.logistica_manual).'
+- '[configuracion] GET /configuracion/log?format=csv sin filtros devuelve todo el log en una respuesta JSON: si
+  config_audit_log crece mucho puede acercarse al límite de 6 MB de respuesta de Lambda/API Gateway (en el origen
+  no había límite). Mitigación: exportar con filtro de fechas.'
+- '[configuracion] Reasignar el analista de un vendedor (PUT /configuracion/vendedores/{cod}) dispara trg_vendedores_trg_propagar_analista_vendedor
+  → fn_propagar_analista_vendedor sobre tbl_maestro_clientes dentro de la misma transacción; con muchos clientes
+  el UPDATE debe terminar dentro de los 29 s de API Gateway (verificado sobre esquema vacío).'
+- '[configuracion] Validación de dominio en altas de usuarios es sensible a mayúsculas como el original (email.split(''@'')[1]
+  exacto): ''X@Cofersa.cr'' se rechaza.'
+- '[dashboard] ''mañana'' de la agenda se calcula, igual que el original, sobre la fecha UTC (Date.now()+1 día),
+  no la de Costa Rica: entre 18:00 y 24:00 CR apunta a pasado mañana. Se conservó a propósito; corregirlo es un
+  cambio funcional a decidir.'
+- '[dashboard] fn_recuperacion, fn_pedidos_retenidos y fn_dashboard_analista_kpis son pesadas: el dashboard coordinador
+  ahora las ejecuta en serie dentro de una Lambda (antes en paralelo desde Next). Vigilar latencia frente al corte
+  de 29 s de API Gateway.'
+- '[dashboard] Mi Cartera devuelve todas las filas de la cartera del analista (~cientos) en un solo JSON; tamaño
+  acotado pero mayor que el resto de respuestas.'
+- '[gestion_cartera] Copiar los objetos del bucket Supabase comprobantes-pago a S3 conservando las keys; sin eso
+  los reportes históricos quedan sin comprobante.'
+- '[gestion_cartera] El matching (fn_matching_saldos_favor) sin cliente recorre todos los saldos/facturas: verificar
+  que termine dentro de los 29 s en Aurora con datos reales (antes se cacheaba 5 min con Cache-Control).'
+- '[gestion_cartera] Las notificaciones de pedidos retenidos dependen del trigger trg_pedidos_retenidos_trg_notificar_pedido_retenido
+  (fn_notificar_pedido_retenido) en Aurora: validar que el job de sync de pedidos (otro módulo) siga insertando
+  en tbl_pedidos_retenidos.'
+- '[gestiones] La bandeja de Coordinador trae todas las gestiones (~8.9k filas hoy) en lotes de 1000 por llamada
+  (cada respuesta muy por debajo de 6 MB); si el volumen crece mucho conviene paginar en la UI.'
+- '[gestiones] Las gestiones con activo=false se siguen devolviendo en la bandeja (el original tampoco filtraba);
+  se conserva el comportamiento.'
+- '[gestiones] ANALISTA_RIESGO sin cartera y GERENCIA ya no pueden registrar ni editar gestiones (antes la RLS lo
+  permitia para analista_email propio): se aplica el guard pedido para el modulo.'
+- '[identidad] Si el cliente OAuth de Google usado por el backend no es el mismo que emitió los refresh tokens guardados,
+  todos los usuarios deberán volver a autorizar Gmail (lo hace solo el flujo de /auth/callback).'
+- '[jobs] HORARIO DE SERVICIO: aws-project-deployer apaga Aurora y las Lambdas fuera de 5:00–17:00 CR. Quedarían
+  sin ejecutarse: el ciclo sync_* de las 17:05 CR (23:05 UTC), check-sync-salud y check-recibos-reversion 17:15,
+  notificar-sla-vencido 17:20, notificar-pedido-en-regla 17:25, conciliar-promesas e historico-cartera 17:30 (el
+  snapshot diario de cartera se perdería todos los días), cierre-cartera-mensual 23:50 CR y cierre-mensual-pedidos-retenidos
+  23:59 CR (el cierre de mes nunca correría). Recomendación: ampliar el horario de servicio a 5:00–18:30 CR (todos
+  los días, porque los sync_* e historico-cartera corren también en fin de semana) y abrir una ventana 23:30–00:30
+  CR para el cierre mensual (o mover ambos cierres dentro del horario, decisión del coordinador). Aurora Serverless
+  v2 pausada agrega ~15–30 s de arranque en el primer job del día.'
+- '[jobs] N8N y GAS dejan de cargar datos el día del corte si no se reconfiguran: deben pasar de ''escribir en Supabase''
+  a POST /ingesta/{tabla} con x-ingesta-key, en lotes ≤ ~5 MB (límite 6 MB del payload síncrono de Lambda; máx.
+  5000 filas por lote) y terminar de cargar pagos_stage antes del :05 (fn_sync_pagos trunca el stage al procesar,
+  igual que antes). Mantener ORIGEN N8N = PRODUCCIÓN de Softland (incidente 24–25/06/2026).'
+- '[jobs] El worker sync-manual-worker corre en la VPC: necesita salida a Internet (NAT Gateway) para llamar a https://n8n.mayoreo.biz;
+  sin NAT el webhook falla por timeout (30 s) y solo se procesa lo que ya haya en stage.'
+- '[jobs] IngestaApi es público (auth none): ingesta_api_key debe ser larga y aleatoria, rotarse en Secrets Manager
+  y compartirse solo con N8N/GAS; aplican WAF rate-limit y throttling del stage. Sin ingesta_api_key en el secreto
+  toda ingesta responde 401 (falla cerrada).'
+- '[jobs] EventBridge Scheduler reintenta por defecto hasta 185 veces en 24 h si la invocación falla; un job que
+  falle por Aurora apagada se reintentaría fuera de hora. Conviene fijar RetryPolicy (p. ej. MaximumRetryAttempts
+  2, MaximumEventAgeInSeconds 3600) y DLQ del schedule en template.yaml.'
+- '[jobs] Los 5 sync_* del :05 corren en 5 Lambdas en paralelo (en pg_cron también eran jobs independientes); fn_check_sync_salud
+  del :15 sigue comparando conteo + sumas.'
+- '[notificaciones] R-SCHEMA-MISMATCH: la tabla mensajes_chat (usada por src/app/api/chat/route.ts y src/hooks/useChat.ts)
+  NO existe en el esquema real de producción, por lo que el chat no funciona en el origen. Decisión: no se inventa
+  la tabla; GET /chat responde 422 ''No se pudieron cargar los mensajes.'' y POST /chat valida igual que el origen
+  (mensaje vacío / >1000 / usuario) y responde 422 ''Error al enviar el mensaje'' (code chat_no_disponible). Si
+  se decide habilitar el chat, hay que crear la tabla con un cambio versionado de BD y reimplementar los casos de
+  uso.'
+- '[notificaciones] La Lambda NotificacionesApi necesita salida a Internet (NAT) para api.hacienda.go.cr y apim.bccr.fi.cr.
+  Hacienda bloqueaba tráfico desde nubes (Vercel) con su WAF: puede pasar lo mismo desde AWS; en ese caso la UI
+  muestra el error de conexión normal (sin romper).'
+- '[notificaciones] Tipo de cambio: dos llamadas secuenciales al BCCR con timeout de 8 s c/u; la Lambda debe tener
+  timeout 29 s.'
+- '[presupuesto] GET /presupuesto/proyeccion hace commit porque fn_proyeccion_cobro inserta el snapshot semanal
+  (antes lo hacía el RPC VOLATILE de PostgREST en su propia transacción).'
+- '[presupuesto] fn_recuperacion_*/fn_presupuesto_preview recorren pagos/facturas completas: timeout de 29 s de
+  API Gateway; validar tiempos con datos reales (antes PostgREST tenía su propio statement_timeout).'
+- '[presupuesto] Sin pago este mes (fn_sin_pago_cliente) no filtra por analista en la base: igual que el original,
+  un ANALISTA en Mi Recuperación ve la lista completa del mes.'
+- '[presupuesto] scope_email: ANALISTA y ANALISTA_RIESGO con cartera quedan acotados a su email en recuperación-mom/periodo/tramos/meta
+  aunque pidan otro; COORDINADOR/GERENCIA/ANALISTA_RIESGO sin cartera ven lo pedido. ''Ver como'' de un coordinador
+  manda su propio email (igual que antes).'
+- '[promesas] Con ''Ver como'' ANALISTA el Coordinador ve solo sus propias promesas (igual que antes: la page pasa
+  ?analista=<su email>); las escrituras se autorizan con el rol real.'
+- '[reportes] historico_cartera se sigue leyendo ORDER BY fecha ASC LIMIT 90 (comportamiento original: las 90 filas
+  más antiguas); con >90 días de histórico la tendencia del resumen ejecutivo no muestra lo más reciente.'
+- '[reportes] Adjuntos base64 en POST /reportes/enviar: límite de payload de Lambda (6 MB) / API Gateway (10 MB);
+  adjuntos grandes fallarán.'
+- '[reportes] maestro_clientes completo (~1.5k filas) viaja en GET /reportes/cierre-mensual; crecer mucho afecta
+  la latencia (límite 29 s).'
+- '[reportes] PostgREST limitaba a 1000 filas las consultas directas (cartera-vencida, gestiones-periodo); ahora
+  no hay límite, resultados pueden ser mayores que antes.'
+- '[solicitudes] Las solicitudes del catálogo nuevo (''Pendiente'', ''En revisión''...) solo las puede cambiar de
+  estado el COORDINADOR (igual que el efecto real del RLS original, que comparaba con ''PENDIENTE'' en mayúsculas).
+  Si el negocio espera que los analistas las muevan, hay que decidir y ajustar la regla.'
+- '[solicitudes] Para que las URLs de adjuntos migradas funcionen, los objetos de Storage de comprobantes-pago se
+  tienen que copiar a S3 con la misma key (ruta dentro del bucket).'
+- '[solicitudes] Un ANALISTA_RIESGO sin cartera ya no puede crear solicitudes desde la ficha del cliente (antes
+  RLS lo permitía a cualquier usuario activo); queda alineado con el guard del módulo pedido en el CLAUDE.md.'
+- '[solicitudes] El correo legacy necesita que el usuario haya conectado Gmail (refresh token en usuarios.google_refresh_token);
+  si no, la solicitud no se crea, como antes con el token vencido.'
+pending_errors: []

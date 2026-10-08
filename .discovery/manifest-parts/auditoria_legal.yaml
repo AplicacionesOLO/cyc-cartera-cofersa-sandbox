@@ -1,0 +1,250 @@
+module:
+  name: auditoria_legal
+  entities: [garantias, garantia_eventos, garantias_consecutivo_anual, personas_legales, solicitudes_actualizacion]
+  use_cases: [ListGarantiasUseCase, ListClientesSinGarantiaUseCase, ListVendedoresActivosUseCase,
+              GetVendedorGarantiaUseCase, ListEventosGarantiaUseCase, BuscarContribuyentesUseCase,
+              GetSaldoContribuyenteUseCase, GetGarantiaActivaContribuyenteUseCase,
+              ListVendedoresContribuyenteUseCase, ListPersonasLegalesUseCase, GetConfigPagareUseCase,
+              ContarGarantiasCarpetaUseCase, SiguienteCarpetaDisponibleUseCase, GetPagareImprimibleUseCase,
+              RegistrarGarantiaUseCase, EditarGarantiaUseCase, CambiarCustodiaGarantiaUseCase,
+              CrearUploadDocumentoGarantiaUseCase, AdjuntarDocumentoGarantiaUseCase, GenerarPagareUseCase,
+              ListSolicitudesActualizacionUseCase, CrearSolicitudActualizacionUseCase,
+              GetSolicitudActualizacionUseCase, GestionarSolicitudActualizacionUseCase,
+              ValidarTokenActualizacionUseCase, CrearUploadsActualizacionUseCase,
+              EnviarActualizacionPerfilUseCase]
+api_endpoints:
+  - {method: GET, path: /garantias, function: AuditoriaLegalApi,
+     handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler, use_case: ListGarantiasUseCase,
+     module: auditoria_legal, auth: cognito, source: ["src/app/(app)/auditoria-legal/garantias/garantias-cliente.tsx:500"]}
+  - {method: POST, path: /garantias, function: AuditoriaLegalApi,
+     handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler, use_case: RegistrarGarantiaUseCase,
+     module: auditoria_legal, auth: cognito,
+     source: ["src/app/api/auditoria-legal/garantias/route.ts:13",
+              "src/app/(app)/auditoria-legal/garantias/ModalRegistrarGarantia.tsx:433",
+              "src/app/(app)/auditoria-legal/garantias/ModalEmitirPagare.tsx:463"]}
+  - {method: GET, path: /garantias/sin-garantia, function: AuditoriaLegalApi,
+     handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler,
+     use_case: ListClientesSinGarantiaUseCase, module: auditoria_legal, auth: cognito,
+     source: ["src/app/(app)/auditoria-legal/garantias/garantias-cliente.tsx:520"]}
+  - {method: GET, path: /garantias/vendedores, function: AuditoriaLegalApi,
+     handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler,
+     use_case: ListVendedoresActivosUseCase, module: auditoria_legal, auth: cognito,
+     source: ["src/app/(app)/auditoria-legal/garantias/garantias-cliente.tsx:446"]}
+  - {method: GET, path: /garantias/contribuyentes, function: AuditoriaLegalApi,
+     handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler,
+     use_case: BuscarContribuyentesUseCase, module: auditoria_legal, auth: cognito,
+     source: ["src/app/(app)/auditoria-legal/garantias/ModalRegistrarGarantia.tsx:269",
+              "src/app/(app)/auditoria-legal/garantias/ModalEmitirPagare.tsx:222"]}
+  - {method: GET, path: /garantias/contribuyentes/saldo, function: AuditoriaLegalApi,
+     handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler,
+     use_case: GetSaldoContribuyenteUseCase, module: auditoria_legal, auth: cognito,
+     source: ["src/app/(app)/auditoria-legal/garantias/ModalRegistrarGarantia.tsx:303",
+              "src/app/(app)/auditoria-legal/garantias/ModalEmitirPagare.tsx:254"]}
+  - {method: GET, path: /garantias/contribuyentes/garantia-activa, function: AuditoriaLegalApi,
+     handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler,
+     use_case: GetGarantiaActivaContribuyenteUseCase, module: auditoria_legal, auth: cognito,
+     source: ["src/app/(app)/auditoria-legal/garantias/ModalRegistrarGarantia.tsx:312",
+              "src/app/(app)/auditoria-legal/garantias/ModalEmitirPagare.tsx:262"]}
+  - {method: GET, path: /garantias/contribuyentes/vendedores, function: AuditoriaLegalApi,
+     handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler,
+     use_case: ListVendedoresContribuyenteUseCase, module: auditoria_legal, auth: cognito,
+     source: ["src/app/(app)/auditoria-legal/garantias/ModalEmitirPagare.tsx:275"]}
+  - {method: GET, path: /garantias/personas-legales, function: AuditoriaLegalApi,
+     handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler,
+     use_case: ListPersonasLegalesUseCase, module: auditoria_legal, auth: cognito,
+     source: ["src/app/(app)/auditoria-legal/garantias/ModalGenerarPagare.tsx:108",
+              "src/app/(app)/auditoria-legal/garantias/ModalGenerarPagare.tsx:161",
+              "src/app/(app)/auditoria-legal/garantias/ModalEmitirPagare.tsx:336",
+              "src/app/(app)/auditoria-legal/garantias/ModalEmitirPagare.tsx:354",
+              "src/app/(app)/auditoria-legal/garantias/ModalEmitirPagare.tsx:373"]}
+  - {method: GET, path: /garantias/config-pagare, function: AuditoriaLegalApi,
+     handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler,
+     use_case: GetConfigPagareUseCase, module: auditoria_legal, auth: cognito,
+     source: ["src/app/(app)/auditoria-legal/garantias/ModalGenerarPagare.tsx:97",
+              "src/app/(app)/auditoria-legal/garantias/ModalEmitirPagare.tsx:174"]}
+  - {method: GET, path: /garantias/carpetas/conteo, function: AuditoriaLegalApi,
+     handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler,
+     use_case: ContarGarantiasCarpetaUseCase, module: auditoria_legal, auth: cognito,
+     source: ["src/app/(app)/auditoria-legal/garantias/ModalRegistrarGarantia.tsx:195"]}
+  - {method: GET, path: /garantias/carpetas/siguiente, function: AuditoriaLegalApi,
+     handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler,
+     use_case: SiguienteCarpetaDisponibleUseCase, module: auditoria_legal, auth: cognito,
+     source: ["src/app/(app)/auditoria-legal/garantias/ModalRegistrarGarantia.tsx:215"]}
+  - {method: PATCH, path: "/garantias/{id}", function: AuditoriaLegalApi,
+     handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler, use_case: EditarGarantiaUseCase,
+     module: auditoria_legal, auth: cognito,
+     source: ["src/app/api/auditoria-legal/garantias/[id]/route.ts:71",
+              "src/app/(app)/auditoria-legal/garantias/ModalRegistrarGarantia.tsx:406"]}
+  - {method: GET, path: "/garantias/{id}/vendedor", function: AuditoriaLegalApi,
+     handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler,
+     use_case: GetVendedorGarantiaUseCase, module: auditoria_legal, auth: cognito,
+     source: ["src/app/(app)/auditoria-legal/garantias/ModalConfirmarEnvioVendedor.tsx:34"]}
+  - {method: GET, path: "/garantias/{id}/eventos", function: AuditoriaLegalApi,
+     handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler,
+     use_case: ListEventosGarantiaUseCase, module: auditoria_legal, auth: cognito,
+     source: ["src/app/(app)/auditoria-legal/garantias/ModalHistorialGarantia.tsx:48"]}
+  - {method: PATCH, path: "/garantias/{id}/custodia", function: AuditoriaLegalApi,
+     handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler,
+     use_case: CambiarCustodiaGarantiaUseCase, module: auditoria_legal, auth: cognito, timeout: 29,
+     source: ["src/app/api/auditoria-legal/garantias/[id]/custodia/route.ts:17",
+              "src/app/(app)/auditoria-legal/garantias/garantias-cliente.tsx:703",
+              "src/app/(app)/auditoria-legal/garantias/garantias-cliente.tsx:704",
+              "src/app/(app)/auditoria-legal/garantias/ModalConfirmarEnvioVendedor.tsx:47",
+              "src/app/(app)/auditoria-legal/garantias/ModalConfirmarEnvioVendedor.tsx:48",
+              "src/app/(app)/auditoria-legal/garantias/ModalConfirmarRecepcion.tsx:44",
+              "src/app/(app)/auditoria-legal/garantias/ModalEmitirPagare.tsx:504",
+              "src/app/(app)/auditoria-legal/garantias/ModalEmitirPagare.tsx:505"]}
+  - {method: POST, path: "/garantias/{id}/documento/upload-url", function: AuditoriaLegalApi,
+     handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler,
+     use_case: CrearUploadDocumentoGarantiaUseCase, module: auditoria_legal, auth: cognito,
+     source: ["src/app/api/auditoria-legal/garantias/[id]/documento/route.ts:69",
+              "src/app/(app)/auditoria-legal/garantias/garantias-cliente.tsx:738"]}
+  - {method: POST, path: "/garantias/{id}/documento", function: AuditoriaLegalApi,
+     handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler,
+     use_case: AdjuntarDocumentoGarantiaUseCase, module: auditoria_legal, auth: cognito,
+     source: ["src/app/api/auditoria-legal/garantias/[id]/documento/route.ts:19",
+              "src/app/api/auditoria-legal/garantias/[id]/documento/route.ts:74"]}
+  - {method: GET, path: "/garantias/{id}/pagare", function: AuditoriaLegalApi,
+     handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler,
+     use_case: GetPagareImprimibleUseCase, module: auditoria_legal, auth: cognito,
+     source: ["src/app/(print)/pagare/[id]/page.tsx:23", "src/app/(print)/pagare/[id]/page.tsx:42",
+              "src/app/(print)/pagare/[id]/page.tsx:46", "src/app/(print)/pagare/[id]/page.tsx:54",
+              "src/app/(print)/pagare/[id]/page.tsx:62"]}
+  - {method: POST, path: "/garantias/{id}/pagare", function: AuditoriaLegalApi,
+     handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler, use_case: GenerarPagareUseCase,
+     module: auditoria_legal, auth: cognito,
+     source: ["src/app/api/auditoria-legal/garantias/[id]/pagare/route.ts:42",
+              "src/app/(app)/auditoria-legal/garantias/ModalGenerarPagare.tsx:251",
+              "src/app/(app)/auditoria-legal/garantias/ModalEmitirPagare.tsx:491"]}
+  - {method: GET, path: /solicitudes-actualizacion, function: AuditoriaLegalApi,
+     handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler,
+     use_case: ListSolicitudesActualizacionUseCase, module: auditoria_legal, auth: cognito,
+     source: ["src/app/(app)/auditoria-legal/garantias/garantias-cliente.tsx:402"]}
+  - {method: POST, path: /solicitudes-actualizacion, function: AuditoriaLegalApi,
+     handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler,
+     use_case: CrearSolicitudActualizacionUseCase, module: auditoria_legal, auth: cognito, timeout: 29,
+     source: ["src/app/api/auditoria-legal/solicitudes-actualizacion/route.ts:15",
+              "src/app/(app)/auditoria-legal/garantias/ModalSolicitarActualizacion.tsx:37",
+              "src/app/(app)/auditoria-legal/garantias/ModalSolicitarActualizacion.tsx:46"]}
+  - {method: GET, path: "/solicitudes-actualizacion/{id}", function: AuditoriaLegalApi,
+     handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler,
+     use_case: GetSolicitudActualizacionUseCase, module: auditoria_legal, auth: cognito,
+     source: ["src/app/api/auditoria-legal/solicitudes-actualizacion/[id]/route.ts:29",
+              "src/app/(app)/auditoria-legal/garantias/garantias-cliente.tsx:782",
+              "src/app/(app)/auditoria-legal/garantias/ModalRevisarActualizacion.tsx:34"]}
+  - {method: PATCH, path: "/solicitudes-actualizacion/{id}", function: AuditoriaLegalApi,
+     handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler,
+     use_case: GestionarSolicitudActualizacionUseCase, module: auditoria_legal, auth: cognito, timeout: 29,
+     source: ["src/app/api/auditoria-legal/solicitudes-actualizacion/[id]/route.ts:72",
+              "src/app/(app)/auditoria-legal/garantias/garantias-cliente.tsx:805",
+              "src/app/(app)/auditoria-legal/garantias/ModalRevisarActualizacion.tsx:56",
+              "src/app/(app)/auditoria-legal/garantias/ModalRevisarActualizacion.tsx:75",
+              "src/app/(app)/auditoria-legal/garantias/ModalSolicitarActualizacion.tsx:41"]}
+  - {method: GET, path: "/actualizar-perfil/{token}", function: ActualizarPerfilApi,
+     handler: entrypoints.lambda_handlers.actualizar_perfil.actualizar_perfil_handler,
+     use_case: ValidarTokenActualizacionUseCase, module: auditoria_legal, auth: none,
+     public_reason: "Formulario de actualización de datos que recibe el cliente externo (sin cuenta del SIC) por
+       email; autorizado por token de un solo uso (256 bits, se guarda solo su SHA-256) con expiración de 7 días.",
+     source: ["src/app/api/actualizar-perfil/[token]/route.ts:22", "src/app/actualizar-perfil/[token]/page.tsx:9",
+              "src/lib/auditoria-legal/validar-token-solicitud.ts:25"]}
+  - {method: POST, path: "/actualizar-perfil/{token}/archivos", function: ActualizarPerfilApi,
+     handler: entrypoints.lambda_handlers.actualizar_perfil.actualizar_perfil_handler,
+     use_case: CrearUploadsActualizacionUseCase, module: auditoria_legal, auth: none,
+     public_reason: "Formulario público de actualización de datos (cliente externo por email): firma las subidas de
+       cédula/personería a S3 solo si el token de un solo uso sigue vigente.",
+     source: ["src/app/api/actualizar-perfil/[token]/route.ts:92", "src/app/api/actualizar-perfil/[token]/route.ts:102"]}
+  - {method: POST, path: "/actualizar-perfil/{token}", function: ActualizarPerfilApi,
+     handler: entrypoints.lambda_handlers.actualizar_perfil.actualizar_perfil_handler,
+     use_case: EnviarActualizacionPerfilUseCase, module: auditoria_legal, auth: none,
+     public_reason: "Formulario público de actualización de datos (cliente externo por email), validado por token
+       de un solo uso con expiración; el compare-and-swap ENVIADA→DATOS_RECIBIDOS lo invalida al usarse.",
+     source: ["src/app/api/actualizar-perfil/[token]/route.ts:37",
+              "src/app/actualizar-perfil/[token]/formulario-actualizacion.tsx:88"]}
+storage_buckets:
+  - {name: garantias-legal, functions: [AuditoriaLegalApi]}
+  - {name: expedientes-clientes, functions: [AuditoriaLegalApi, ActualizarPerfilApi]}
+authorization_rules:
+  - {table: public.garantias, policy: garantias_select_activos, command: SELECT,
+     enforced_in: "List/Get*UseCase de auditoria_legal (require_modulo = require_usuario activo; ANALISTA_RIESGO 403)"}
+  - {table: public.garantias, policy: garantias_insert_activos, command: INSERT,
+     enforced_in: "RegistrarGarantiaUseCase (require_escritura_modulo: usuario activo, no ANALISTA_RIESGO, no GERENCIA)"}
+  - {table: public.garantias, policy: garantias_update_activos, command: UPDATE,
+     enforced_in: "EditarGarantiaUseCase, CambiarCustodiaGarantiaUseCase, AdjuntarDocumentoGarantiaUseCase,
+       GenerarPagareUseCase, RegistrarGarantiaUseCase (sustitución) — require_escritura_modulo"}
+  - {table: public.garantia_eventos, policy: garantia_eventos_select_activos, command: SELECT,
+     enforced_in: "ListEventosGarantiaUseCase (require_modulo)"}
+  - {table: public.garantia_eventos, policy: garantia_eventos_insert_activos, command: INSERT,
+     enforced_in: "Use cases de escritura de garantías (require_escritura_modulo); usuario_id = perfil del principal"}
+  - {table: public.garantias_consecutivo_anual, policy: garantias_consecutivo_anual_bloqueada, command: ALL,
+     enforced_in: "Sin acceso directo: solo fn_siguiente_consecutivo_garantia desde RegistrarGarantiaUseCase (repository)"}
+  - {table: public.personas_legales, policy: personas_legales_select_activos, command: SELECT,
+     enforced_in: "ListPersonasLegalesUseCase (require_modulo)"}
+  - {table: public.personas_legales, policy: personas_legales_insert_activos, command: INSERT,
+     enforced_in: "GenerarPagareUseCase y GestionarSolicitudActualizacionUseCase APROBAR (require_escritura_modulo)"}
+  - {table: public.personas_legales, policy: personas_legales_update_activos, command: UPDATE,
+     enforced_in: "GenerarPagareUseCase y GestionarSolicitudActualizacionUseCase APROBAR (upsert, require_escritura_modulo)"}
+  - {table: public.solicitudes_actualizacion, policy: solicitudes_actualizacion_select_activos, command: SELECT,
+     enforced_in: "ListSolicitudesActualizacionUseCase, GetSolicitudActualizacionUseCase (require_modulo); portal
+       público: solo por SHA-256 del token vigente (ValidarTokenActualizacionUseCase)"}
+  - {table: public.solicitudes_actualizacion, policy: solicitudes_actualizacion_insert_activos, command: INSERT,
+     enforced_in: "CrearSolicitudActualizacionUseCase (require_escritura_modulo + límite 30/hora por usuario)"}
+  - {table: public.solicitudes_actualizacion, policy: solicitudes_actualizacion_update_activos, command: UPDATE,
+     enforced_in: "GestionarSolicitudActualizacionUseCase (require_escritura_modulo); EnviarActualizacionPerfilUseCase
+       (token vigente + CAS estado ENVIADA)"}
+  - {table: storage.objects, policy: usuarios_activos_suben_garantias_legal, command: INSERT,
+     enforced_in: "CrearUploadDocumentoGarantiaUseCase (require_escritura_modulo antes de firmar la URL PUT; key
+       generada por el backend `<id>_<ms>.pdf`, PDF ≤4MB)"}
+scheduled_jobs: []
+async_workers: []
+structural_changes:
+  - "Las 8 API Routes de /api/auditoria-legal/** y /api/actualizar-perfil/[token] pasan a la Lambda AuditoriaLegalApi
+     (paths /garantias*, /solicitudes-actualizacion*) y a la Lambda pública ActualizarPerfilApi
+     (/actualizar-perfil/{token}*). Mismos cuerpos, respuestas y textos de error."
+  - "Las consultas directas de supabase-js de la pantalla de Garantías y sus modales (fn_garantias_lista,
+     fn_garantias_clientes_sin_garantia, fn_buscar_contribuyentes, fn_saldo_contribuyente,
+     fn_vendedores_por_contribuyente, fn_contar_garantias_en_carpeta, fn_siguiente_carpeta_disponible,
+     garantia_eventos+usuarios, personas_legales, config_sistema, vendedores, solicitudes_actualizacion) son
+     endpoints GET con intención bajo /garantias/* y /solicitudes-actualizacion."
+  - "Subidas: el PDF firmado (antes multipart a la API Route → bucket público) y los archivos del portal público
+     (antes multipart) ahora van directo a S3 con URL prefirmada PUT emitida por el backend, y un segundo POST
+     confirma (el backend verifica existencia, prefijo de la key y tamaño con list())."
+  - "garantias.documento_pdf_url guarda ahora la key S3 (`<id>_<ms>.pdf`); al listar se devuelve una URL prefirmada
+     GET (1 h). Las filas migradas con la URL pública de Supabase se resuelven extrayendo la key tras
+     '/garantias-legal/'."
+  - "Gmail (correo al vendedor en ENTREGAR, correo de Auditoría Anual al crear/reenviar solicitud) lo envía el
+     backend con UsuarioMailer; el front ya no manda providerToken/providerRefreshToken."
+  - "POST /garantias corre en una sola transacción (consecutivo, desactivar anterior, insertar, eventos, vínculo,
+     notificación al coordinador): ya no hace falta la compensación manual de reactivar la anterior."
+  - "fetchSolicitudes: el backend devuelve todas las solicitudes ENVIADA/DATOS_RECIBIDOS/APROBADA/EXPIRADA y el
+     front filtra por los contribuyentes del tab (antes .in('contribuyente', [...]) con cientos de valores, que no
+     cabe en una query string)."
+  - "Hacienda: los modales usan useHaciendaController (módulo notificaciones, GET /hacienda) en vez de fetch('/api/hacienda')."
+  - "Borrados del front (solo servidor, ya en el backend): lib/auditoria-legal/token-solicitud.ts,
+     validar-token-solicitud.ts, storage-expedientes.ts; email-actualizacion-perfil.ts queda solo con el asunto
+     (vista previa del modal); el HTML vive en domain/services/auditoria_legal_correos.py."
+incompatibilities:
+  - "Rate limit de solicitudes (30/hora): antes respondía 429; ahora 422 (BusinessRuleViolation code rate_limited)
+     con el mismo mensaje — el adaptador HTTP no tiene 429."
+  - "Usuario sin fila en usuarios: antes 400 'Tu usuario no está registrado en el sistema.'; ahora 403
+     acceso_denegado de require_usuario (el layout ya no deja entrar a esos usuarios)."
+  - "Error de Gmail: antes se distinguía 401/403 de Gmail con textos propios; ahora email_error trae el mensaje de
+     UsuarioMailer ('No se pudo obtener acceso a Gmail...' sin refresh token, o 'Gmail rechazó el envío: ...')."
+  - "GET /actualizar-perfil/{token} con token inválido devuelve 404 {error:{message:'Este enlace ya no es válido.'}}
+     en vez de {valido:false}; la página pública lo trata igual (muestra 'Este enlace ya no es válido')."
+  - "El tope de tamaño de la subida a S3 no se puede imponer en una URL PUT prefirmada: se valida el tamaño
+     declarado al firmar y el real al confirmar (si excede se borra el objeto y se responde el mismo error)."
+migration_risks:
+  - "Archivos huérfanos en expedientes-clientes / garantias-legal si el cliente sube a S3 y nunca confirma; conviene
+     una regla de ciclo de vida o limpieza periódica."
+  - "Migración de datos de Storage: copiar los objetos de los buckets de Supabase garantias-legal y
+     expedientes-clientes a S3 con la MISMA key (las filas guardan esa ruta); documento_pdf_url con URL pública
+     de Supabase sigue funcionando por la extracción de la key."
+  - "El link del correo usa integration_config 'app_url' (fallback https://cyc-cartera-cofersa.vercel.app); si no
+     se configura con el dominio de Amplify, los links apuntarán a Vercel."
+  - "La Lambda pública ActualizarPerfilApi no tiene autenticación: conviene throttling en API Gateway (usage plan /
+     WAF) para el path /actualizar-perfil/*."
+pending:
+  - "jobs: el cron diario expirar_solicitudes_actualizacion_diario (SELECT fn_expirar_solicitudes_actualizacion())
+     lo debe programar el módulo jobs; la función existe en Aurora sin cambios."
+  - "Coordinador/infra: CORS del bucket expedientes-clientes debe permitir PUT desde el dominio público del front
+     (el portal /actualizar-perfil lo usa un cliente sin sesión), igual que garantias-legal para el SIC."

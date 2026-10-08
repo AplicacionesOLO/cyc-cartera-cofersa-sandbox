@@ -1,0 +1,360 @@
+module:
+  name: jobs
+  entities:
+  - public.pagos_stage
+  - public.pedidos_retenidos_stage
+  - public.sync_log
+  - public.sync_salud
+  - public.cartera
+  - public.facturas
+  - public.saldos_favor
+  - public.maestro_clientes
+  use_cases:
+  - EjecutarTareaProgramadaUseCase
+  - SincronizarTablaUseCase
+  - EncolarSyncManualUseCase
+  - ProcesarSyncManualUseCase
+  - ListarHistorialSyncUseCase
+  - ObtenerEstadoSyncUseCase
+  - IngestarLoteUseCase
+  - ConciliarPromesasManualUseCase
+api_endpoints:
+- method: POST
+  path: /sync/pagos
+  function: JobsApi
+  handler: entrypoints.lambda_handlers.jobs.jobs_handler
+  use_case: EncolarSyncManualUseCase
+  module: jobs
+  auth: cognito
+  source:
+  - src/components/configuracion/TabSincronizacion.tsx:157
+  - src/app/api/sync/pagos/route.ts:36
+  - src/app/api/sync/pagos/route.ts:54
+  timeout: 10
+- method: POST
+  path: /sync/pedidos-retenidos
+  function: JobsApi
+  handler: entrypoints.lambda_handlers.jobs.jobs_handler
+  use_case: EncolarSyncManualUseCase
+  module: jobs
+  auth: cognito
+  source:
+  - src/components/configuracion/TabSincronizacion.tsx:204
+  - src/app/api/sync/pedidos-retenidos/route.ts:40
+  - src/app/api/sync/pedidos-retenidos/route.ts:57
+  timeout: 10
+- method: POST
+  path: /sync/cartera
+  function: JobsApi
+  handler: entrypoints.lambda_handlers.jobs.jobs_handler
+  use_case: SincronizarTablaUseCase
+  module: jobs
+  auth: cognito
+  source:
+  - src/components/configuracion/TabSincronizacion.tsx:171
+  - src/app/api/sync/cartera/route.ts:31
+  timeout: 29
+- method: POST
+  path: /sync/facturas
+  function: JobsApi
+  handler: entrypoints.lambda_handlers.jobs.jobs_handler
+  use_case: SincronizarTablaUseCase
+  module: jobs
+  auth: cognito
+  source:
+  - src/components/configuracion/TabSincronizacion.tsx:182
+  - src/app/api/sync/facturas/route.ts:31
+  timeout: 29
+- method: POST
+  path: /sync/saldos_favor
+  function: JobsApi
+  handler: entrypoints.lambda_handlers.jobs.jobs_handler
+  use_case: SincronizarTablaUseCase
+  module: jobs
+  auth: cognito
+  source:
+  - src/components/configuracion/TabSincronizacion.tsx:193
+  - src/app/api/sync/saldos_favor/route.ts:31
+  timeout: 29
+- method: GET
+  path: /sync/historial
+  function: JobsApi
+  handler: entrypoints.lambda_handlers.jobs.jobs_handler
+  use_case: ListarHistorialSyncUseCase
+  module: jobs
+  auth: cognito
+  source:
+  - src/components/configuracion/TabSincronizacion.tsx:125
+  timeout: 10
+- method: GET
+  path: /sync/estado
+  function: JobsApi
+  handler: entrypoints.lambda_handlers.jobs.jobs_handler
+  use_case: ObtenerEstadoSyncUseCase
+  module: jobs
+  auth: cognito
+  source:
+  - src/components/configuracion/TabSincronizacion.tsx:125
+  - src/components/configuracion/TabSincronizacion.tsx:157
+  - src/components/configuracion/TabSincronizacion.tsx:204
+  timeout: 10
+- method: POST
+  path: /ingesta/{tabla}
+  function: IngestaApi
+  handler: entrypoints.lambda_handlers.ingesta.ingesta_handler
+  use_case: IngestarLoteUseCase
+  module: jobs
+  auth: none
+  public_reason: integración máquina a máquina N8N/GAS; autenticada con header x-ingesta-key comparado en tiempo
+    constante contra ingesta_api_key de Secrets Manager; WAF + throttling
+  source:
+  - CLAUDE.md:82
+  - CLAUDE.md:87
+  - CLAUDE.md:90
+  - CLAUDE.md:91
+  - supabase/migrations/20260615_saldos_favor_unique.sql:3
+  - supabase/migrations/20260717_pedidos_retenidos.sql:29
+  - supabase/migrations/20260722_maestro_clientes_sincronizar_analista_nombre.sql:2
+  - supabase/migrations/20260714_logistica_despacho_maestro_clientes.sql:2
+  timeout: 29
+  memory: 1024
+- method: POST
+  path: /jobs/conciliar-promesas
+  function: JobsApi
+  handler: entrypoints.lambda_handlers.jobs.jobs_handler
+  use_case: ConciliarPromesasManualUseCase
+  module: jobs
+  auth: cognito
+  source:
+  - supabase/functions/mark-promesas-incumplidas/index.ts:1
+storage_buckets: []
+authorization_rules:
+- table: public.pagos_stage
+  policy: solo_usuarios_activos
+  command: ALL
+  enforced_in: IngestarLoteUseCase (x-ingesta-key, service_role) + EjecutarTareaProgramadaUseCase / ProcesarSyncManualUseCase
+    (service_role vía fn_sync_pagos); ningún endpoint de usuario lee ni escribe el stage
+- table: public.pedidos_retenidos_stage
+  policy: pedidos_retenidos_stage_activos
+  command: ALL
+  enforced_in: IngestarLoteUseCase (x-ingesta-key, service_role) + EjecutarTareaProgramadaUseCase / ProcesarSyncManualUseCase
+    (service_role vía fn_sync_pedidos_retenidos); ningún endpoint de usuario lo expone
+- table: public.sync_log
+  policy: sync_log_insert_usuarios_activos
+  command: INSERT
+  enforced_in: 'Solo las fn_sync_* insertan (SECURITY DEFINER): SincronizarTablaUseCase / EncolarSyncManualUseCase
+    (require_usuario + require_coordinador) y jobs programados (service_role); no hay INSERT directo desde el API'
+- table: public.sync_log
+  policy: sync_log_select_usuarios_activos
+  command: SELECT
+  enforced_in: 'ListarHistorialSyncUseCase / ObtenerEstadoSyncUseCase (require_usuario: usuario activo)'
+- table: public.sync_salud
+  policy: Solo coordinador lee sync_salud
+  command: SELECT
+  enforced_in: Sin endpoint de lectura (el front original no la consultaba); solo la usa fn_check_sync_salud desde
+    el job check-sync-salud (service_role). Un futuro GET debe usar require_coordinador
+scheduled_jobs:
+- name: check-recibos-reversion
+  schedule: cron(15 23 ? * MON-FRI *)
+  function: job-check-recibos-reversion
+  handler: entrypoints.lambda_handlers.jobs_programados.check_recibos_reversion_job
+  timeout: 120
+  source: 'pg_cron: check_recibos_reversion ''15 23 * * 1-5'''
+- name: check-sync-salud
+  schedule: cron(15 13-23 ? * MON-FRI *)
+  function: job-check-sync-salud
+  handler: entrypoints.lambda_handlers.jobs_programados.check_sync_salud_job
+  timeout: 120
+  source: 'pg_cron: check_sync_salud ''15 13-23 * * 1-5'''
+- name: cierre-cartera-mensual
+  schedule: cron(50 5 * * ? *)
+  function: job-cierre-cartera-mensual
+  handler: entrypoints.lambda_handlers.jobs_programados.cierre_cartera_mensual_job
+  timeout: 300
+  source: 'pg_cron: cierre-cartera-mensual ''50 5 * * *'''
+- name: cierre-mensual-pedidos-retenidos
+  schedule: cron(59 5 * * ? *)
+  function: job-cierre-mensual-pedidos-retenidos
+  handler: entrypoints.lambda_handlers.jobs_programados.cierre_mensual_pedidos_retenidos_job
+  timeout: 300
+  source: 'pg_cron: cierre-mensual-pedidos-retenidos ''59 5 * * *'''
+- name: conciliar-promesas
+  schedule: cron(30 23 * * ? *)
+  function: job-conciliar-promesas
+  handler: entrypoints.lambda_handlers.jobs_programados.conciliar_promesas_job
+  timeout: 300
+  source: 'pg_cron: evening-conciliar-promesas ''30 23 * * *'''
+- name: expirar-solicitudes-actualizacion
+  schedule: cron(0 12 * * ? *)
+  function: job-expirar-solicitudes-actualizacion
+  handler: entrypoints.lambda_handlers.jobs_programados.expirar_solicitudes_actualizacion_job
+  timeout: 120
+  source: 'pg_cron: expirar_solicitudes_actualizacion_diario ''0 12 * * *'''
+- name: historico-cartera
+  schedule: cron(30 23 * * ? *)
+  function: job-historico-cartera
+  handler: entrypoints.lambda_handlers.jobs_programados.historico_cartera_job
+  timeout: 300
+  source: 'pg_cron: historico_cartera_diario ''30 23 * * *'''
+- name: notificar-pedido-en-regla
+  schedule: cron(25 13-23 ? * MON-FRI *)
+  function: job-notificar-pedido-en-regla
+  handler: entrypoints.lambda_handlers.jobs_programados.notificar_pedido_en_regla_job
+  timeout: 120
+  source: 'pg_cron: notificar-pedido-en-regla ''25 13-23 * * 1-5'''
+- name: notificar-promesas-hoy
+  schedule: cron(0 13 ? * MON-FRI *)
+  function: job-notificar-promesas-hoy
+  handler: entrypoints.lambda_handlers.jobs_programados.notificar_promesas_hoy_job
+  timeout: 120
+  source: 'pg_cron: notificar-promesas-hoy ''0 13 * * 1-5'''
+- name: notificar-sin-gestion
+  schedule: cron(10 13 ? * MON-FRI *)
+  function: job-notificar-sin-gestion
+  handler: entrypoints.lambda_handlers.jobs_programados.notificar_sin_gestion_job
+  timeout: 120
+  source: 'pg_cron: notificar-sin-gestion ''10 13 * * 1-5'''
+- name: notificar-sla-vencido
+  schedule: cron(20 13-23 ? * MON-FRI *)
+  function: job-notificar-sla-vencido
+  handler: entrypoints.lambda_handlers.jobs_programados.notificar_sla_vencido_job
+  timeout: 120
+  source: 'pg_cron: notificar-sla-vencido ''20 13-23 * * 1-5'''
+- name: snapshot-proyeccion-semana
+  schedule: cron(5 13 ? * MON *)
+  function: job-snapshot-proyeccion-semana
+  handler: entrypoints.lambda_handlers.jobs_programados.snapshot_proyeccion_semana_job
+  timeout: 300
+  source: 'pg_cron: snapshot_proyeccion_lunes ''5 13 * * 1'''
+- name: sync-pagos
+  schedule: cron(5 13-23 * * ? *)
+  function: job-sync-pagos
+  handler: entrypoints.lambda_handlers.jobs_programados.sync_pagos_job
+  timeout: 120
+  source: 'pg_cron: sync_pagos_0705cr..1705cr (11 jobs ''5 13..23 * * *'', 07:05–17:05 CR)'
+- name: sync-cartera
+  schedule: cron(5 13-23 * * ? *)
+  function: job-sync-cartera
+  handler: entrypoints.lambda_handlers.jobs_programados.sync_cartera_job
+  timeout: 60
+  source: 'pg_cron: sync_cartera_0705cr..1705cr (11 jobs ''5 13..23 * * *'', 07:05–17:05 CR)'
+- name: sync-facturas
+  schedule: cron(5 13-23 * * ? *)
+  function: job-sync-facturas
+  handler: entrypoints.lambda_handlers.jobs_programados.sync_facturas_job
+  timeout: 60
+  source: 'pg_cron: sync_facturas_0705cr..1705cr (11 jobs ''5 13..23 * * *'', 07:05–17:05 CR)'
+- name: sync-saldos-favor
+  schedule: cron(5 13-23 * * ? *)
+  function: job-sync-saldos-favor
+  handler: entrypoints.lambda_handlers.jobs_programados.sync_saldos_favor_job
+  timeout: 60
+  source: 'pg_cron: sync_saldos_0705cr..1705cr (11 jobs ''5 13..23 * * *'', 07:05–17:05 CR)'
+- name: sync-pedidos-retenidos
+  schedule: cron(5 13-23 * * ? *)
+  function: job-sync-pedidos-retenidos
+  handler: entrypoints.lambda_handlers.jobs_programados.sync_pedidos_retenidos_job
+  timeout: 120
+  source: 'pg_cron: sync_pedidos_retenidos_0705cr..1705cr (11 jobs ''5 13..23 * * *'', 07:05–17:05 CR)'
+async_workers:
+- name: sync-manual
+  queue: sync-manual
+  function: sync-manual-worker
+  handler: entrypoints.lambda_handlers.jobs.sync_manual_worker_handler
+  batch_size: 1
+  timeout: 90
+  max_receive_count: 5
+  producers:
+  - JobsApi
+structural_changes:
+- 'pg_cron → EventBridge Scheduler (ScheduleV2, UTC): 17 Lambdas programadas, una por job lógico (handlers en entrypoints/lambda_handlers/jobs_programados.py
+  → EjecutarTareaProgramadaUseCase con uow_factory(None) = service_role). Mismos horarios UTC; los 55 jobs sync_*_HHMMcr
+  (5 tipos × 11 horas) se consolidan en 5 reglas cron(5 13-23 * * ? *) todos los días, igual que el original. Las
+  fn_* siguen leyendo sus toggles tbl_config_sistema.automatizacion_*_activa.'
+- 'POST /api/sync/{pagos,pedidos-retenidos} esperaban a N8N (hasta 30 s) + 12 s (> 29 s de API Gateway): ahora POST
+  /sync/pagos y /sync/pedidos-retenidos validan COORDINADOR, encolan en SQS sync-manual y responden 202 {ok, encolado,
+  tipo, solicitado_en, n8n_configurado}. El worker sync-manual-worker (timeout 90 s, visibility 540 s, DLQ, maxReceive
+  5, ReportBatchItemFailures, idempotencia DynamoDB) llama al webhook N8N (n8n_webhook_pagos_url con fallback https://n8n.mayoreo.biz/webhook/Flujos_SIC;
+  n8n_webhook_pedidos_retenidos_url, sin fallback como el original), espera 12 s y ejecuta fn_sync_* con p_ejecutado_por
+  = email del coordinador.'
+- 'UI (TabSincronizacion.tsx): mismo JSX; los datos salen de views/sincronizacion (sincronizacionApi + useSincronizacionController).
+  Para pagos/pedidos mantiene el estado ''en proceso'' (fases originales) y consulta GET /sync/estado?tipo=&desde=solicitado_en
+  cada 4 s (máx. 120 s) hasta ver la fila nueva de sync_log; luego arma el mismo mensaje y refresca GET /sync/historial
+  (antes supabase.from(''sync_log'') limit 600).'
+- 'cartera/facturas/saldos_favor manuales siguen síncronos: POST /sync/{cartera,facturas,saldos_favor} → fn_sync_*(p_ejecutado_por)
+  → {ok, resultado}. Se borraron las 5 route.ts de src/app/api/sync/.'
+- 'Ingesta externa: N8N y Google Apps Script ya NO pueden escribir directo en la base (Aurora en VPC privada, sin
+  PostgREST). Nuevo POST /ingesta/{tabla} (Lambda IngestaApi, sin Cognito, header x-ingesta-key validado con hmac.compare_digest
+  contra ingesta_api_key del secreto) para pagos_stage, pedidos_retenidos_stage, cartera, facturas, saldos_favor
+  y maestro_clientes. Cuerpo {modo: reemplazar|agregar|actualizar, lote, total_lotes, sync_id?, purgar_anteriores?,
+  filas:[...]}; lista blanca de columnas por tabla (domain/entities/jobs.py TABLAS_INGESTA; columna desconocida
+  = 400, igual que PostgREST); todas las filas del lote con las mismas columnas; máx. 5000 filas/lote; cada lote
+  es UNA transacción. reemplazar: DELETE de la tabla destino en el lote 1 y luego INSERT. actualizar: INSERT ...
+  ON CONFLICT (clave natural) DO UPDATE de las columnas recibidas (+ updated_at = now()); con purgar_anteriores
+  en el último lote borra las filas de otro sync_id (equivale al upsert + ''DELETE por sync_id'' que hacía N8N en
+  saldos_favor). El sync_id del cuerpo se agrega a las filas que no lo traen. En las tablas stage los valores se
+  guardan como texto (fn_cargar_pagos_stage / fn_sync_pedidos_retenidos castean igual que antes).'
+- 'Modos por tabla: pagos_stage y pedidos_retenidos_stage → reemplazar|agregar; cartera y facturas → reemplazar|agregar|actualizar
+  (clave contribuyente+cliente_cod / contribuyente+documento); saldos_favor → agregar|actualizar (clave documento;
+  sin reemplazar para no perder estado_manual/aplicado_por/aplicado_en del SIC); maestro_clientes → agregar|actualizar
+  (clave cliente_cod, upsert diario del GAS; sin reemplazar: tbl_solicitudes.cliente_id ON DELETE SET NULL y columnas
+  SIC-exclusivas). maestro_clientes no acepta estado_manual, asignacion_manual ni la logística SIC (dia_visita,
+  dia_pago, metodo_pago, observaciones_logistica, hora_recibo_*, persona_recibe); los triggers fn_proteger_contacto_manual,
+  fn_asignar_analista_por_vendedor y fn_sincronizar_analista_nombre siguen activos.'
+- 'Se copiaron tal cual los assets de la skill (assets/backend-async): application/ports/message_queue.py, application/ports/idempotency_store.py,
+  entrypoints/lambda_handlers/sqs_adapter.py, infrastructure/aws/sqs_message_queue.py, infrastructure/aws/dynamodb_idempotency_store.py,
+  tests/unit/test_sqs_adapter.py. Como container.py es base compartida, jobs.py arma localmente SqsMessageQueue(SYNC_MANUAL_QUEUE_URL)
+  y DynamoDbIdempotencyStore(IDEMPOTENCY_TABLE_NAME) (nombres de env que genera generate_sam.py).'
+- Edge Function mark-promesas-incumplidas (HTTP, obsoleta en el origen) → POST /jobs/conciliar-promesas (solo COORDINADOR)
+  que ejecuta fn_conciliar_promesas a pedido; la ejecución diaria sigue en el job job-evening-conciliar-promesas.
+incompatibilities:
+- 'El 202 de /sync/pagos y /sync/pedidos-retenidos ya no trae resultado ni n8n_status: la UI lo reconstruye de la
+  fila de sync_log (insertados, en_stage, omitidos, total_tabla). Para pedidos, ''actualizados'' no se guarda en
+  sync_log: se deriva como max(en_stage - insertados - omitidos, 0) (exacto salvo duplicados en el stage).'
+- Si el worker tarda más de 120 s la UI muestra 'La sincronización sigue en proceso; el historial se actualizará
+  al terminar.' en vez de bloquear el botón.
+- 'Un fallo de conexión/BD en el worker se reintenta (SQS, hasta 5 veces y luego DLQ) y vuelve a llamar al webhook
+  N8N; el original fallaba una sola vez con 500. Los errores de negocio de fn_sync_* no reintentan: la función los
+  registra en sync_log.error y devuelve {error}, como antes.'
+- 'EventBridge Scheduler no tiene equivalente a cron.job_run_details: el historial de ejecuciones queda en CloudWatch
+  Logs/Metrics de cada Lambda (y en sync_log para los sync_*).'
+- 'La ingesta no es el upsert genérico de PostgREST (on_conflict libre): la clave de conflicto es fija por tabla
+  y el modo actualizar es explícito.'
+migration_risks:
+- 'HORARIO DE SERVICIO: aws-project-deployer apaga Aurora y las Lambdas fuera de 5:00–17:00 CR. Quedarían sin ejecutarse:
+  el ciclo sync_* de las 17:05 CR (23:05 UTC), check-sync-salud y check-recibos-reversion 17:15, notificar-sla-vencido
+  17:20, notificar-pedido-en-regla 17:25, conciliar-promesas e historico-cartera 17:30 (el snapshot diario de cartera
+  se perdería todos los días), cierre-cartera-mensual 23:50 CR y cierre-mensual-pedidos-retenidos 23:59 CR (el cierre
+  de mes nunca correría). Recomendación: ampliar el horario de servicio a 5:00–18:30 CR (todos los días, porque
+  los sync_* e historico-cartera corren también en fin de semana) y abrir una ventana 23:30–00:30 CR para el cierre
+  mensual (o mover ambos cierres dentro del horario, decisión del coordinador). Aurora Serverless v2 pausada agrega
+  ~15–30 s de arranque en el primer job del día.'
+- 'N8N y GAS dejan de cargar datos el día del corte si no se reconfiguran: deben pasar de ''escribir en Supabase''
+  a POST /ingesta/{tabla} con x-ingesta-key, en lotes ≤ ~5 MB (límite 6 MB del payload síncrono de Lambda; máx.
+  5000 filas por lote) y terminar de cargar pagos_stage antes del :05 (fn_sync_pagos trunca el stage al procesar,
+  igual que antes). Mantener ORIGEN N8N = PRODUCCIÓN de Softland (incidente 24–25/06/2026).'
+- 'El worker sync-manual-worker corre en la VPC: necesita salida a Internet (NAT Gateway) para llamar a https://n8n.mayoreo.biz;
+  sin NAT el webhook falla por timeout (30 s) y solo se procesa lo que ya haya en stage.'
+- 'IngestaApi es público (auth none): ingesta_api_key debe ser larga y aleatoria, rotarse en Secrets Manager y compartirse
+  solo con N8N/GAS; aplican WAF rate-limit y throttling del stage. Sin ingesta_api_key en el secreto toda ingesta
+  responde 401 (falla cerrada).'
+- EventBridge Scheduler reintenta por defecto hasta 185 veces en 24 h si la invocación falla; un job que falle por
+  Aurora apagada se reintentaría fuera de hora. Conviene fijar RetryPolicy (p. ej. MaximumRetryAttempts 2, MaximumEventAgeInSeconds
+  3600) y DLQ del schedule en template.yaml.
+- Los 5 sync_* del :05 corren en 5 Lambdas en paralelo (en pg_cron también eran jobs independientes); fn_check_sync_salud
+  del :15 sigue comparando conteo + sumas.
+pending:
+- 'Base compartida (container.py): exponer message_queue()/idempotency_store() comunes si otros módulos usan SQS;
+  hoy jobs.py los construye localmente con SYNC_MANUAL_QUEUE_URL e IDEMPOTENCY_TABLE_NAME.'
+- 'bootstrap_output.py: los assets backend-async ya están copiados en backend/ (no hace falta regenerarlos; si se
+  re-ejecuta, son idénticos).'
+- 'template.yaml (coordinador / generate_sam): RetryPolicy y DLQ en los ScheduleV2; IngestaApi con auth NONE + WAF;
+  salida a Internet (NAT) para sync-manual-worker.'
+- 'Deployer: ampliar el horario de servicio (5:00–18:30 CR todos los días + ventana 23:30–00:30 CR para el cierre
+  mensual); ver migration_risks.'
+- 'Fuera del repo: reconfigurar los flujos N8N (pagos_stage :00, cartera, facturas, saldos_favor, pedidos_retenidos_stage)
+  y el Google Apps Script de maestro_clientes para POST {API}/ingesta/{tabla} con header x-ingesta-key; cargar ingesta_api_key,
+  n8n_webhook_pagos_url y n8n_webhook_pedidos_retenidos_url en el secreto de la app.'
+- 'Módulo configuracion (informativo): src/lib/automatizaciones/registry.ts guarda cronJobName con los nombres de
+  pg_cron; ningún código del front lee cron.job, pero si las API de automatizaciones muestran el job, el nombre
+  equivalente es la function job-<name> de scheduled_jobs.'

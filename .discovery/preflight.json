@@ -1,0 +1,77 @@
+{
+  "project": "C:\\Users\\jalvarez\\Documents\\cyc-cartera-cofersa",
+  "python": "3.12.10",
+  "python_ok": true,
+  "package_manager": "npm",
+  "tools": {
+    "node": "v24.20.0",
+    "npm": "12.0.2",
+    "pnpm": null,
+    "yarn": null,
+    "git": "git version 2.55.0.windows.5",
+    "docker": null,
+    "sam": null,
+    "aws": "aws-cli/2.36.49 Python/3.14.6 Windows/11 script-exe/AMD64",
+    "cfn-lint": "cfn-lint.EXE 1.57.1",
+    "supabase": null,
+    "ruff": "ruff 0.16.9",
+    "jq": null,
+    "psql": "psql (PostgreSQL) 16.15",
+    "initdb": "initdb (PostgreSQL) 16.15",
+    "pg_ctl": "pg_ctl (PostgreSQL) 16.15"
+  },
+  "python_modules": {
+    "yaml": true,
+    "pytest": true,
+    "samtranslator": true,
+    "cfnlint": true,
+    "psycopg": true,
+    "boto3": true
+  },
+  "validations": {
+    "frontend_build": {
+      "status": "available",
+      "reason": ""
+    },
+    "backend_unit_tests": {
+      "status": "available",
+      "reason": ""
+    },
+    "backend_lint": {
+      "status": "available",
+      "reason": ""
+    },
+    "sam_validate": {
+      "status": "available",
+      "reason": ""
+    },
+    "cfn_lint": {
+      "status": "available",
+      "reason": ""
+    },
+    "aurora_sql_sandbox": {
+      "status": "available",
+      "reason": ""
+    },
+    "schema_from_live_db": {
+      "status": "NOT VALIDATED",
+      "reason": "Falta .env.supabase con SUPABASE_DB_PASSWORD (+psql) o SUPABASE_ACCESS_TOKEN (python scripts/supabase_connect.py init)"
+    },
+    "schema_from_migrations": {
+      "status": "available",
+      "reason": ""
+    },
+    "backend_integration_tests": {
+      "status": "available",
+      "reason": ""
+    }
+  },
+  "git_uncommitted_changes": false,
+  "supabase_credentials": {
+    "file": ".env.supabase",
+    "exists": false,
+    "fields_set": []
+  },
+  "output_dir_exists": false,
+  "blocking": []
+}

@@ -1,0 +1,82 @@
+{
+  "database": "cof_qa_cyc_cofersa_db",
+  "steps": [
+    {
+      "step": "provisioning (ejecución 1)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "schema (ejecución 1)",
+      "ok": true,
+      "detail": "asignar_analistaÂ» para la relaciÃ³n Â«cof_qa_cyc_cofersa_sch_core.tbl_maestro_clientesÂ» no existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_schema.sql:6422: NOTICE:  disparador Â«trg_maestro_clientes_trg_normalizar_analista_nombreÂ» para la relaciÃ³n Â«cof_qa_cyc_cofersa_sch_core.tbl_maestro_clientesÂ» no existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_schema.sql:6424: NOTICE:  disparador Â«trg_maestro_clientes_trg_proteger_contacto_manualÂ» para la relaciÃ³n Â«cof_qa_cyc_cofersa_sch_core.tbl_maestro_clientesÂ» no existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_schema.sql:6426: NOTICE:  disparador Â«trg_maestro_clientes_trg_proteger_logistica_manualÂ» para la relaciÃ³n Â«cof_qa_cyc_cofersa_sch_core.tbl_maestro_clientesÂ» no existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_schema.sql:6428: NOTICE:  disparador Â«trg_maestro_clientes_trg_sincronizar_analista_nombreÂ» para la relaciÃ³n Â«cof_qa_cyc_cofersa_sch_core.tbl_maestro_clientesÂ» no existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_schema.sql:6430: NOTICE:  disparador Â«trg_notas_rapidas_updated_atÂ» para la relaciÃ³n Â«cof_qa_cyc_cofersa_sch_core.tbl_notas_rapidasÂ» no existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_schema.sql:6432: NOTICE:  disparador Â«trg_pedidos_retenidos_trg_notificar_pedido_retenidoÂ» para la relaciÃ³n Â«cof_qa_cyc_cofersa_sch_core.tbl_pedidos_retenidosÂ» no existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_schema.sql:6434: NOTICE:  disparador Â«trg_personas_legales_updated_atÂ» para la relaciÃ³n Â«cof_qa_cyc_cofersa_sch_core.tbl_personas_legalesÂ» no existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_schema.sql:6436: NOTICE:  disparador Â«trg_solicitudes_updated_atÂ» para la relaciÃ³n Â«cof_qa_cyc_cofersa_sch_core.tbl_solicitudesÂ» no existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_schema.sql:6438: NOTICE:  disparador Â«trg_solicitudes_actualizacion_updated_atÂ» para la relaciÃ³n Â«cof_qa_cyc_cofersa_sch_core.tbl_solicitudes_actualizacionÂ» no existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_schema.sql:6440: NOTICE:  disparador Â«trg_vendedores_trg_propagar_analista_vendedorÂ» para la relaciÃ³n Â«cof_qa_cyc_cofersa_sch_core.tbl_vendedoresÂ» no existe, omitiendo\n"
+    },
+    {
+      "step": "datos iniciales (ejecución 1)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "validation (ejecución 1) TOTAL_FALTA=0",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "provisioning (ejecución 2)",
+      "ok": true,
+      "detail": "psql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_provisioning.sql:91: NOTICE:  el rol Â«rw_cyc_cofersaÂ» ya recibiÃ³ membresÃ­a en el rol Â«ro_cyc_cofersaÂ» por parte del rol Â«postgresÂ»\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_provisioning.sql:92: NOTICE:  el rol Â«ddl_cyc_cofersaÂ» ya recibiÃ³ membresÃ­a en el rol Â«rw_cyc_cofersaÂ» por parte del rol Â«postgresÂ»\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_provisioning.sql:93: NOTICE:  el rol Â«admin_cyc_cofersaÂ» ya recibiÃ³ membresÃ­a en el rol Â«ddl_cyc_cofersaÂ» por parte del rol Â«postgresÂ»\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_provisioning.sql:95: NOTICE:  el rol Â«postgresÂ» ya recibiÃ³ membresÃ­a en el rol Â«admin_cyc_cofersaÂ» por parte del rol Â«postgresÂ»\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_provisioning.sql:101: NOTICE:  el rol Â«usr_cyc_cofersa_reportÂ» ya recibiÃ³ membresÃ­a en el rol Â«ro_cyc_cofersaÂ» por parte del rol Â«postgresÂ»\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_provisioning.sql:105: NOTICE:  el rol Â«usr_cyc_cofersa_appÂ» ya recibiÃ³ membresÃ­a en el rol Â«rw_cyc_cofersaÂ» por parte del rol Â«postgresÂ»\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_provisioning.sql:109: NOTICE:  el rol Â«usr_cyc_cofersa_deployÂ» ya recibiÃ³ membresÃ­a en el rol Â«ddl_cyc_cofersaÂ» por parte del rol Â«postgresÂ»\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_provisioning.sql:113: NOTICE:  el rol Â«usr_cyc_cofersa_dbaÂ» ya recibiÃ³ membresÃ­a en el rol Â«admin_cyc_cofersaÂ» por parte del rol Â«postgresÂ»\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_provisioning.sql:127: NOTICE:  el esquema Â«cof_qa_cyc_cofersa_sch_coreÂ» ya existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_provisioning.sql:163: NOTICE:  la extensiÃ³n Â«pg_stat_statementsÂ» ya existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_provisioning.sql:164: NOTICE:  la extensiÃ³n Â«pgcryptoÂ» ya existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_provisioning.sql:166: NOTICE:  la extensiÃ³n Â«uuid-osspÂ» ya existe, omitiendo\n"
+    },
+    {
+      "step": "schema (ejecución 2)",
+      "ok": true,
+      "detail": "«idx_solicitudes_estadoÂ» ya existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_schema.sql:6288: NOTICE:  la relaciÃ³n Â«idx_solicitudes_gestion_idÂ» ya existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_schema.sql:6289: NOTICE:  la relaciÃ³n Â«idx_solicitudes_sla_vencimientoÂ» ya existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_schema.sql:6290: NOTICE:  la relaciÃ³n Â«idx_solicitudes_cliente_idÂ» ya existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_schema.sql:6291: NOTICE:  la relaciÃ³n Â«idx_solicitudes_created_atÂ» ya existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_schema.sql:6292: NOTICE:  la relaciÃ³n Â«idx_solicitudes_estado_2Â» ya existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_schema.sql:6293: NOTICE:  la relaciÃ³n Â«uidx_solicitudes_numero_consecutivoÂ» ya existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_schema.sql:6294: NOTICE:  la relaciÃ³n Â«idx_solicitudes_solicitante_idÂ» ya existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_schema.sql:6295: NOTICE:  la relaciÃ³n Â«idx_solicitudes_actualizacion_aprobada_porÂ» ya existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_schema.sql:6296: NOTICE:  la relaciÃ³n Â«uidx_solicitudes_actualizacion_contribuyente_partialÂ» ya existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_schema.sql:6297: NOTICE:  la relaciÃ³n Â«idx_solicitudes_actualizacion_enviada_porÂ» ya existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_schema.sql:6298: NOTICE:  la relaciÃ³n Â«idx_solicitudes_actualizacion_garantia_idÂ» ya existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_schema.sql:6299: NOTICE:  la relaciÃ³n Â«idx_vendedores_analista_emailÂ» ya existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_schema.sql:6300: NOTICE:  la relaciÃ³n Â«idx_vendedores_supervisor_codÂ» ya existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_schema.sql:6301: NOTICE:  la relaciÃ³n Â«idx_ventas_mensuales_anio_mesÂ» ya existe, omitiendo\n"
+    },
+    {
+      "step": "datos iniciales (ejecución 2)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "validation (ejecución 2) TOTAL_FALTA=0",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "search_path del usuario de la app",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "rollback de objetos",
+      "ok": true,
+      "detail": "Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_rollback.sql:223: NOTICE:  el esquema Â«cof_qa_cyc_cofersa_sch_coreÂ» no existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_rollback.sql:225: NOTICE:  el esquema Â«cof_qa_cyc_cofersa_sch_coreÂ» no existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_rollback.sql:226: NOTICE:  el esquema Â«cof_qa_cyc_cofersa_sch_coreÂ» no existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_rollback.sql:227: NOTICE:  el esquema Â«cof_qa_cyc_cofersa_sch_coreÂ» no existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_rollback.sql:228: NOTICE:  el esquema Â«cof_qa_cyc_cofersa_sch_coreÂ» no existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_rollback.sql:229: NOTICE:  el esquema Â«cof_qa_cyc_cofersa_sch_coreÂ» no existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_rollback.sql:230: NOTICE:  el esquema Â«cof_qa_cyc_cofersa_sch_coreÂ» no existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_rollback.sql:231: NOTICE:  el esquema Â«cof_qa_cyc_cofersa_sch_coreÂ» no existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_rollback.sql:232: NOTICE:  el esquema Â«cof_qa_cyc_cofersa_sch_coreÂ» no existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_rollback.sql:233: NOTICE:  el esquema Â«cof_qa_cyc_cofersa_sch_coreÂ» no existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_rollback.sql:234: NOTICE:  el esquema Â«cof_qa_cyc_cofersa_sch_coreÂ» no existe, omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_rollback.sql:236: NOTICE:  no existe la extensiÃ³n Â«uuid-osspÂ», omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_rollback.sql:237: NOTICE:  no existe la extensiÃ³n Â«pgcryptoÂ», omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_rollback.sql:238: NOTICE:  no existe la extensiÃ³n Â«pg_stat_statementsÂ», omitiendo\npsql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/environments/qa/aurora_postgresql_rollback.sql:240: NOTICE:  el esquema Â«cof_qa_cyc_cofersa_sch_coreÂ» no existe, omitiendo\n"
+    },
+    {
+      "step": "esquemas eliminados",
+      "ok": true,
+      "detail": "quedan 0"
+    },
+    {
+      "step": "rollback MANUAL (base, usuarios, roles)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "roles y usuarios eliminados",
+      "ok": true,
+      "detail": "quedan 0"
+    }
+  ],
+  "status": "PASSED",
+  "sandbox_mode": "local",
+  "validation_round_1": {
+    "checks": 521,
+    "total_falta": 0,
+    "falta": []
+  },
+  "validation_round_2": {
+    "checks": 521,
+    "total_falta": 0,
+    "falta": []
+  }
+}

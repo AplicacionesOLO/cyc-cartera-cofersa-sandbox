@@ -1,0 +1,17 @@
+{
+  "env": "dev",
+  "started_at": "2026-10-08T17:22:12+00:00",
+  "steps": [
+    {
+      "step": "verificación del proyecto",
+      "status": "OK",
+      "detail": "MIGRATION COMPLETE"
+    },
+    {
+      "step": "backend",
+      "status": "OK",
+      "detail": "dev-cyc-cofersa-api · código c504f10e2e0609ce · API https://t5kjcqpme1.execute-api.us-east-1.amazonaws.com/dev"
+    }
+  ],
+  "finished_at": "2026-10-08T17:23:46+00:00"
+}

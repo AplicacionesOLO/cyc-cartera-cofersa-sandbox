@@ -1,0 +1,23 @@
+# Configuración de despliegue CYC Cofersa (variante RDS + frontend en Lambda de aws-project-deployer).
+# Región: us-east-1 (la política IAM del usuario de despliegue permite us-east-1 y us-east-2).
+# Horario en hora de Costa Rica: 04:45 arranca RDS, 05:00 habilita Lambdas, cada 15 min reintenta el arranque
+# dentro del horario, 18:00 apaga todo. El frontend (Lambda + CloudFront) se cobra por uso y no se apaga.
+region: us-east-1
+service_hours:
+  enabled: true
+  timezone: America/Costa_Rica
+  warmup: '04:45'
+  start: '05:00'
+  stop: '18:00'
+  days: '*'
+environments:
+  dev:
+    create_network: true
+    vpc_cidr: 10.40.0.0/16
+    use_rds_proxy: false
+    # 07/10/2026: us-east-1b se quedó sin capacidad para db.t4g.micro y la base no arrancaba; se recreó
+    # en us-east-1a como db.t3.micro (sufijo -a = instancia nueva; la vieja quedó como snapshot final).
+    db_instance_class: db.t3.micro
+    db_availability_zone: us-east-1a
+    db_identifier_suffix: '-a'
+    db_allocated_storage: 20

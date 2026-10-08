@@ -1,0 +1,59 @@
+module:
+  name: identidad
+  entities: [usuarios, app_users]
+  use_cases: [GetMeUseCase, ListAnalistasConCarteraUseCase, PreviewRolUseCase, GoogleAuthorizeUrlUseCase,
+              ConnectGoogleUseCase, ListCalendarEventsUseCase]
+api_endpoints:
+  - {method: GET, path: /me, function: MeApi, handler: entrypoints.lambda_handlers.me.me_handler,
+     use_case: GetMeUseCase, module: identidad, auth: cognito,
+     source: ["src/lib/utils/usuario-actual.ts:42", "src/lib/utils/usuario-actual.ts:48",
+              "src/app/(app)/layout.tsx:36", "src/app/(app)/layout.tsx:52",
+              "src/app/auth/callback/route.ts:46", "src/app/auth/denegado/route.ts:11",
+              "src/app/login/page.tsx:52", "src/app/login/page.tsx:96",
+              "src/middleware.ts:33", "src/middleware.ts:56",
+              "src/lib/supabase/server.ts:7", "src/lib/supabase/client.ts:4",
+              "src/hooks/useSessionTimeout.ts:51"]}
+  - {method: GET, path: /me/analistas-con-cartera, function: MeApi, handler: entrypoints.lambda_handlers.me.me_handler,
+     use_case: ListAnalistasConCarteraUseCase, module: identidad, auth: cognito,
+     source: ["src/lib/utils/analistas-equipo.ts:28"]}
+  - {method: POST, path: /me/preview-rol, function: MeApi, handler: entrypoints.lambda_handlers.me.me_handler,
+     use_case: PreviewRolUseCase, module: identidad, auth: cognito,
+     source: ["src/app/api/preview-rol/route.ts:11", "src/app/api/preview-rol/route.ts:14"]}
+  - {method: GET, path: /me/google/authorize-url, function: MeApi, handler: entrypoints.lambda_handlers.me.me_handler,
+     use_case: GoogleAuthorizeUrlUseCase, module: identidad, auth: cognito,
+     source: ["src/app/login/page.tsx:63", "src/lib/utils/gmail-token.ts:45"]}
+  - {method: POST, path: /me/google/connect, function: MeApi, handler: entrypoints.lambda_handlers.me.me_handler,
+     use_case: ConnectGoogleUseCase, module: identidad, auth: cognito,
+     source: ["src/app/auth/callback/route.ts:63", "src/app/auth/callback/route.ts:81"]}
+  - {method: GET, path: /me/calendar/events, function: MeApi, handler: entrypoints.lambda_handlers.me.me_handler,
+     use_case: ListCalendarEventsUseCase, module: identidad, auth: cognito,
+     source: ["src/lib/services/googleCalendarService.ts:1"]}
+authorization_rules: []
+structural_changes:
+  - "Supabase Auth (Google OAuth) → Cognito User Pool con Google como IdP federado (Hosted UI). El acceso real
+     sigue dado por tener fila activa en `usuarios` (GET /me responde 403 acceso_denegado si no), igual que
+     el layout original + /auth/denegado. El primer login vincula el sub de Cognito con tbl_app_users por
+     email verificado (mismos ids que auth.users)."
+  - "Gmail/Calendar: Supabase entregaba provider_token/provider_refresh_token de Google en la sesión;
+     Cognito no los expone. Se agregó un consentimiento de Google propio (/me/google/authorize-url →
+     /auth/google → /me/google/connect) que guarda el refresh token en usuarios.google_refresh_token (la
+     misma columna que ya usaba /auth/callback). Los envíos de correo se hacen en el backend con ese
+     refresh token (UsuarioMailer). Los refresh tokens existentes siguen sirviendo si se usa el mismo
+     cliente OAuth de Google (google_client_id/secret)."
+  - "'Ver como': la cookie sic_ver_como la fija ahora el navegador (no httpOnly) después de que
+     POST /me/preview-rol valida que el rol real es COORDINADOR. Solo cambia qué se renderiza; el API
+     autoriza siempre con el rol real (igual que el original)."
+  - "Layout: totalEquipo y última sincronización vienen en GET /me (antes 2 consultas con service_role y
+     unstable_cache)."
+  - "Server Components llaman al API Gateway con el ID token de la sesión (cookies de Amplify,
+     @aws-amplify/adapter-nextjs); nunca a la base."
+incompatibilities:
+  - "Login silencioso de Google (login_hint + prompt=none desde la app): el Hosted UI de Cognito no permite
+     pasar esos parámetros al IdP; el usuario hace clic en 'Ingresar con Google' (Cognito recuerda la
+     sesión del IdP)."
+  - "Login correo/contraseña: en Supabase existía para cuentas no-Google; en Cognito requiere crear esos
+     usuarios en el User Pool (las contraseñas de Supabase no se pueden migrar)."
+migration_risks:
+  - "Si el cliente OAuth de Google usado por el backend no es el mismo que emitió los refresh tokens
+     guardados, todos los usuarios deberán volver a autorizar Gmail (lo hace solo el flujo de /auth/callback)."
+pending: []

@@ -1,0 +1,76 @@
+module:
+  name: analisis_pagos
+  entities: [public.pagos, public.pagos_anulados, public.pagos_duplicado_descartado]
+  use_cases:
+    - GetRankingClientesUseCase
+    - GetPerfilVendedorUseCase
+    - GetAlertasDeterioroUseCase
+    - GetConcentracionUseCase
+    - GetPagosMesResumenUseCase
+    - MarcarPagosAnuladosUseCase
+    - DesmarcarPagoAnuladoUseCase
+    - DescartarDuplicadoUseCase
+    - RevertirDescarteDuplicadoUseCase
+api_endpoints:
+  - {method: GET, path: /analisis-pagos/ranking-clientes, function: AnalisisPagosApi,
+     handler: entrypoints.lambda_handlers.analisis_pagos.analisis_pagos_handler, use_case: GetRankingClientesUseCase,
+     module: analisis_pagos, auth: cognito, timeout: 29,
+     source: ["src/components/analisis-pagos/TabRankingClientes.tsx:202"]}
+  - {method: GET, path: /analisis-pagos/perfil-vendedor, function: AnalisisPagosApi,
+     handler: entrypoints.lambda_handlers.analisis_pagos.analisis_pagos_handler, use_case: GetPerfilVendedorUseCase,
+     module: analisis_pagos, auth: cognito, timeout: 29,
+     source: ["src/components/analisis-pagos/TabPerfilVendedor.tsx:56"]}
+  - {method: GET, path: /analisis-pagos/alertas-deterioro, function: AnalisisPagosApi,
+     handler: entrypoints.lambda_handlers.analisis_pagos.analisis_pagos_handler, use_case: GetAlertasDeterioroUseCase,
+     module: analisis_pagos, auth: cognito, timeout: 29,
+     source: ["src/components/analisis-pagos/TabAlertasDeterioro.tsx:37"]}
+  - {method: GET, path: /analisis-pagos/concentracion, function: AnalisisPagosApi,
+     handler: entrypoints.lambda_handlers.analisis_pagos.analisis_pagos_handler, use_case: GetConcentracionUseCase,
+     module: analisis_pagos, auth: cognito, timeout: 29,
+     source: ["src/components/analisis-pagos/TabConcentracion.tsx:51"]}
+  - {method: GET, path: /analisis-pagos/pagos-mes, function: AnalisisPagosApi,
+     handler: entrypoints.lambda_handlers.analisis_pagos.analisis_pagos_handler, use_case: GetPagosMesResumenUseCase,
+     module: analisis_pagos, auth: cognito, timeout: 29,
+     source: ["src/components/analisis-pagos/PagosAplicadosCliente.tsx:107"]}
+  - {method: POST, path: /pagos-anulados, function: AnalisisPagosApi,
+     handler: entrypoints.lambda_handlers.analisis_pagos.analisis_pagos_handler, use_case: MarcarPagosAnuladosUseCase,
+     module: analisis_pagos, auth: cognito,
+     source: ["src/app/api/pagos-anulados/route.ts", "src/components/analisis-pagos/PagosAplicadosCliente.tsx:490"]}
+  - {method: DELETE, path: "/pagos-anulados/{no_recibo}", function: AnalisisPagosApi,
+     handler: entrypoints.lambda_handlers.analisis_pagos.analisis_pagos_handler, use_case: DesmarcarPagoAnuladoUseCase,
+     module: analisis_pagos, auth: cognito,
+     source: ["src/app/api/pagos-anulados/[no_recibo]/route.ts",
+              "src/components/analisis-pagos/PagosAplicadosCliente.tsx:168"]}
+  - {method: POST, path: /pagos-duplicado-descartado, function: AnalisisPagosApi,
+     handler: entrypoints.lambda_handlers.analisis_pagos.analisis_pagos_handler, use_case: DescartarDuplicadoUseCase,
+     module: analisis_pagos, auth: cognito,
+     source: ["src/app/api/pagos-duplicado-descartado/route.ts",
+              "src/components/analisis-pagos/PagosAplicadosCliente.tsx:560"]}
+  - {method: DELETE, path: "/pagos-duplicado-descartado/{no_recibo}", function: AnalisisPagosApi,
+     handler: entrypoints.lambda_handlers.analisis_pagos.analisis_pagos_handler,
+     use_case: RevertirDescarteDuplicadoUseCase, module: analisis_pagos, auth: cognito,
+     source: ["src/app/api/pagos-duplicado-descartado/[no_recibo]/route.ts"]}
+storage_buckets: []
+authorization_rules:
+  - {table: public.pagos, policy: pagos_select_usuarios_activos, command: SELECT,
+     enforced_in: "GetRankingClientesUseCase / GetPerfilVendedorUseCase / GetAlertasDeterioroUseCase (require_usuario + scope_email: ANALISTA o ANALISTA_RIESGO con cartera solo su email), GetConcentracionUseCase (require_usuario; ForbiddenError para quien gestiona cartera propia), GetPagosMesResumenUseCase (require_roles COORDINADOR|GERENCIA)"}
+  - {table: public.pagos, policy: pagos_write_coordinador, command: ALL,
+     enforced_in: "Sin escrituras desde la API: tbl_pagos solo la escribe la sincronización (fn_sync_pagos / módulo jobs). Este módulo solo lee pagos vía fn_* SECURITY DEFINER."}
+  - {table: public.pagos_anulados, policy: Solo coordinador accede a pagos_anulados, command: ALL,
+     enforced_in: "MarcarPagosAnuladosUseCase / DesmarcarPagoAnuladoUseCase (require_usuario + require_coordinador, 'Acceso restringido al coordinador'); la lectura solo ocurre dentro de fn_pagos_mes_resumen (GetPagosMesResumenUseCase: COORDINADOR|GERENCIA)"}
+  - {table: public.pagos_duplicado_descartado, policy: Solo coordinador accede a pagos_duplicado_descartado, command: ALL,
+     enforced_in: "DescartarDuplicadoUseCase / RevertirDescarteDuplicadoUseCase (require_usuario + require_coordinador); la lectura solo ocurre dentro de fn_pagos_mes_resumen (GetPagosMesResumenUseCase: COORDINADOR|GERENCIA)"}
+scheduled_jobs: []
+async_workers: []
+structural_changes:
+  - "Las 4 API Routes de Next (pagos-anulados, pagos-anulados/[no_recibo], pagos-duplicado-descartado, pagos-duplicado-descartado/[no_recibo]) se borraron y quedan como endpoints de AnalisisPagosApi con el mismo método, body y respuesta ({ok, marcados} / {ok}); el upsert con service role pasa a INSERT ... ON CONFLICT en el repository y la auditoría a tbl_config_audit_log dentro de un SAVEPOINT (un fallo de auditoría no aborta, como insertAuditLog)."
+  - "Los RPC fn_analisis_ranking_clientes / perfil_vendedor / alertas_deterioro / concentracion y fn_pagos_mes_resumen pasan a GET /analisis-pagos/* con los mismos parámetros (query string) y la misma forma JSON."
+  - "Frontend: módulo src/views/analisis-pagos (api/analisis-pagos-api.ts, hooks/use-analisis-icp-controller.ts, hooks/use-pagos-aplicados-controller.ts, use-remote-resource.ts, types.ts). Tab*/PagosAplicadosCliente conservan su JSX; los modales Anular/Descartar usan controllers propios. Los tipos ReciboRow/ResumenResult salieron del componente a views/analisis-pagos/types.ts."
+  - "Las páginas host (gestion-pagos/analisis/page.tsx y reportes/pagos-aplicados/page.tsx) no usaban Supabase (getUsuarioActual ya migrado): no se modificaron."
+incompatibilities:
+  - "Antes el p_email del análisis lo decidía el front (esAnalista); ahora el backend lo fuerza al email propio para ANALISTA / ANALISTA_RIESGO con cartera aunque se pida otro, y bloquea Concentración para ellos (antes solo lo ocultaba la UI)."
+  - "checkCoordinador no exigía usuarios.activo; require_usuario sí (usuario inactivo → 403 acceso_denegado)."
+migration_risks:
+  - "fn_analisis_* recalculan ICP sobre 9 meses de tbl_pagos: vigilar el límite de 29 s de API Gateway con el volumen real."
+  - "path param {no_recibo}: recibos con caracteres especiales viajan codificados (seg()) y API Gateway los entrega decodificados; el recibo '—' (sin número) también se puede desmarcar."
+pending: []

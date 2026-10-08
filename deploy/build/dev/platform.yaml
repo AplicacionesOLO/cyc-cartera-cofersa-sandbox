@@ -1,0 +1,1831 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Metadata:
+  cfn-lint:
+    config:
+      ignore_checks:
+      - W1030
+Description: CYC_COFERSA - plataforma (red, RDS, secretos, SSM, Lambda+CloudFront, runner BD, horario)
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues:
+    - dev
+    - qa
+    - prod
+  EnvironmentTag:
+    Type: String
+    AllowedValues:
+    - DEV
+    - QA
+    - PROD
+  ProjectSlug:
+    Type: String
+    Default: cyc-cofersa
+    AllowedPattern: ^[a-z][a-z0-9-]{1,30}$
+  ProjectLabel:
+    Type: String
+    Default: CYC_COFERSA
+  DbName:
+    Type: String
+    Description: base del aplicativo (naming-map.json del ambiente)
+  AppUser:
+    Type: String
+    Default: usr_cyc_cofersa_app
+  ReportUser:
+    Type: String
+    Default: usr_cyc_cofersa_report
+  DeployUser:
+    Type: String
+    Default: usr_cyc_cofersa_deploy
+  DbaUser:
+    Type: String
+    Default: usr_cyc_cofersa_dba
+  CreateNetwork:
+    Type: String
+    AllowedValues:
+    - 'true'
+    - 'false'
+    Default: 'true'
+  VpcCidr:
+    Type: String
+    Default: 10.40.0.0/16
+  ExistingVpcId:
+    Type: String
+    Default: ''
+  ExistingPrivateSubnetIds:
+    Type: CommaDelimitedList
+    Default: ''
+  UseRdsProxy:
+    Type: String
+    AllowedValues:
+    - 'true'
+    - 'false'
+    Default: 'false'
+  DbEngineVersion:
+    Type: String
+    Default: '16.15'
+  DbInstanceClass:
+    Type: String
+    Default: db.t4g.micro
+  DbAllocatedStorage:
+    Type: Number
+    Default: 20
+    MinValue: 20
+  DbAvailabilityZone:
+    Type: String
+    Default: ''
+  DbIdentifierSuffix:
+    Type: String
+    Default: ''
+    AllowedPattern: ^[a-z0-9-]{0,10}$
+  ServiceHoursEnabled:
+    Type: String
+    AllowedValues:
+    - 'true'
+    - 'false'
+    Default: 'true'
+  ServiceTimezone:
+    Type: String
+    Default: America/Costa_Rica
+  ServiceWarmupCron:
+    Type: String
+    Default: cron(45 4 ? * * *)
+  ServiceStartCron:
+    Type: String
+    Default: cron(0 5 ? * * *)
+  ServiceStopCron:
+    Type: String
+    Default: cron(0 18 ? * * *)
+  ServiceEnsureCron:
+    Type: String
+    Default: cron(0/15 5-17 ? * * *)
+Conditions:
+  IsProduction:
+    Fn::Equals:
+    - Ref: Environment
+    - prod
+  CreateVpc:
+    Fn::Equals:
+    - Ref: CreateNetwork
+    - 'true'
+  UseProxy:
+    Fn::Equals:
+    - Ref: UseRdsProxy
+    - 'true'
+  HasDbAz:
+    Fn::Not:
+    - Fn::Equals:
+      - Ref: DbAvailabilityZone
+      - ''
+  HasServiceHours:
+    Fn::Equals:
+    - Ref: ServiceHoursEnabled
+    - 'true'
+Resources:
+  Vpc:
+    Type: AWS::EC2::VPC
+    Condition: CreateVpc
+    Properties:
+      CidrBlock:
+        Ref: VpcCidr
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      - Key: Name
+        Value:
+          Fn::Sub: ${Environment}-${ProjectSlug}-vpc
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Condition: CreateVpc
+    Properties:
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      - Key: Name
+        Value:
+          Fn::Sub: ${Environment}-${ProjectSlug}-igw
+  GatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Condition: CreateVpc
+    Properties:
+      VpcId:
+        Ref: Vpc
+      InternetGatewayId:
+        Ref: InternetGateway
+  PublicSubnetA:
+    Type: AWS::EC2::Subnet
+    Condition: CreateVpc
+    Properties:
+      VpcId:
+        Ref: Vpc
+      AvailabilityZone:
+        Fn::Select:
+        - 0
+        - Fn::GetAZs: ''
+      CidrBlock:
+        Fn::Select:
+        - 0
+        - Fn::Cidr:
+          - Ref: VpcCidr
+          - 4
+          - 8
+      MapPublicIpOnLaunch: false
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      - Key: Name
+        Value:
+          Fn::Sub: ${Environment}-${ProjectSlug}-public-a
+  PublicSubnetB:
+    Type: AWS::EC2::Subnet
+    Condition: CreateVpc
+    Properties:
+      VpcId:
+        Ref: Vpc
+      AvailabilityZone:
+        Fn::Select:
+        - 1
+        - Fn::GetAZs: ''
+      CidrBlock:
+        Fn::Select:
+        - 1
+        - Fn::Cidr:
+          - Ref: VpcCidr
+          - 4
+          - 8
+      MapPublicIpOnLaunch: false
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      - Key: Name
+        Value:
+          Fn::Sub: ${Environment}-${ProjectSlug}-public-b
+  PrivateSubnetA:
+    Type: AWS::EC2::Subnet
+    Condition: CreateVpc
+    Properties:
+      VpcId:
+        Ref: Vpc
+      AvailabilityZone:
+        Fn::Select:
+        - 0
+        - Fn::GetAZs: ''
+      CidrBlock:
+        Fn::Select:
+        - 2
+        - Fn::Cidr:
+          - Ref: VpcCidr
+          - 4
+          - 8
+      MapPublicIpOnLaunch: false
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      - Key: Name
+        Value:
+          Fn::Sub: ${Environment}-${ProjectSlug}-private-a
+  PrivateSubnetB:
+    Type: AWS::EC2::Subnet
+    Condition: CreateVpc
+    Properties:
+      VpcId:
+        Ref: Vpc
+      AvailabilityZone:
+        Fn::Select:
+        - 1
+        - Fn::GetAZs: ''
+      CidrBlock:
+        Fn::Select:
+        - 3
+        - Fn::Cidr:
+          - Ref: VpcCidr
+          - 4
+          - 8
+      MapPublicIpOnLaunch: false
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      - Key: Name
+        Value:
+          Fn::Sub: ${Environment}-${ProjectSlug}-private-b
+  NatEip:
+    Type: AWS::EC2::EIP
+    Condition: CreateVpc
+    DependsOn: GatewayAttachment
+    Properties:
+      Domain: vpc
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      - Key: Name
+        Value:
+          Fn::Sub: ${Environment}-${ProjectSlug}-nat-eip
+  NatGateway:
+    Type: AWS::EC2::NatGateway
+    Condition: CreateVpc
+    Properties:
+      SubnetId:
+        Ref: PublicSubnetA
+      AllocationId:
+        Fn::GetAtt:
+        - NatEip
+        - AllocationId
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      - Key: Name
+        Value:
+          Fn::Sub: ${Environment}-${ProjectSlug}-nat
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Condition: CreateVpc
+    Properties:
+      VpcId:
+        Ref: Vpc
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      - Key: Name
+        Value:
+          Fn::Sub: ${Environment}-${ProjectSlug}-public-rt
+  PublicSubnetARouteAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: CreateVpc
+    Properties:
+      SubnetId:
+        Ref: PublicSubnetA
+      RouteTableId:
+        Ref: PublicRouteTable
+  PublicSubnetBRouteAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: CreateVpc
+    Properties:
+      SubnetId:
+        Ref: PublicSubnetB
+      RouteTableId:
+        Ref: PublicRouteTable
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Condition: CreateVpc
+    Properties:
+      VpcId:
+        Ref: Vpc
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      - Key: Name
+        Value:
+          Fn::Sub: ${Environment}-${ProjectSlug}-private-rt
+  PrivateSubnetARouteAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: CreateVpc
+    Properties:
+      SubnetId:
+        Ref: PrivateSubnetA
+      RouteTableId:
+        Ref: PrivateRouteTable
+  PrivateSubnetBRouteAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: CreateVpc
+    Properties:
+      SubnetId:
+        Ref: PrivateSubnetB
+      RouteTableId:
+        Ref: PrivateRouteTable
+  PublicDefaultRoute:
+    Type: AWS::EC2::Route
+    Condition: CreateVpc
+    DependsOn: GatewayAttachment
+    Properties:
+      RouteTableId:
+        Ref: PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: InternetGateway
+  PrivateDefaultRoute:
+    Type: AWS::EC2::Route
+    Condition: CreateVpc
+    Properties:
+      RouteTableId:
+        Ref: PrivateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId:
+        Ref: NatGateway
+  S3GatewayEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Condition: CreateVpc
+    Properties:
+      VpcId:
+        Ref: Vpc
+      ServiceName:
+        Fn::Sub: com.amazonaws.${AWS::Region}.s3
+      VpcEndpointType: Gateway
+      RouteTableIds:
+      - Ref: PrivateRouteTable
+  DynamodbGatewayEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Condition: CreateVpc
+    Properties:
+      VpcId:
+        Ref: Vpc
+      ServiceName:
+        Fn::Sub: com.amazonaws.${AWS::Region}.dynamodb
+      VpcEndpointType: Gateway
+      RouteTableIds:
+      - Ref: PrivateRouteTable
+  LambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription:
+        Fn::Sub: ${ProjectLabel} - Lambdas y runner de BD
+      VpcId:
+        Fn::If:
+        - CreateVpc
+        - Ref: Vpc
+        - Ref: ExistingVpcId
+      SecurityGroupEgress:
+      - IpProtocol: '-1'
+        CidrIp: 0.0.0.0/0
+        Description: salida a AWS e Internet via NAT
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      - Key: Name
+        Value:
+          Fn::Sub: ${Environment}-${ProjectSlug}-lambda-sg
+  DatabaseSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription:
+        Fn::Sub: ${ProjectLabel} - RDS PostgreSQL
+      VpcId:
+        Fn::If:
+        - CreateVpc
+        - Ref: Vpc
+        - Ref: ExistingVpcId
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 5432
+        ToPort: 5432
+        SourceSecurityGroupId:
+          Ref: LambdaSecurityGroup
+        Description: Lambdas y runner de BD
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      - Key: Name
+        Value:
+          Fn::Sub: ${Environment}-${ProjectSlug}-db-sg
+  ProxySecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Condition: UseProxy
+    Properties:
+      GroupDescription:
+        Fn::Sub: ${ProjectLabel} - RDS Proxy
+      VpcId:
+        Fn::If:
+        - CreateVpc
+        - Ref: Vpc
+        - Ref: ExistingVpcId
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 5432
+        ToPort: 5432
+        SourceSecurityGroupId:
+          Ref: LambdaSecurityGroup
+        Description: Lambdas
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      - Key: Name
+        Value:
+          Fn::Sub: ${Environment}-${ProjectSlug}-proxy-sg
+  DatabaseIngressFromProxy:
+    Type: AWS::EC2::SecurityGroupIngress
+    Condition: UseProxy
+    Properties:
+      GroupId:
+        Ref: DatabaseSecurityGroup
+      IpProtocol: tcp
+      FromPort: 5432
+      ToPort: 5432
+      SourceSecurityGroupId:
+        Ref: ProxySecurityGroup
+      Description: RDS Proxy
+  DatabaseSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription:
+        Fn::Sub: ${ProjectLabel} ${Environment} - subredes privadas
+      SubnetIds:
+        Fn::If:
+        - CreateVpc
+        - - Ref: PrivateSubnetA
+          - Ref: PrivateSubnetB
+        - Ref: ExistingPrivateSubnetIds
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      - Key: Name
+        Value:
+          Fn::Sub: ${Environment}-${ProjectSlug}-db-subnets
+  DatabaseInstance:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
+    UpdateReplacePolicy: Snapshot
+    Properties:
+      DBInstanceIdentifier:
+        Fn::Sub: ${Environment}-${ProjectSlug}-rds${DbIdentifierSuffix}
+      AvailabilityZone:
+        Fn::If:
+        - HasDbAz
+        - Ref: DbAvailabilityZone
+        - Ref: AWS::NoValue
+      Engine: postgres
+      EngineVersion:
+        Ref: DbEngineVersion
+      DBInstanceClass:
+        Ref: DbInstanceClass
+      AllocatedStorage:
+        Ref: DbAllocatedStorage
+      StorageType: gp3
+      MasterUsername: dbmaster
+      ManageMasterUserPassword: true
+      StorageEncrypted: true
+      CopyTagsToSnapshot: true
+      MultiAZ: false
+      PubliclyAccessible: false
+      AutoMinorVersionUpgrade: true
+      BackupRetentionPeriod:
+        Fn::If:
+        - IsProduction
+        - 14
+        - 7
+      DeletionProtection:
+        Fn::If:
+        - IsProduction
+        - true
+        - false
+      DBSubnetGroupName:
+        Ref: DatabaseSubnetGroup
+      VPCSecurityGroups:
+      - Ref: DatabaseSecurityGroup
+      EnableCloudwatchLogsExports:
+      - postgresql
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      - Key: Name
+        Value:
+          Fn::Sub: ${Environment}-${ProjectSlug}-rds
+  AppDbSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name:
+        Fn::Sub: /${Environment}/${ProjectSlug}/db/app
+      Description:
+        Fn::Sub: ${ProjectLabel} ${Environment} - usuario de la aplicación (rw)
+      GenerateSecretString:
+        SecretStringTemplate:
+          Fn::Sub: '{"username": "${AppUser}"}'
+        GenerateStringKey: password
+        PasswordLength: 32
+        RequireEachIncludedType: true
+        ExcludeCharacters: '"''`\/@ :;{}[]$&|<>'
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      - Key: Name
+        Value:
+          Fn::Sub: /${Environment}/${ProjectSlug}/db/app
+  ReportDbSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name:
+        Fn::Sub: /${Environment}/${ProjectSlug}/db/report
+      Description:
+        Fn::Sub: ${ProjectLabel} ${Environment} - usuario de reportes (ro)
+      GenerateSecretString:
+        SecretStringTemplate:
+          Fn::Sub: '{"username": "${ReportUser}"}'
+        GenerateStringKey: password
+        PasswordLength: 32
+        RequireEachIncludedType: true
+        ExcludeCharacters: '"''`\/@ :;{}[]$&|<>'
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      - Key: Name
+        Value:
+          Fn::Sub: /${Environment}/${ProjectSlug}/db/report
+  DeployDbSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name:
+        Fn::Sub: /${Environment}/${ProjectSlug}/db/deploy
+      Description:
+        Fn::Sub: ${ProjectLabel} ${Environment} - usuario de despliegue (ddl)
+      GenerateSecretString:
+        SecretStringTemplate:
+          Fn::Sub: '{"username": "${DeployUser}"}'
+        GenerateStringKey: password
+        PasswordLength: 32
+        RequireEachIncludedType: true
+        ExcludeCharacters: '"''`\/@ :;{}[]$&|<>'
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      - Key: Name
+        Value:
+          Fn::Sub: /${Environment}/${ProjectSlug}/db/deploy
+  DbaDbSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name:
+        Fn::Sub: /${Environment}/${ProjectSlug}/db/dba
+      Description:
+        Fn::Sub: ${ProjectLabel} ${Environment} - usuario DBA (admin)
+      GenerateSecretString:
+        SecretStringTemplate:
+          Fn::Sub: '{"username": "${DbaUser}"}'
+        GenerateStringKey: password
+        PasswordLength: 32
+        RequireEachIncludedType: true
+        ExcludeCharacters: '"''`\/@ :;{}[]$&|<>'
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      - Key: Name
+        Value:
+          Fn::Sub: /${Environment}/${ProjectSlug}/db/dba
+  ProxyRole:
+    Type: AWS::IAM::Role
+    Condition: UseProxy
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: rds.amazonaws.com
+          Action: sts:AssumeRole
+      Policies:
+      - PolicyName: read-db-secrets
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Sid: ReadAppSecrets
+            Effect: Allow
+            Action:
+            - secretsmanager:GetSecretValue
+            Resource:
+            - Ref: AppDbSecret
+            - Ref: ReportDbSecret
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      - Key: Name
+        Value:
+          Fn::Sub: ${Environment}-${ProjectSlug}-proxy-role
+  DatabaseProxy:
+    Type: AWS::RDS::DBProxy
+    Condition: UseProxy
+    Properties:
+      DBProxyName:
+        Fn::Sub: ${Environment}-${ProjectSlug}-proxy
+      EngineFamily: POSTGRESQL
+      RequireTLS: true
+      RoleArn:
+        Fn::GetAtt:
+        - ProxyRole
+        - Arn
+      VpcSubnetIds:
+        Fn::If:
+        - CreateVpc
+        - - Ref: PrivateSubnetA
+          - Ref: PrivateSubnetB
+        - Ref: ExistingPrivateSubnetIds
+      VpcSecurityGroupIds:
+      - Ref: ProxySecurityGroup
+      IdleClientTimeout: 1800
+      Auth:
+      - AuthScheme: SECRETS
+        IAMAuth: DISABLED
+        SecretArn:
+          Ref: AppDbSecret
+      - AuthScheme: SECRETS
+        IAMAuth: DISABLED
+        SecretArn:
+          Ref: ReportDbSecret
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+  DatabaseProxyTargets:
+    Type: AWS::RDS::DBProxyTargetGroup
+    Condition: UseProxy
+    Properties:
+      DBProxyName:
+        Ref: DatabaseProxy
+      TargetGroupName: default
+      DBInstanceIdentifiers:
+      - Ref: DatabaseInstance
+  WebRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName:
+        Fn::Sub: ${Environment}-${ProjectSlug}-web
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      EncryptionConfiguration:
+        EncryptionType: AES256
+      LifecyclePolicy:
+        LifecyclePolicyText: '{"rules": [{"rulePriority": 1, "description": "conservar las ultimas 10 imagenes", "selection": {"tagStatus": "any", "countType": "imageCountMoreThan", "countNumber": 10}, "action": {"type": "expire"}}]}'
+      RepositoryPolicyText:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: LambdaPullWebImage
+          Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action:
+          - ecr:BatchGetImage
+          - ecr:GetDownloadUrlForLayer
+          Condition:
+            StringLike:
+              aws:sourceArn:
+                Fn::Sub: arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${Environment}-${ProjectSlug}-web
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      - Key: Name
+        Value:
+          Fn::Sub: ${Environment}-${ProjectSlug}-web
+  WebDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment:
+          Fn::Sub: ${Environment}-${ProjectSlug}-web
+        PriceClass: PriceClass_100
+        HttpVersion: http2and3
+        Origins:
+        - Id: web-lambda
+          DomainName:
+            Fn::Select:
+            - 2
+            - Fn::Split:
+              - /
+              - Fn::GetAtt:
+                - WebFunctionUrl
+                - FunctionUrl
+          CustomOriginConfig:
+            OriginProtocolPolicy: https-only
+            HTTPSPort: 443
+            OriginSSLProtocols:
+            - TLSv1.2
+            OriginReadTimeout: 30
+            OriginKeepaliveTimeout: 5
+        DefaultCacheBehavior:
+          TargetOriginId: web-lambda
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+          - GET
+          - HEAD
+          - OPTIONS
+          - PUT
+          - PATCH
+          - POST
+          - DELETE
+          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+          OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
+          Compress: true
+        CacheBehaviors:
+        - PathPattern: /_next/static/*
+          TargetOriginId: web-lambda
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+          - GET
+          - HEAD
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+          Compress: true
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      - Key: Name
+        Value:
+          Fn::Sub: ${Environment}-${ProjectSlug}-web-cdn
+  WebFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/${Environment}-${ProjectSlug}-web
+      RetentionInDays:
+        Fn::If:
+        - IsProduction
+        - 30
+        - 7
+  WebFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      Policies:
+      - PolicyName: web-logs
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Sid: WriteLogs
+            Effect: Allow
+            Action:
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Resource:
+              Fn::Sub: ${WebFunctionLogGroup.Arn}:*
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      - Key: Name
+        Value:
+          Fn::Sub: ${Environment}-${ProjectSlug}-web-fn-role
+  WebFunction:
+    Type: AWS::Lambda::Function
+    DependsOn:
+    - WebFunctionLogGroup
+    Properties:
+      FunctionName:
+        Fn::Sub: ${Environment}-${ProjectSlug}-web
+      Description:
+        Fn::Sub: ${ProjectLabel} - frontend Next.js (SSR)
+      PackageType: Image
+      Code:
+        ImageUri:
+          Fn::Sub: ${WebRepository.RepositoryUri}:latest
+      Architectures:
+      - x86_64
+      MemorySize: 1024
+      Timeout: 30
+      Role:
+        Fn::GetAtt:
+        - WebFunctionRole
+        - Arn
+      Environment:
+        Variables:
+          AWS_LWA_PORT: '3000'
+          AWS_LWA_READINESS_CHECK_PATH: /login
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      - Key: Name
+        Value:
+          Fn::Sub: ${Environment}-${ProjectSlug}-web
+  WebFunctionUrl:
+    Type: AWS::Lambda::Url
+    Properties:
+      TargetFunctionArn:
+        Fn::GetAtt:
+        - WebFunction
+        - Arn
+      AuthType: NONE
+      InvokeMode: BUFFERED
+  WebFunctionUrlPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Ref: WebFunction
+      Action: lambda:InvokeFunctionUrl
+      Principal: '*'
+      FunctionUrlAuthType: NONE
+  WebFunctionInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Ref: WebFunction
+      Action: lambda:InvokeFunction
+      Principal: '*'
+      InvokedViaFunctionUrl: true
+  WebBuilderLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /codebuild/${Environment}-${ProjectSlug}-web-builder
+      RetentionInDays:
+        Fn::If:
+        - IsProduction
+        - 30
+        - 7
+  WebBuilderRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: codebuild.amazonaws.com
+          Action: sts:AssumeRole
+      Policies:
+      - PolicyName: web-builder
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Sid: ReadSource
+            Effect: Allow
+            Action:
+            - s3:GetObject
+            Resource:
+              Fn::Sub: ${ArtifactsBucket.Arn}/web/*
+          - Sid: EcrToken
+            Effect: Allow
+            Action:
+            - ecr:GetAuthorizationToken
+            Resource: '*'
+          - Sid: PushWebImage
+            Effect: Allow
+            Action:
+            - ecr:BatchCheckLayerAvailability
+            - ecr:InitiateLayerUpload
+            - ecr:UploadLayerPart
+            - ecr:CompleteLayerUpload
+            - ecr:PutImage
+            - ecr:BatchGetImage
+            - ecr:GetDownloadUrlForLayer
+            Resource:
+              Fn::GetAtt:
+              - WebRepository
+              - Arn
+          - Sid: WriteLogs
+            Effect: Allow
+            Action:
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Resource:
+              Fn::Sub: ${WebBuilderLogGroup.Arn}:*
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      - Key: Name
+        Value:
+          Fn::Sub: ${Environment}-${ProjectSlug}-web-builder-role
+  WebBuilder:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name:
+        Fn::Sub: ${Environment}-${ProjectSlug}-web-builder
+      Description:
+        Fn::Sub: ${ProjectLabel} - construye la imagen Docker del frontend Next.js y la publica en ECR
+      ServiceRole:
+        Fn::GetAtt:
+        - WebBuilderRole
+        - Arn
+      TimeoutInMinutes: 45
+      QueuedTimeoutInMinutes: 30
+      Artifacts:
+        Type: NO_ARTIFACTS
+      Source:
+        Type: NO_SOURCE
+        BuildSpec: |
+          version: 0.2
+          env:
+            shell: bash
+          phases:
+            build:
+              commands:
+                - |
+                  set -euo pipefail
+                  aws s3 cp "$SOURCE_S3" /tmp/web.zip --quiet
+                  mkdir -p /tmp/web && unzip -q -o /tmp/web.zip -d /tmp/web && cd /tmp/web
+                  REGISTRY="${REPOSITORY_URI%%/*}"
+                  aws ecr get-login-password | docker login --username AWS --password-stdin "$REGISTRY"
+                  docker build -t "$REPOSITORY_URI:latest" -t "$REPOSITORY_URI:$IMAGE_TAG" \
+                    --build-arg NEXT_PUBLIC_API_BASE_URL --build-arg NEXT_PUBLIC_COGNITO_USER_POOL_ID \
+                    --build-arg NEXT_PUBLIC_COGNITO_CLIENT_ID --build-arg NEXT_PUBLIC_COGNITO_DOMAIN \
+                    --build-arg NEXT_PUBLIC_APP_URL --build-arg NEXT_PUBLIC_APP_EXPOSURE \
+                    --build-arg NEXT_PUBLIC_REALTIME_ENABLED .
+                  docker push "$REPOSITORY_URI:$IMAGE_TAG"
+                  docker push "$REPOSITORY_URI:latest"
+                  echo 'IMAGEN PUBLICADA'
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_MEDIUM
+        PrivilegedMode: true
+        Image: aws/codebuild/amazonlinux-x86_64-standard:5.0
+        EnvironmentVariables:
+        - Name: REPOSITORY_URI
+          Value:
+            Fn::GetAtt:
+            - WebRepository
+            - RepositoryUri
+        - Name: SOURCE_S3
+          Value: definido-en-cada-ejecucion
+        - Name: IMAGE_TAG
+          Value: definido-en-cada-ejecucion
+      LogsConfig:
+        CloudWatchLogs:
+          Status: ENABLED
+          GroupName:
+            Ref: WebBuilderLogGroup
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      - Key: Name
+        Value:
+          Fn::Sub: ${Environment}-${ProjectSlug}-web-builder
+  ArtifactsBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+        - ObjectOwnership: BucketOwnerEnforced
+      LifecycleConfiguration:
+        Rules:
+        - Id: expire-artifacts
+          Status: Enabled
+          ExpirationInDays: 60
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      - Key: Name
+        Value:
+          Fn::Sub: ${Environment}-${ProjectSlug}-artifacts
+  ArtifactsBucketTlsOnly:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        Ref: ArtifactsBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: DenyInsecureTransport
+          Effect: Deny
+          Principal: '*'
+          Action: s3:*
+          Resource:
+          - Fn::GetAtt:
+            - ArtifactsBucket
+            - Arn
+          - Fn::Sub: ${ArtifactsBucket.Arn}/*
+          Condition:
+            Bool:
+              aws:SecureTransport: 'false'
+  DbRunnerLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /codebuild/${Environment}-${ProjectSlug}-db-runner
+      RetentionInDays:
+        Fn::If:
+        - IsProduction
+        - 30
+        - 7
+  DbRunnerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: codebuild.amazonaws.com
+          Action: sts:AssumeRole
+      Policies:
+      - PolicyName: db-runner
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Sid: ReadBundles
+            Effect: Allow
+            Action:
+            - s3:GetObject
+            Resource:
+              Fn::Sub: ${ArtifactsBucket.Arn}/db/*
+          - Sid: ReadDbSecrets
+            Effect: Allow
+            Action:
+            - secretsmanager:GetSecretValue
+            Resource:
+            - Fn::GetAtt:
+              - DatabaseInstance
+              - MasterUserSecret.SecretArn
+            - Ref: AppDbSecret
+            - Ref: ReportDbSecret
+            - Ref: DeployDbSecret
+            - Ref: DbaDbSecret
+          - Sid: WriteLogs
+            Effect: Allow
+            Action:
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Resource:
+              Fn::Sub: ${DbRunnerLogGroup.Arn}:*
+          - Sid: VpcNetworkInterfaces
+            Effect: Allow
+            Action:
+            - ec2:CreateNetworkInterface
+            - ec2:DescribeNetworkInterfaces
+            - ec2:DeleteNetworkInterface
+            - ec2:DescribeSubnets
+            - ec2:DescribeSecurityGroups
+            - ec2:DescribeVpcs
+            - ec2:DescribeDhcpOptions
+            Resource: '*'
+          - Sid: VpcNetworkInterfacePermission
+            Effect: Allow
+            Action:
+            - ec2:CreateNetworkInterfacePermission
+            Resource:
+              Fn::Sub: arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:network-interface/*
+            Condition:
+              StringEquals:
+                ec2:AuthorizedService: codebuild.amazonaws.com
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      - Key: Name
+        Value:
+          Fn::Sub: ${Environment}-${ProjectSlug}-db-runner-role
+  DbRunner:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name:
+        Fn::Sub: ${Environment}-${ProjectSlug}-db-runner
+      Description:
+        Fn::Sub: ${ProjectLabel} - aplica provisioning, schema, cambios, datos y validación en RDS
+      ServiceRole:
+        Fn::GetAtt:
+        - DbRunnerRole
+        - Arn
+      TimeoutInMinutes: 45
+      QueuedTimeoutInMinutes: 30
+      Artifacts:
+        Type: NO_ARTIFACTS
+      Source:
+        Type: NO_SOURCE
+        BuildSpec: |
+          version: 0.2
+          env:
+            shell: bash
+          phases:
+            install:
+              commands:
+                - dnf install -y -q postgresql16 unzip > /dev/null
+            build:
+              commands:
+                - |
+                  set -euo pipefail
+                  aws s3 cp "$BUNDLE_S3" /tmp/db.zip --quiet
+                  mkdir -p /tmp/db && unzip -q -o /tmp/db.zip -d /tmp/db && cd "/tmp/db/$ENV_DIR"
+                  field() { python3 -c 'import json,sys; print(json.loads(sys.stdin.read())[sys.argv[1]])' "$1"; }
+                  secret() { aws secretsmanager get-secret-value --secret-id "$1" --query SecretString --output text; }
+                  export PGHOST="$DB_HOST" PGPORT=5432 PGSSLMODE=require PGCONNECT_TIMEOUT=30
+                  export PGUSER="$(secret "$MASTER_SECRET_ARN" | field username)"
+                  export PGPASSWORD="$(secret "$MASTER_SECRET_ARN" | field password)"
+                  for i in $(seq 1 30); do psql -X -d postgres -c 'select 1' > /dev/null 2>&1 && break; echo "esperando base ($i)"; sleep 20; done
+                  psql -X -v ON_ERROR_STOP=1 -d postgres \
+                    -v pass_ro="$(secret "$SECRET_REPORT" | field password)" -v pass_rw="$(secret "$SECRET_APP" | field password)" \
+                    -v pass_ddl="$(secret "$SECRET_DEPLOY" | field password)" -v pass_admin="$(secret "$SECRET_DBA" | field password)" \
+                    -f aurora_postgresql_provisioning.sql
+                  psql -X -v ON_ERROR_STOP=1 -d "$DB_NAME" -f aurora_postgresql_schema.sql
+                  for f in changes_run/*.sql; do [ -e "$f" ] || continue; psql -X -v ON_ERROR_STOP=1 -d "$DB_NAME" -f "$f"; done
+                  if [ "$LOAD_DATA" = "true" ] && [ -f aurora_postgresql_data.sql ]; then
+                    psql -X -v ON_ERROR_STOP=1 -d "$DB_NAME" -f aurora_postgresql_data.sql
+                  fi
+                  psql -X -At -v ON_ERROR_STOP=1 -d "$DB_NAME" -f aurora_postgresql_validation.sql | tee /tmp/validation.txt
+                  grep -q '^TOTAL_FALTA|resumen|0$' /tmp/validation.txt || { echo 'VALIDACION FALLIDA: hay objetos FALTA'; exit 1; }
+                  echo 'BASE DE DATOS LISTA'
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux-x86_64-standard:5.0
+        EnvironmentVariables:
+        - Name: DB_HOST
+          Value:
+            Fn::GetAtt:
+            - DatabaseInstance
+            - Endpoint.Address
+        - Name: DB_NAME
+          Value:
+            Ref: DbName
+        - Name: MASTER_SECRET_ARN
+          Value:
+            Fn::GetAtt:
+            - DatabaseInstance
+            - MasterUserSecret.SecretArn
+        - Name: SECRET_APP
+          Value:
+            Ref: AppDbSecret
+        - Name: SECRET_REPORT
+          Value:
+            Ref: ReportDbSecret
+        - Name: SECRET_DEPLOY
+          Value:
+            Ref: DeployDbSecret
+        - Name: SECRET_DBA
+          Value:
+            Ref: DbaDbSecret
+        - Name: BUNDLE_S3
+          Value: definido-en-cada-ejecucion
+        - Name: ENV_DIR
+          Value: .
+        - Name: LOAD_DATA
+          Value: 'true'
+      VpcConfig:
+        VpcId:
+          Fn::If:
+          - CreateVpc
+          - Ref: Vpc
+          - Ref: ExistingVpcId
+        Subnets:
+          Fn::If:
+          - CreateVpc
+          - - Ref: PrivateSubnetA
+            - Ref: PrivateSubnetB
+          - Ref: ExistingPrivateSubnetIds
+        SecurityGroupIds:
+        - Ref: LambdaSecurityGroup
+      LogsConfig:
+        CloudWatchLogs:
+          Status: ENABLED
+          GroupName:
+            Ref: DbRunnerLogGroup
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      - Key: Name
+        Value:
+          Fn::Sub: ${Environment}-${ProjectSlug}-db-runner
+  ServiceHoursLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/${Environment}-${ProjectSlug}-service-hours
+      RetentionInDays:
+        Fn::If:
+        - IsProduction
+        - 30
+        - 7
+  ServiceHoursRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      Policies:
+      - PolicyName: service-hours
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Sid: StartStopDatabase
+            Effect: Allow
+            Action:
+            - rds:StartDBInstance
+            - rds:StopDBInstance
+            - rds:DescribeDBInstances
+            Resource:
+              Fn::Sub: arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:db:${DatabaseInstance}
+          - Sid: ToggleProjectFunctions
+            Effect: Allow
+            Action:
+            - lambda:PutFunctionConcurrency
+            - lambda:DeleteFunctionConcurrency
+            - lambda:GetFunctionConcurrency
+            Resource:
+              Fn::Sub: arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${Environment}-${ProjectSlug}-api-*
+          - Sid: ListAppStackResources
+            Effect: Allow
+            Action:
+            - cloudformation:ListStackResources
+            Resource:
+              Fn::Sub: arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${Environment}-${ProjectSlug}-api/*
+          - Sid: WriteLogs
+            Effect: Allow
+            Action:
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Resource:
+              Fn::Sub: ${ServiceHoursLogGroup.Arn}:*
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      - Key: Name
+        Value:
+          Fn::Sub: ${Environment}-${ProjectSlug}-service-hours-role
+  ServiceHoursFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: ${Environment}-${ProjectSlug}-service-hours
+      Description:
+        Fn::Sub: ${ProjectLabel} - horario de servicio (${ServiceTimezone})
+      Runtime: python3.13
+      Handler: index.handler
+      MemorySize: 256
+      Timeout: 120
+      Role:
+        Fn::GetAtt:
+        - ServiceHoursRole
+        - Arn
+      Code:
+        ZipFile: |
+          """Horario de servicio: enciende y apaga los servicios del proyecto (EventBridge Scheduler -> esta Lambda).
+
+          warmup: arranca RDS y el EC2 del frontend · start: habilita las Lambdas · stop: Lambdas a concurrencia 0,
+          detiene el EC2 y RDS · status: estado actual. Solo toca la instancia RDS, el EC2 y las funciones del proyecto.
+          """
+          import json
+          import os
+
+          import boto3
+          from botocore.exceptions import ClientError
+
+          rds = boto3.client("rds")
+          ec2 = boto3.client("ec2")
+          lam = boto3.client("lambda")
+          cfn = boto3.client("cloudformation")
+
+
+          def functions():
+              names = []
+              for stack in filter(None, os.environ.get("APP_STACKS", "").split(",")):
+                  try:
+                      for page in cfn.get_paginator("list_stack_resources").paginate(StackName=stack):
+                          names += [r["PhysicalResourceId"] for r in page["StackResourceSummaries"]
+                                    if r["ResourceType"] == "AWS::Lambda::Function"]
+                  except ClientError as error:
+                      if "does not exist" not in str(error):
+                          raise
+              return names
+
+
+          def db_status(db):
+              return rds.describe_db_instances(DBInstanceIdentifier=db)["DBInstances"][0]["DBInstanceStatus"]
+
+
+          def web_status(iid):
+              return ec2.describe_instances(InstanceIds=[iid])["Reservations"][0]["Instances"][0]["State"]["Name"]
+
+
+          def handler(event, context=None):
+              action = (event or {}).get("action", "status")
+              db = os.environ["DB_INSTANCE_ID"]
+              web = os.environ.get("WEB_INSTANCE_ID", "")
+              status = db_status(db)
+              result = {"action": action, "db_before": status, "db": status, "functions": 0}
+              if web:
+                  result["web"] = web_status(web)
+              db_error = None
+              if action in ("warmup", "start"):
+                  if status == "stopped":
+                      # Sin capacidad en la AZ (InsufficientDBInstanceCapacity) no se frena el resto: se enciende lo demás
+                      # y al final se lanza el error para que el Scheduler reintente.
+                      try:
+                          rds.start_db_instance(DBInstanceIdentifier=db)
+                          result["db"] = "starting"
+                      except ClientError as error:
+                          db_error = error
+                          result["db_error"] = error.response["Error"]["Code"]
+                  if web and result["web"] == "stopped":
+                      ec2.start_instances(InstanceIds=[web])
+                      result["web"] = "pending"
+              if action == "start":
+                  for name in functions():
+                      lam.delete_function_concurrency(FunctionName=name)
+                      result["functions"] += 1
+              elif action == "stop":
+                  for name in functions():
+                      lam.put_function_concurrency(FunctionName=name, ReservedConcurrentExecutions=0)
+                      result["functions"] += 1
+                  if web and result["web"] == "running":
+                      ec2.stop_instances(InstanceIds=[web])
+                      result["web"] = "stopping"
+                  if status == "available":
+                      rds.stop_db_instance(DBInstanceIdentifier=db)
+                      result["db"] = "stopping"
+              elif action == "status":
+                  result["disabled"] = [n for n in functions()
+                                        if lam.get_function_concurrency(FunctionName=n).get("ReservedConcurrentExecutions") == 0]
+              print(json.dumps(result))
+              if db_error:
+                  raise db_error
+              return result
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup:
+          Ref: ServiceHoursLogGroup
+      Environment:
+        Variables:
+          DB_INSTANCE_ID:
+            Ref: DatabaseInstance
+          APP_STACKS:
+            Fn::Sub: ${Environment}-${ProjectSlug}-api
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      - Key: Name
+        Value:
+          Fn::Sub: ${Environment}-${ProjectSlug}-service-hours
+  SchedulerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: scheduler.amazonaws.com
+          Action: sts:AssumeRole
+          Condition:
+            StringEquals:
+              aws:SourceAccount:
+                Ref: AWS::AccountId
+      Policies:
+      - PolicyName: invoke-service-hours
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Sid: InvokeServiceHours
+            Effect: Allow
+            Action:
+            - lambda:InvokeFunction
+            Resource:
+              Fn::GetAtt:
+              - ServiceHoursFunction
+              - Arn
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectLabel
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      - Key: Name
+        Value:
+          Fn::Sub: ${Environment}-${ProjectSlug}-scheduler-role
+  ServiceWarmupSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name:
+        Fn::Sub: ${Environment}-${ProjectSlug}-service-warmup
+      Description:
+        Fn::Sub: ${ProjectLabel} - arranca RDS (${ServiceTimezone})
+      ScheduleExpression:
+        Ref: ServiceWarmupCron
+      ScheduleExpressionTimezone:
+        Ref: ServiceTimezone
+      FlexibleTimeWindow:
+        Mode: 'OFF'
+      State:
+        Fn::If:
+        - HasServiceHours
+        - ENABLED
+        - DISABLED
+      Target:
+        Arn:
+          Fn::GetAtt:
+          - ServiceHoursFunction
+          - Arn
+        RoleArn:
+          Fn::GetAtt:
+          - SchedulerRole
+          - Arn
+        Input: '{"action": "warmup"}'
+        RetryPolicy:
+          MaximumRetryAttempts: 3
+          MaximumEventAgeInSeconds: 3600
+  ServiceStartSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name:
+        Fn::Sub: ${Environment}-${ProjectSlug}-service-start
+      Description:
+        Fn::Sub: ${ProjectLabel} - habilita las Lambdas (${ServiceTimezone})
+      ScheduleExpression:
+        Ref: ServiceStartCron
+      ScheduleExpressionTimezone:
+        Ref: ServiceTimezone
+      FlexibleTimeWindow:
+        Mode: 'OFF'
+      State:
+        Fn::If:
+        - HasServiceHours
+        - ENABLED
+        - DISABLED
+      Target:
+        Arn:
+          Fn::GetAtt:
+          - ServiceHoursFunction
+          - Arn
+        RoleArn:
+          Fn::GetAtt:
+          - SchedulerRole
+          - Arn
+        Input: '{"action": "start"}'
+        RetryPolicy:
+          MaximumRetryAttempts: 3
+          MaximumEventAgeInSeconds: 3600
+  ServiceEnsureSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name:
+        Fn::Sub: ${Environment}-${ProjectSlug}-service-ensure
+      Description:
+        Fn::Sub: ${ProjectLabel} - reintenta el arranque en horario (${ServiceTimezone})
+      ScheduleExpression:
+        Ref: ServiceEnsureCron
+      ScheduleExpressionTimezone:
+        Ref: ServiceTimezone
+      FlexibleTimeWindow:
+        Mode: 'OFF'
+      State:
+        Fn::If:
+        - HasServiceHours
+        - ENABLED
+        - DISABLED
+      Target:
+        Arn:
+          Fn::GetAtt:
+          - ServiceHoursFunction
+          - Arn
+        RoleArn:
+          Fn::GetAtt:
+          - SchedulerRole
+          - Arn
+        Input: '{"action": "start"}'
+        RetryPolicy:
+          MaximumRetryAttempts: 3
+          MaximumEventAgeInSeconds: 3600
+  ServiceStopSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name:
+        Fn::Sub: ${Environment}-${ProjectSlug}-service-stop
+      Description:
+        Fn::Sub: ${ProjectLabel} - apaga Lambdas y RDS (${ServiceTimezone})
+      ScheduleExpression:
+        Ref: ServiceStopCron
+      ScheduleExpressionTimezone:
+        Ref: ServiceTimezone
+      FlexibleTimeWindow:
+        Mode: 'OFF'
+      State:
+        Fn::If:
+        - HasServiceHours
+        - ENABLED
+        - DISABLED
+      Target:
+        Arn:
+          Fn::GetAtt:
+          - ServiceHoursFunction
+          - Arn
+        RoleArn:
+          Fn::GetAtt:
+          - SchedulerRole
+          - Arn
+        Input: '{"action": "stop"}'
+        RetryPolicy:
+          MaximumRetryAttempts: 3
+          MaximumEventAgeInSeconds: 3600
+  SubnetsParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name:
+        Fn::Sub: /${Environment}/${ProjectSlug}/network/subnets
+      Type: StringList
+      Value:
+        Fn::Join:
+        - ','
+        - Fn::If:
+          - CreateVpc
+          - - Ref: PrivateSubnetA
+            - Ref: PrivateSubnetB
+          - Ref: ExistingPrivateSubnetIds
+      Tags:
+        Project:
+          Ref: ProjectLabel
+        Environment:
+          Ref: EnvironmentTag
+  LambdaSecurityGroupParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name:
+        Fn::Sub: /${Environment}/${ProjectSlug}/network/lambda-sg
+      Type: String
+      Value:
+        Ref: LambdaSecurityGroup
+      Tags:
+        Project:
+          Ref: ProjectLabel
+        Environment:
+          Ref: EnvironmentTag
+  DbEndpointParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name:
+        Fn::Sub: /${Environment}/${ProjectSlug}/db/proxy-endpoint
+      Type: String
+      Value:
+        Fn::If:
+        - UseProxy
+        - Fn::GetAtt:
+          - DatabaseProxy
+          - Endpoint
+        - Fn::GetAtt:
+          - DatabaseInstance
+          - Endpoint.Address
+      Tags:
+        Project:
+          Ref: ProjectLabel
+        Environment:
+          Ref: EnvironmentTag
+  DbClusterParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name:
+        Fn::Sub: /${Environment}/${ProjectSlug}/db/cluster-id
+      Type: String
+      Value:
+        Ref: DatabaseInstance
+      Tags:
+        Project:
+          Ref: ProjectLabel
+        Environment:
+          Ref: EnvironmentTag
+  FrontendOriginParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name:
+        Fn::Sub: /${Environment}/${ProjectSlug}/frontend/origin
+      Type: String
+      Value:
+        Fn::Sub: https://${WebDistribution.DomainName}
+      Tags:
+        Project:
+          Ref: ProjectLabel
+        Environment:
+          Ref: EnvironmentTag
+Outputs:
+  VpcId:
+    Value:
+      Fn::If:
+      - CreateVpc
+      - Ref: Vpc
+      - Ref: ExistingVpcId
+  PrivateSubnetIds:
+    Value:
+      Fn::Join:
+      - ','
+      - Fn::If:
+        - CreateVpc
+        - - Ref: PrivateSubnetA
+          - Ref: PrivateSubnetB
+        - Ref: ExistingPrivateSubnetIds
+  LambdaSecurityGroupId:
+    Value:
+      Ref: LambdaSecurityGroup
+  DbInstanceId:
+    Value:
+      Ref: DatabaseInstance
+  DbEndpoint:
+    Value:
+      Fn::GetAtt:
+      - DatabaseInstance
+      - Endpoint.Address
+  DbAppEndpoint:
+    Value:
+      Fn::If:
+      - UseProxy
+      - Fn::GetAtt:
+        - DatabaseProxy
+        - Endpoint
+      - Fn::GetAtt:
+        - DatabaseInstance
+        - Endpoint.Address
+  MasterSecretArn:
+    Value:
+      Fn::GetAtt:
+      - DatabaseInstance
+      - MasterUserSecret.SecretArn
+  AppSecretName:
+    Value:
+      Fn::Sub: /${Environment}/${ProjectSlug}/db/app
+  FrontendUrl:
+    Value:
+      Fn::Sub: https://${WebDistribution.DomainName}
+  WebRepositoryUri:
+    Value:
+      Fn::GetAtt:
+      - WebRepository
+      - RepositoryUri
+  WebBuilderProject:
+    Value:
+      Ref: WebBuilder
+  WebDistributionId:
+    Value:
+      Ref: WebDistribution
+  WebFunctionName:
+    Value:
+      Ref: WebFunction
+  WebFunctionUrl:
+    Value:
+      Fn::GetAtt:
+      - WebFunctionUrl
+      - FunctionUrl
+  ArtifactsBucket:
+    Value:
+      Ref: ArtifactsBucket
+  DbRunnerProject:
+    Value:
+      Ref: DbRunner
+  ServiceHoursFunction:
+    Value:
+      Ref: ServiceHoursFunction

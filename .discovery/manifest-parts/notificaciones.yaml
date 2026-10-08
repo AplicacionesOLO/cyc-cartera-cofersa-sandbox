@@ -1,0 +1,73 @@
+module:
+  name: notificaciones
+  entities: [notificaciones, config_sistema, usuarios]
+  use_cases: [ListNotificacionesUseCase, MarcarNotificacionLeidaUseCase, MarcarTodasLeidasUseCase,
+              ListMensajesChatUseCase, EnviarMensajeChatUseCase, GetTipoCambioUseCase, ConsultarHaciendaUseCase,
+              BuscarCabysUseCase]
+api_endpoints:
+  - {method: GET, path: /notificaciones, function: NotificacionesApi,
+     handler: entrypoints.lambda_handlers.notificaciones.notificaciones_handler, use_case: ListNotificacionesUseCase,
+     module: notificaciones, auth: cognito,
+     source: ["src/components/topbar.tsx:192", "src/components/topbar.tsx:201"]}
+  - {method: PATCH, path: "/notificaciones/{id}", function: NotificacionesApi,
+     handler: entrypoints.lambda_handlers.notificaciones.notificaciones_handler,
+     use_case: MarcarNotificacionLeidaUseCase, module: notificaciones, auth: cognito,
+     source: ["src/components/topbar.tsx:224", "src/components/notificaciones/panel-notificaciones.tsx:54"]}
+  - {method: POST, path: /notificaciones/leer-todas, function: NotificacionesApi,
+     handler: entrypoints.lambda_handlers.notificaciones.notificaciones_handler, use_case: MarcarTodasLeidasUseCase,
+     module: notificaciones, auth: cognito,
+     source: ["src/components/topbar.tsx:233", "src/components/notificaciones/panel-notificaciones.tsx:63"]}
+  - {method: GET, path: /chat, function: NotificacionesApi,
+     handler: entrypoints.lambda_handlers.notificaciones.notificaciones_handler, use_case: ListMensajesChatUseCase,
+     module: notificaciones, auth: cognito,
+     source: ["src/hooks/useChat.ts:51", "src/hooks/useChat.ts:73", "src/hooks/useChat.ts:103",
+              "src/hooks/useChat.ts:136"]}
+  - {method: POST, path: /chat, function: NotificacionesApi,
+     handler: entrypoints.lambda_handlers.notificaciones.notificaciones_handler, use_case: EnviarMensajeChatUseCase,
+     module: notificaciones, auth: cognito,
+     source: ["src/app/api/chat/route.ts:14", "src/hooks/useChat.ts:166"]}
+  - {method: GET, path: /tipo-cambio, function: NotificacionesApi,
+     handler: entrypoints.lambda_handlers.notificaciones.notificaciones_handler, use_case: GetTipoCambioUseCase,
+     module: notificaciones, auth: cognito, timeout: 29,
+     source: ["src/app/api/tipo-cambio/route.ts:71", "src/app/api/tipo-cambio/route.ts:47",
+              "src/app/api/tipo-cambio/route.ts:88", "src/components/tipo-cambio-topbar.tsx:25"]}
+  - {method: GET, path: /hacienda, function: NotificacionesApi,
+     handler: entrypoints.lambda_handlers.notificaciones.notificaciones_handler, use_case: ConsultarHaciendaUseCase,
+     module: notificaciones, auth: cognito, timeout: 29,
+     source: ["src/app/api/hacienda/route.ts:18", "src/components/centro-recursos/TabAplicaciones.tsx:76"]}
+  - {method: GET, path: /hacienda/cabys, function: NotificacionesApi,
+     handler: entrypoints.lambda_handlers.notificaciones.notificaciones_handler, use_case: BuscarCabysUseCase,
+     module: notificaciones, auth: cognito, timeout: 29,
+     source: ["src/app/api/hacienda/cabys/route.ts:13", "src/components/centro-recursos/TabAplicaciones.tsx:99"]}
+authorization_rules:
+  - {table: public.notificaciones, policy: "Usuario ve sus propias notificaciones", command: SELECT,
+     enforced_in: "ListNotificacionesUseCase (require_usuario; WHERE usuario_id = perfil.id del principal, se ignora cualquier id del front)"}
+  - {table: public.notificaciones, policy: "Usuario actualiza sus notificaciones", command: UPDATE,
+     enforced_in: "MarcarNotificacionLeidaUseCase / MarcarTodasLeidasUseCase (require_usuario; UPDATE ... WHERE usuario_id = perfil.id; solo leida = true)"}
+  - {table: public.notificaciones, policy: notificaciones_insert_usuarios_activos, command: INSERT,
+     enforced_in: "NotificacionesApi no expone inserción; los INSERT los hacen funciones SQL/cron (service_role) y los casos de uso de otros módulos (solicitudes, clientes, auditoria_legal) después de require_usuario (= fn_es_usuario_activo)"}
+storage_buckets: []
+scheduled_jobs: []
+async_workers: []
+structural_changes:
+  - "REALTIME: el canal Supabase postgres_changes (INSERT en notificaciones filtrado por usuario_id) se reemplazó por polling en useNotificacionesController: carga al montar, cada 60 s y al volver a enfocar/mostrar la ventana. No se usa WebSocket porque las notificaciones las insertan funciones SQL/cron (fn_check_sync_salud, fn_check_recibos_reversion, triggers) y no la API, así que un publisher en el backend no las vería. Badge, panel y tabs se conservan; marcar leída/todas sigue siendo optimista."
+  - "El usuario_id de las notificaciones ya no viene del front: el backend usa siempre el perfil (tbl_usuarios.id) del principal Cognito (equivale a las políticas RLS por email del JWT)."
+  - "Marcar como leída: supabase.update → PATCH /notificaciones/{id} {leida: true}; marcar todas → POST /notificaciones/leer-todas."
+  - "Topbar: 'Ver como' usa useVerComoController (POST /me/preview-rol + cookie en el front) en lugar de fetch('/api/preview-rol'); cerrar sesión usa signOutUser() de Cognito. ClientWrapper usa onAuthStateChange de src/shared/auth/cognito-auth.ts (SIGNED_OUT o SESSION_EXPIRED → /login; Supabase emitía SIGNED_OUT también cuando fallaba el refresh)."
+  - "Tipo de cambio: BCCR_TOKEN (env de Vercel) pasa a la clave bccr_token del secreto de integraciones (container.integration_config()); las llamadas HTTP salen por container.external_http(); el respaldo sigue en config_sistema (tipo_cambio_compra/venta/fecha). bccr_email no lo usaba el origen y no se usa."
+  - "Hacienda (estado tributario y CABYS) pasa de API Routes de Next a NotificacionesApi vía external_http, con el mismo User-Agent de navegador, timeout de 8 s y la misma forma de respuesta ({data, notFound, error} / {data, error})."
+  - "useChat (src/hooks/useChat.ts) re-exporta useChatController (src/views/notificaciones/hooks) que usa GET/POST /chat."
+incompatibilities:
+  - "Las notificaciones nuevas aparecen con hasta 60 s de demora (o al enfocar la ventana) en lugar de instantáneamente por Realtime."
+  - "Chat del equipo: sin Supabase Realtime ni Presence no hay mensajes en vivo ni lista de conectados (conectados = []). El ChatPanel está desmontado en ClientWrapper ('ChatPanel desactivado'), así que no hay impacto visible."
+  - "/api/tipo-cambio tenía revalidate = 3600 (caché de Next); en la Lambda cada GET /tipo-cambio consulta al BCCR (el topbar lo pide una vez al montar, y persiste entre navegaciones)."
+  - "/api/tipo-cambio era público (sin sesión); GET /tipo-cambio exige token Cognito (solo lo usa el topbar autenticado)."
+  - "MarcarNotificacionLeida sobre una notificación ajena o inexistente responde 404 (antes el UPDATE con RLS afectaba 0 filas en silencio); el controller ignora el error igual que el original."
+migration_risks:
+  - "R-SCHEMA-MISMATCH: la tabla mensajes_chat (usada por src/app/api/chat/route.ts y src/hooks/useChat.ts) NO existe en el esquema real de producción, por lo que el chat no funciona en el origen. Decisión: no se inventa la tabla; GET /chat responde 422 'No se pudieron cargar los mensajes.' y POST /chat valida igual que el origen (mensaje vacío / >1000 / usuario) y responde 422 'Error al enviar el mensaje' (code chat_no_disponible). Si se decide habilitar el chat, hay que crear la tabla con un cambio versionado de BD y reimplementar los casos de uso."
+  - "La Lambda NotificacionesApi necesita salida a Internet (NAT) para api.hacienda.go.cr y apim.bccr.fi.cr. Hacienda bloqueaba tráfico desde nubes (Vercel) con su WAF: puede pasar lo mismo desde AWS; en ese caso la UI muestra el error de conexión normal (sin romper)."
+  - "Tipo de cambio: dos llamadas secuenciales al BCCR con timeout de 8 s c/u; la Lambda debe tener timeout 29 s."
+pending:
+  - "auditoria_legal: src/app/(app)/auditoria-legal/garantias/ModalEmitirPagare.tsx:245 y ModalRegistrarGarantia.tsx:174/293 siguen llamando fetch('/api/hacienda?...'), ruta que ya se borró: deben usar notificacionesApi.hacienda(identificacion) o useHaciendaController (src/views/notificaciones/hooks/use-hacienda-controller.ts)."
+  - "Secreto de integraciones: definir bccr_token (antes BCCR_TOKEN en Vercel)."
+  - "Infra: NotificacionesApi con acceso a Internet (NAT) para BCCR y Hacienda."

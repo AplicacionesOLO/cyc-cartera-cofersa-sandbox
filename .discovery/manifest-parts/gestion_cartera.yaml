@@ -1,0 +1,104 @@
+module:
+  name: gestion_cartera
+  entities: [pedidos_retenidos, saldos_favor, reportes_pago, reporte_pago_detalles, maestro_clientes]
+  use_cases:
+    - GetPedidosRetenidosUseCase
+    - ActualizarPedidoRetenidoUseCase
+    - ListSaldosFavorUseCase
+    - ListSaldosFavorClienteUseCase
+    - AplicarSaldoFavorUseCase
+    - MatchingSaldosFavorUseCase
+    - CrearUrlSubidaComprobanteUseCase
+    - ObtenerUrlComprobanteUseCase
+    - ReportarPagoUseCase
+
+api_endpoints:
+  - {method: GET, path: /pedidos-retenidos, function: GestionCarteraApi,
+     handler: entrypoints.lambda_handlers.gestion_cartera.gestion_cartera_handler,
+     use_case: GetPedidosRetenidosUseCase, module: gestion_cartera, auth: cognito, timeout: 29,
+     source: ["src/app/(app)/gestion-cartera/pedidos-retenidos/pedidos-retenidos-cliente.tsx:187"]}
+  - {method: PUT, path: "/pedidos-retenidos/{id}", function: GestionCarteraApi,
+     handler: entrypoints.lambda_handlers.gestion_cartera.gestion_cartera_handler,
+     use_case: ActualizarPedidoRetenidoUseCase, module: gestion_cartera, auth: cognito,
+     source: ["src/app/api/gestion-cartera/pedidos-retenidos/[id]/route.ts",
+              "src/app/(app)/gestion-cartera/pedidos-retenidos/pedidos-retenidos-cliente.tsx:247",
+              "src/app/(app)/gestion-cartera/pedidos-retenidos/pedidos-retenidos-cliente.tsx:272"]}
+  - {method: GET, path: /saldos-favor, function: GestionCarteraApi,
+     handler: entrypoints.lambda_handlers.gestion_cartera.gestion_cartera_handler,
+     use_case: ListSaldosFavorUseCase, module: gestion_cartera, auth: cognito,
+     source: ["src/app/(app)/gestion-cartera/saldos-favor/page.tsx:29"]}
+  - {method: GET, path: /saldos-favor/por-cliente, function: GestionCarteraApi,
+     handler: entrypoints.lambda_handlers.gestion_cartera.gestion_cartera_handler,
+     use_case: ListSaldosFavorClienteUseCase, module: gestion_cartera, auth: cognito,
+     source: ["src/components/saldos-favor/tab-saldos-favor.tsx:40"]}
+  - {method: POST, path: "/saldos-favor/{id}/aplicar", function: GestionCarteraApi,
+     handler: entrypoints.lambda_handlers.gestion_cartera.gestion_cartera_handler,
+     use_case: AplicarSaldoFavorUseCase, module: gestion_cartera, auth: cognito,
+     source: ["src/components/saldos-favor/saldos-favor-tabla.tsx:143"]}
+  - {method: GET, path: /saldos-favor/matching, function: GestionCarteraApi,
+     handler: entrypoints.lambda_handlers.gestion_cartera.gestion_cartera_handler,
+     use_case: MatchingSaldosFavorUseCase, module: gestion_cartera, auth: cognito, timeout: 29,
+     source: ["src/app/api/saldos-favor/matching/route.ts",
+              "src/app/(app)/gestion-cartera/saldos-favor/saldos-favor-cliente.tsx:44",
+              "src/components/saldos-favor/tab-saldos-favor.tsx:27"]}
+  - {method: POST, path: /gestion-cartera/comprobantes/upload-url, function: GestionCarteraApi,
+     handler: entrypoints.lambda_handlers.gestion_cartera.gestion_cartera_handler,
+     use_case: CrearUrlSubidaComprobanteUseCase, module: gestion_cartera, auth: cognito,
+     source: ["src/components/clientes/ficha/tab-reportar-pago.tsx:510"]}
+  - {method: GET, path: /gestion-cartera/comprobantes/download-url, function: GestionCarteraApi,
+     handler: entrypoints.lambda_handlers.gestion_cartera.gestion_cartera_handler,
+     use_case: ObtenerUrlComprobanteUseCase, module: gestion_cartera, auth: cognito,
+     source: ["src/components/clientes/ficha/tab-reportar-pago.tsx:519"]}
+  - {method: POST, path: /clientes/pagos/reportar, function: GestionCarteraApi,
+     handler: entrypoints.lambda_handlers.gestion_cartera.gestion_cartera_handler,
+     use_case: ReportarPagoUseCase, module: gestion_cartera, auth: cognito,
+     source: ["src/app/api/clientes/pagos/reportar/route.ts",
+              "src/components/clientes/ficha/tab-reportar-pago.tsx:526"]}
+
+storage_buckets: [{name: comprobantes-pago, functions: [GestionCarteraApi]}]
+
+authorization_rules:
+  - {table: public.pedidos_retenidos, policy: pedidos_retenidos_select_activos, command: SELECT,
+     enforced_in: "GetPedidosRetenidosUseCase (require_usuario: cualquier usuario activo; email opcional = Vista Global)"}
+  - {table: public.pedidos_retenidos, policy: pedidos_retenidos_update_activos, command: UPDATE,
+     enforced_in: "ActualizarPedidoRetenidoUseCase (require_usuario + require_escritura: Gerencia 403 'Sin permisos para modificar pedidos retenidos')"}
+  - {table: public.saldos_favor, policy: saldos_favor_select, command: SELECT,
+     enforced_in: "ListSaldosFavorUseCase (analista/riesgo con cartera → su email forzado), ListSaldosFavorClienteUseCase (global o cliente de maestro_clientes.analista_email = email), MatchingSaldosFavorUseCase (filtra por clientes_de_analista)"}
+  - {table: public.saldos_favor, policy: saldos_favor_update, command: UPDATE,
+     enforced_in: "AplicarSaldoFavorUseCase (require_usuario + require_escritura + COORDINADOR o cliente en la cartera del analista)"}
+  - {table: storage.objects, policy: usuarios_activos_suben_comprobantes, command: INSERT,
+     enforced_in: "CrearUrlSubidaComprobanteUseCase (require_usuario antes de firmar la URL PUT; content-type limitado a image/webp|jpeg|png; key safe_key(cliente_cod, <ms>_<nombre>.<ext>))"}
+
+scheduled_jobs: []
+async_workers: []
+
+structural_changes:
+  - "reportes_pago y reporte_pago_detalles tienen RLS habilitado SIN políticas en Supabase (deny-all para authenticated): la regla se define en ReportarPagoUseCase = usuario activo (require_usuario) y no Gerencia (require_escritura); analista_email = email del principal (no lo manda el front)."
+  - "POST /clientes/pagos/reportar: cabecera + detalles se insertan en UNA transacción real (antes INSERT + INSERT + DELETE de rollback manual); la referencia duplicada sigue respondiendo 409 con el mismo texto y además la protege uq_reportes_pago_referencia."
+  - "Bucket comprobantes-pago pasa de público (getPublicUrl) a privado: el front pide POST /gestion-cartera/comprobantes/upload-url, sube con uploadToPresignedUrl y guarda la KEY S3 en reportes_pago.url_comprobante; la lectura se hace con GET /gestion-cartera/comprobantes/download-url?key= (acepta también la URL pública legada de Supabase y extrae la key)."
+  - "La compresión de imágenes sigue en el navegador (lib/utils/comprimir-imagen, Canvas → WebP/JPEG) antes de pedir la URL prefirmada; la key la arma el backend con el mismo patrón `${cliente_cod}/${Date.now()}_${base}.${ext}`."
+  - "Saldos a favor: el UPDATE directo a saldos_favor desde el navegador pasa a POST /saldos-favor/{id}/aplicar (aplicado_por = email del principal, aplicado_en = now() en BD)."
+  - "Tab Saldos a Favor de la Ficha 360°: GERENCIA ahora ve los saldos del cliente (es_global) en solo lectura; con la RLS original (solo rol COORDINADOR exacto) veía la lista vacía. Consistente con CLAUDE.md (Gerencia = alcance de Coordinador, sin editar)."
+  - "Matching (GET /saldos-favor/matching): el scope por cartera se aplica a ANALISTA y a ANALISTA_RIESGO con tiene_cartera_asignada (puede_gestionar_cartera), igual que la página de Saldos a Favor; antes solo rol === 'ANALISTA'. Se quitaron los headers Cache-Control privados (API Gateway/Lambda)."
+  - "GET /saldos-favor: el email pedido solo se respeta para roles globales y ANALISTA_RIESGO sin cartera; ANALISTA (y riesgo con cartera) siempre recibe su propia cartera (antes lo decidía el Server Component con el rol efectivo)."
+  - "Página Saldos a Favor: si falla la carga muestra un mensaje de error visible (regla 8) en vez de una tabla vacía; la lista de analistas usa analistasConCarteraReal (GET /me/analistas-con-cartera)."
+  - "bandeja-pagos y recibos-ruta (placeholders) solo verificaban sesión con supabase.auth.getUser(): ahora usan getUsuarioActual(). gestion-pagos/* no tenía acceso a Supabase (sin cambios)."
+  - "fn_get_kpis_saldos_favor no tiene consumidores en el front (ni en el src original): no se expuso endpoint."
+  - "Front: src/views/gestion-cartera/ (api/gestion-cartera-api.ts, types.ts, hooks use-pedidos-retenidos / use-saldos-favor-cliente / use-saldos-favor-matching / use-aplicar-saldo / use-reportar-pago -controller.ts). Borradas las 3 route.ts del alcance."
+
+incompatibilities:
+  - "En Supabase el reporte de pago fallaba siempre por RLS (reportes_pago sin políticas + cliente de sesión); en AWS funciona con la regla de ReportarPagoUseCase. El toast dice 'el coordinador recibirá una notificación' pero no existe trigger de notificación sobre tbl_reportes_pago (tampoco en el origen): se conservó el texto."
+  - "Las URLs públicas de comprobantes ya guardadas en url_comprobante dejan de funcionar al apagar Supabase Storage; ObtenerUrlComprobanteUseCase extrae la key de esas URLs, pero los objetos deben copiarse al bucket S3 con la misma ruta (cliente_cod/archivo)."
+  - "El update de un saldo de otra cartera antes 'tenía éxito' en silencio (RLS filtraba 0 filas); ahora responde 403 y la UI muestra 'No se pudo marcar como aplicado. Intentá de nuevo.'."
+  - "PUT /pedidos-retenidos/{id} con un id inexistente responde 404 'Pedido retenido no encontrado' (antes 500 con el error de .single())."
+
+migration_risks:
+  - "Copiar los objetos del bucket Supabase comprobantes-pago a S3 conservando las keys; sin eso los reportes históricos quedan sin comprobante."
+  - "El matching (fn_matching_saldos_favor) sin cliente recorre todos los saldos/facturas: verificar que termine dentro de los 29 s en Aurora con datos reales (antes se cacheaba 5 min con Cache-Control)."
+  - "Las notificaciones de pedidos retenidos dependen del trigger trg_pedidos_retenidos_trg_notificar_pedido_retenido (fn_notificar_pedido_retenido) en Aurora: validar que el job de sync de pedidos (otro módulo) siga insertando en tbl_pedidos_retenidos."
+
+pending:
+  - "solicitudes: components/solicitudes/form-solicitud-nueva.tsx también sube al bucket comprobantes-pago; si SolicitudesApi firma URLs de ese bucket debe agregarse a storage_buckets.comprobantes-pago.functions."
+  - "clientes: ficha-cliente.tsx renderiza TabReportarPago y TabSaldosFavor (ya migrados); no requiere cambios, pero el agente de clientes no debe registrar /clientes/pagos/reportar (es de GestionCarteraApi)."
+  - "API Gateway: /clientes/pagos/reportar (GestionCarteraApi) convive como recurso estático junto a /clientes/{cod} (ClientesApi); el generador del template debe crear ambos recursos."
+  - "Datos: script de copia Supabase Storage → S3 para comprobantes-pago (base compartida / data migration)."

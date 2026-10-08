@@ -1,0 +1,117 @@
+module:
+  name: presupuesto
+  entities: [public.presupuesto_cobro, public.presupuesto_meta_vendedor, public.proyeccion_semana_snapshot]
+  use_cases:
+    - GetPresupuestoMesUseCase
+    - CongelarPresupuestoUseCase
+    - AjustarMetaVendedorUseCase
+    - ReasignarClientePresupuestoUseCase
+    - ListVendedoresPresupuestoUseCase
+    - GetDestinatariosPresupuestoUseCase
+    - EnviarCorreoPresupuestoUseCase
+    - GetRecuperacionMesUseCase
+    - GetProyeccionCobroUseCase
+    - GetSinPagoUseCase
+    - GetRecuperacionMomUseCase
+    - GetRecuperacionPeriodoUseCase
+    - GetRecuperacionTramosUseCase
+    - GetMetaAnalistaMesUseCase
+api_endpoints:
+  - {method: GET, path: /presupuesto/mes, function: PresupuestoApi,
+     handler: entrypoints.lambda_handlers.presupuesto.presupuesto_handler, use_case: GetPresupuestoMesUseCase,
+     module: presupuesto, auth: cognito, timeout: 29,
+     source: ["src/app/(app)/reportes/presupuesto-cobro/tab-presupuesto.tsx:62",
+              "src/app/(app)/reportes/presupuesto-cobro/tab-presupuesto.tsx:67"]}
+  - {method: POST, path: /presupuesto/mes/congelar, function: PresupuestoApi,
+     handler: entrypoints.lambda_handlers.presupuesto.presupuesto_handler, use_case: CongelarPresupuestoUseCase,
+     module: presupuesto, auth: cognito, timeout: 29,
+     source: ["src/app/(app)/reportes/presupuesto-cobro/tab-presupuesto.tsx:90",
+              "src/app/(app)/reportes/presupuesto-cobro/tab-presupuesto.tsx:99",
+              "src/app/(app)/reportes/presupuesto-cobro/tab-presupuesto.tsx:103"]}
+  - {method: POST, path: /presupuesto/mes/meta, function: PresupuestoApi,
+     handler: entrypoints.lambda_handlers.presupuesto.presupuesto_handler, use_case: AjustarMetaVendedorUseCase,
+     module: presupuesto, auth: cognito,
+     source: ["src/app/(app)/reportes/presupuesto-cobro/tab-presupuesto.tsx:111"]}
+  - {method: POST, path: /presupuesto/mes/reasignar, function: PresupuestoApi,
+     handler: entrypoints.lambda_handlers.presupuesto.presupuesto_handler,
+     use_case: ReasignarClientePresupuestoUseCase, module: presupuesto, auth: cognito,
+     source: ["src/app/(app)/reportes/presupuesto-cobro/tab-presupuesto.tsx:106"]}
+  - {method: GET, path: /presupuesto/vendedores, function: PresupuestoApi,
+     handler: entrypoints.lambda_handlers.presupuesto.presupuesto_handler, use_case: ListVendedoresPresupuestoUseCase,
+     module: presupuesto, auth: cognito,
+     source: ["src/app/(app)/reportes/presupuesto-cobro/tab-presupuesto.tsx:81"]}
+  - {method: GET, path: /presupuesto/destinatarios, function: PresupuestoApi,
+     handler: entrypoints.lambda_handlers.presupuesto.presupuesto_handler,
+     use_case: GetDestinatariosPresupuestoUseCase, module: presupuesto, auth: cognito,
+     source: ["src/app/(app)/reportes/presupuesto-cobro/tab-presupuesto.tsx:304",
+              "src/app/(app)/reportes/presupuesto-cobro/tab-presupuesto.tsx:305",
+              "src/app/(app)/reportes/presupuesto-cobro/tab-presupuesto.tsx:307",
+              "src/app/(app)/reportes/presupuesto-cobro/tab-presupuesto.tsx:308"]}
+  - {method: POST, path: /presupuesto/enviar, function: PresupuestoApi,
+     handler: entrypoints.lambda_handlers.presupuesto.presupuesto_handler, use_case: EnviarCorreoPresupuestoUseCase,
+     module: presupuesto, auth: cognito, timeout: 29,
+     source: ["src/app/(app)/reportes/presupuesto-cobro/tab-presupuesto.tsx:364",
+              "src/app/(app)/reportes/presupuesto-cobro/tab-presupuesto.tsx:365",
+              "src/app/(app)/reportes/presupuesto-cobro/tab-recuperacion.tsx:181",
+              "src/app/(app)/reportes/presupuesto-cobro/tab-recuperacion.tsx:182"]}
+  - {method: GET, path: /presupuesto/recuperacion, function: PresupuestoApi,
+     handler: entrypoints.lambda_handlers.presupuesto.presupuesto_handler, use_case: GetRecuperacionMesUseCase,
+     module: presupuesto, auth: cognito, timeout: 29,
+     source: ["src/app/(app)/reportes/presupuesto-cobro/tab-recuperacion.tsx:100"]}
+  - {method: GET, path: /presupuesto/proyeccion, function: PresupuestoApi,
+     handler: entrypoints.lambda_handlers.presupuesto.presupuesto_handler, use_case: GetProyeccionCobroUseCase,
+     module: presupuesto, auth: cognito, timeout: 29,
+     source: ["src/app/(app)/reportes/presupuesto-cobro/tab-proyeccion.tsx:80"]}
+  - {method: GET, path: /presupuesto/sin-pago, function: PresupuestoApi,
+     handler: entrypoints.lambda_handlers.presupuesto.presupuesto_handler, use_case: GetSinPagoUseCase,
+     module: presupuesto, auth: cognito,
+     source: ["src/app/(app)/reportes/presupuesto-cobro/tab-sin-pago.tsx:45",
+              "src/app/(app)/reportes/presupuesto-cobro/tab-sin-pago.tsx:50"]}
+  - {method: GET, path: /presupuesto/recuperacion-mom, function: PresupuestoApi,
+     handler: entrypoints.lambda_handlers.presupuesto.presupuesto_handler, use_case: GetRecuperacionMomUseCase,
+     module: presupuesto, auth: cognito, timeout: 29,
+     source: ["src/components/reportes/RecuperacionMom.tsx:57"]}
+  - {method: GET, path: /presupuesto/recuperacion-periodo, function: PresupuestoApi,
+     handler: entrypoints.lambda_handlers.presupuesto.presupuesto_handler, use_case: GetRecuperacionPeriodoUseCase,
+     module: presupuesto, auth: cognito, timeout: 29,
+     source: ["src/components/reportes/RecuperacionPeriodoCliente.tsx:57"]}
+  - {method: GET, path: /presupuesto/recuperacion-tramos, function: PresupuestoApi,
+     handler: entrypoints.lambda_handlers.presupuesto.presupuesto_handler, use_case: GetRecuperacionTramosUseCase,
+     module: presupuesto, auth: cognito, timeout: 29,
+     source: ["src/components/reportes/RecuperacionTramos.tsx:50"]}
+  - {method: GET, path: /presupuesto/meta-analista, function: PresupuestoApi,
+     handler: entrypoints.lambda_handlers.presupuesto.presupuesto_handler, use_case: GetMetaAnalistaMesUseCase,
+     module: presupuesto, auth: cognito,
+     source: ["src/components/reportes/RecuperacionPeriodoCliente.tsx:65"]}
+storage_buckets: []
+authorization_rules:
+  - {table: public.presupuesto_cobro, policy: solo_usuarios_activos, command: ALL,
+     enforced_in: "Todos los casos de uso de presupuesto (require_usuario = usuario activo). Lectura: GetPresupuestoMesUseCase / GetRecuperacionMesUseCase (require_roles COORDINADOR|GERENCIA), GetSinPagoUseCase (cualquier usuario activo). Escritura (fn_presupuesto_guardar / fn_presupuesto_reasignar): CongelarPresupuestoUseCase y ReasignarClientePresupuestoUseCase (require_coordinador; GERENCIA solo lectura)"}
+  - {table: public.presupuesto_meta_vendedor, policy: solo_usuarios_activos, command: ALL,
+     enforced_in: "GetPresupuestoMesUseCase (require_usuario + require_roles COORDINADOR|GERENCIA), GetMetaAnalistaMesUseCase (require_usuario + scope_email: ANALISTA solo su email), AjustarMetaVendedorUseCase / CongelarPresupuestoUseCase / ReasignarClientePresupuestoUseCase (require_coordinador; fn_presupuesto_meta / fn__recalc_metas)"}
+  - {table: public.proyeccion_semana_snapshot, policy: solo_usuarios_activos, command: ALL,
+     enforced_in: "GetProyeccionCobroUseCase (require_usuario + require_roles COORDINADOR|GERENCIA; fn_proyeccion_cobro escribe el snapshot vía fn_snapshot_proyeccion_semana y el caso de uso hace commit)"}
+scheduled_jobs: []
+async_workers: []
+structural_changes:
+  - "tab-presupuesto: las dos llamadas fn_presupuesto_frozen + fn_presupuesto_preview pasan a un único GET /presupuesto/mes que devuelve el congelado o el estimado con congelado:false (misma forma que el estado `Data` del componente)."
+  - "Congelar, regenerar, editar meta y reasignar (antes rpc genérico con p_email del front) son POST /presupuesto/mes/{congelar|meta|reasignar}; el email que se guarda en generado_por/updated_por es el del usuario autenticado (no el que mande el front). La prop userEmail de TabPresupuesto queda sin uso."
+  - "Modal 'Enviar Presupuesto General': las 5 lecturas (vendedores, supervisores, usuarios+cartera real, portafolio_grupos, portafolio_acotado) pasan a GET /presupuesto/destinatarios + analistasConCarteraReal (GET /me/analistas-con-cartera); el cruce de destinatarios y filas del correo se conserva idéntico en use-envio-presupuesto-general-controller."
+  - "Envío por correo de tab-presupuesto y tab-recuperacion (antes fetch a /api/reportes/enviar con providerToken) pasa a POST /presupuesto/enviar → EnviarCorreoPresupuestoUseCase → UsuarioMailer (refresh token guardado). Mismas validaciones y textos ('to, subject y html son requeridos', 'Dirección de correo inválida: x', 'No tenés permiso para enviar estos reportes'); respuesta {ok, email_sent, to}."
+  - "tab-sin-pago: fn_sin_pago_cliente + SUM(presupuesto_cobro.ppto_cartera) en un único GET /presupuesto/sin-pago → {filas, ppto_total}."
+  - "RecuperacionPeriodoCliente: fn_recuperacion_periodo → GET /presupuesto/recuperacion-periodo y fn_meta_analista_mes → GET /presupuesto/meta-analista ({meta}); un fallo al leer la meta deja 0 como en el original."
+  - "Frontend: módulo src/views/presupuesto (api/presupuesto-api.ts, hooks/use-*-controller.ts, use-remote-resource.ts con AbortController, types.ts). Los componentes conservan su JSX; solo cambian las fuentes de datos."
+  - "fn_presupuesto_calc y fn__recalc_metas no se exponen: se ejecutan dentro de fn_presupuesto_guardar / fn_presupuesto_preview / fn_presupuesto_reasignar (SECURITY DEFINER en Aurora)."
+incompatibilities:
+  - "El original devolvía HTTP 200 con {ok:false, email_sent:false, error} cuando Gmail rechazaba el envío; ahora UsuarioMailer lanza BusinessRuleViolation (422) y la UI muestra el mismo mensaje vía ApiError.message en el mismo recuadro de resultado."
+  - "Sin provider_token de Supabase: el envío usa siempre el refresh token de Gmail persistido; si no existe se muestra MSG_GMAIL_NO_CONECTADO (antes 'Sesión de Google expirada...')."
+  - "GERENCIA podía (por RLS solo_usuarios_activos) congelar/editar el presupuesto desde la UI; ahora las escrituras exigen COORDINADOR (regla de solo lectura de GERENCIA del CLAUDE.md). La UI sigue mostrando los botones; el error se muestra con el mismo alert('Error al aplicar el cambio.')."
+migration_risks:
+  - "GET /presupuesto/proyeccion hace commit porque fn_proyeccion_cobro inserta el snapshot semanal (antes lo hacía el RPC VOLATILE de PostgREST en su propia transacción)."
+  - "fn_recuperacion_*/fn_presupuesto_preview recorren pagos/facturas completas: timeout de 29 s de API Gateway; validar tiempos con datos reales (antes PostgREST tenía su propio statement_timeout)."
+  - "Sin pago este mes (fn_sin_pago_cliente) no filtra por analista en la base: igual que el original, un ANALISTA en Mi Recuperación ve la lista completa del mes."
+  - "scope_email: ANALISTA y ANALISTA_RIESGO con cartera quedan acotados a su email en recuperación-mom/periodo/tramos/meta aunque pidan otro; COORDINADOR/GERENCIA/ANALISTA_RIESGO sin cartera ven lo pedido. 'Ver como' de un coordinador manda su propio email (igual que antes)."
+pending:
+  - "src/components/reportes/VendedorEnvioPanel.tsx (usado por tab-recuperacion) sigue con supabase.rpc('fn_portafolio_destinatarios') + fetch('/api/reportes/enviar'): pertenece al módulo reportes; no se tocó."
+  - "src/components/ui/DirectorioInput.tsx (usado en los modales de envío) sigue leyendo Supabase: pertenece a otro módulo (directorio/configuración); no se tocó."
+  - "src/components/reportes/DimensionFilter.tsx (usado por RecuperacionPeriodoCliente) sigue leyendo Supabase: pertenece al módulo reportes; no se tocó."

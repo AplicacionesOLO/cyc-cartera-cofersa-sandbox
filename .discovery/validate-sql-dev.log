@@ -1,0 +1,4 @@
+[OK] provisioning (ejecución 1)
+[FAIL] schema (ejecución 1): psql:C:/Users/jalvarez/Documents/cyc-cartera-cofersa/migration-output/database/aurora_postgresql_schema.sql:27: ERROR:  el valor Â«9223372036854776000Â» estÃ¡ fuera de rango para el tipo bigint
+
+Resultado: FAILED

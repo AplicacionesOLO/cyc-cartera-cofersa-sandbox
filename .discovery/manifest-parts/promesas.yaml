@@ -1,0 +1,44 @@
+module:
+  name: promesas
+  entities: [promesas]
+  use_cases: [ListPromesasUseCase, ValidarPromesaUseCase, ReprogramarPromesaUseCase, DeletePromesaUseCase]
+api_endpoints:
+  - {method: GET, path: /promesas, function: PromesasApi,
+     handler: entrypoints.lambda_handlers.promesas.promesas_handler, use_case: ListPromesasUseCase,
+     module: promesas, auth: cognito,
+     source: ["src/app/(app)/promesas/page.tsx:38", "src/app/(app)/promesas/page.tsx:73"], timeout: 29}
+  - {method: PATCH, path: /clientes/promesas, function: PromesasApi,
+     handler: entrypoints.lambda_handlers.promesas.promesas_handler, use_case: ValidarPromesaUseCase,
+     module: promesas, auth: cognito, source: ["src/app/api/clientes/promesas/route.ts:30"], timeout: 29}
+  - {method: DELETE, path: /clientes/promesas, function: PromesasApi,
+     handler: entrypoints.lambda_handlers.promesas.promesas_handler, use_case: DeletePromesaUseCase,
+     module: promesas, auth: cognito, source: ["src/app/api/clientes/promesas/route.ts:141"], timeout: 29}
+  - {method: POST, path: /clientes/promesas/reprogramar, function: PromesasApi,
+     handler: entrypoints.lambda_handlers.promesas.promesas_handler, use_case: ReprogramarPromesaUseCase,
+     module: promesas, auth: cognito, source: ["src/app/api/clientes/promesas/reprogramar/route.ts:22"],
+     timeout: 29}
+storage_buckets: []
+authorization_rules:
+  - {table: public.promesas, policy: promesas_select_autenticados, command: SELECT,
+     enforced_in: "ListPromesasUseCase (require_usuario activo + require_gestor_cartera + analista_scope: ANALISTA/ANALISTA_RIESGO solo las propias, COORDINADOR todas o la del filtro); RegistrarGestionUseCase solo consulta duplicados"}
+  - {table: public.promesas, policy: promesas_insert_autenticados, command: INSERT,
+     enforced_in: "RegistrarGestionUseCase / RegistrarGestionRapidaUseCase (analista_email = usuario actual, o el indicado solo si es COORDINADOR) y ReprogramarPromesaUseCase (dueno de la original o COORDINADOR; la nueva conserva el analista_email de la original)"}
+  - {table: public.promesas, policy: promesas_update_autenticados, command: UPDATE,
+     enforced_in: "ValidarPromesaUseCase / ReprogramarPromesaUseCase (dueno por analista_email o COORDINADOR + require_escritura + require_gestor_cartera; fila bloqueada FOR UPDATE) y DeletePromesaUseCase (solo COORDINADOR, soft-delete activo=false)"}
+scheduled_jobs: []
+async_workers: []
+structural_changes:
+  - "La bandeja /promesas (Server Component) hacia 2 consultas a Supabase (promesas activas tope 800 + gestion origen); ahora GET /promesas devuelve {promesas, gestionesMap} con la misma forma. Analistas del filtro: analistasConCarteraReal."
+  - "Reprogramar: INSERT de la promesa nueva + UPDATE de la original a REPROGRAMADA en UNA transaccion (antes 2 escrituras con rollback manual via DELETE, que fallaba por falta de politica DELETE)."
+  - "Validar/Reprogramar leen la promesa con SELECT ... FOR UPDATE antes de anexar el evento al JSONB eventos (evita perder eventos con dos validaciones simultaneas)."
+  - "DELETE /clientes/promesas recibe el id por query (?id=); el handler acepta tambien {id} en el body. Hoy ninguna pantalla lo llama."
+  - "Edge Function supabase/functions/mark-promesas-incumplidas NO se porta: esta OBSOLETA desde 2026-06-15 (reemplazada por fn_conciliar_promesas via cron, que migra el modulo jobs). No tiene endpoint ni job en este modulo."
+  - "El modal de accion de tabla-promesas.tsx usa useAccionPromesaController (src/views/promesas/hooks) -> promesasApi; JSX, validaciones de cliente y textos sin cambios. GestionOrigen se movio a src/views/promesas/types.ts (re-exportado desde page.tsx)."
+incompatibilities:
+  - "mark-promesas-incumplidas (Edge Function Deno con service role) no tiene equivalente en este modulo: su funcion la cumple fn_conciliar_promesas via el cron del modulo jobs."
+  - "Los montos en las descripciones de eventos (abono, reprogramacion) usaban toLocaleString('es-CR'); ahora fmtCRC (simbolo de colon + punto de miles) por la regla 4 del CLAUDE.md. Los eventos historicos ya guardados no cambian."
+  - "El texto 'Para reprogramar use /api/promesas/reprogramar' del error de estado invalido se conserva literal aunque el path real es /clientes/promesas/reprogramar."
+migration_risks:
+  - "Con 'Ver como' ANALISTA el Coordinador ve solo sus propias promesas (igual que antes: la page pasa ?analista=<su email>); las escrituras se autorizan con el rol real."
+pending:
+  - "Coordinador: agregar PromesasApi al template; verificar que el modulo jobs incluya el cron de fn_conciliar_promesas (reemplazo de mark-promesas-incumplidas)."

@@ -1,0 +1,16 @@
+compania: cof
+aplicativo: cyc_cofersa
+ambiente_default: dev
+ambientes:
+- dev
+- qa
+- prd
+schemas:
+  public: core
+extra_schemas: []
+naming:
+  rename_objects: true
+  keep_original: []
+rls_mode: backend
+auth_users_strategy: mirror_table
+database_owner_role: admin

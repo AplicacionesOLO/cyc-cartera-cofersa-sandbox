@@ -1,0 +1,501 @@
+module:
+  name: configuracion
+  entities:
+  - config_audit_log
+  - config_sistema
+  - directorio_empresa
+  - portafolio_acotado
+  - portafolio_grupos
+  - supervisores
+  - vendedores
+  - usuarios
+  - ventas_mensuales
+  - notificaciones
+  - maestro_clientes
+  - v_automatizaciones_feed
+  use_cases:
+  - GetConfiguracionPantallaUseCase
+  - GetParametrosUseCase
+  - UpdateParametroUseCase
+  - GetSemaforoUseCase
+  - UpdateSemaforoUseCase
+  - GetSlaUseCase
+  - UpdateSlaUseCase
+  - GetAutomatizacionesUseCase
+  - ToggleAutomatizacionUseCase
+  - ListAutomatizacionesFeedUseCase
+  - MarcarEventoLeidoUseCase
+  - ListVentasMensualesUseCase
+  - GuardarCierreMesUseCase
+  - ListAuditLogUseCase
+  - ListUsuariosConfigUseCase
+  - CreateUsuarioUseCase
+  - UpdateUsuarioUseCase
+  - ListVendedoresConfigUseCase
+  - CreateVendedorUseCase
+  - UpdateVendedorUseCase
+  - DeactivateVendedorUseCase
+  - ListSupervisoresConfigUseCase
+  - CreateSupervisorUseCase
+  - UpdateSupervisorUseCase
+  - DeactivateSupervisorUseCase
+  - ListDirectorioUseCase
+  - ListContactosDirectorioUseCase
+  - CreateContactoUseCase
+  - UpdateContactoUseCase
+  - DeactivateContactoUseCase
+  - ListRutasUseCase
+  - CreateRutaUseCase
+  - UpdateRutaUseCase
+  - DeactivateRutaUseCase
+api_endpoints:
+- method: GET
+  path: /configuracion
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: GetConfiguracionPantallaUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/(app)/configuracion/page.tsx:2
+  - src/app/(app)/configuracion/page.tsx:60
+  - src/app/(app)/configuracion/page.tsx:64
+  - src/app/(app)/configuracion/page.tsx:67
+  - src/app/(app)/configuracion/page.tsx:71
+  - src/app/(app)/configuracion/page.tsx:74
+  - src/app/(app)/configuracion/page.tsx:77
+  - src/app/(app)/configuracion/page.tsx:81
+  - src/app/(app)/configuracion/page.tsx:84
+  - src/app/(app)/configuracion/page.tsx:86
+  - src/app/(app)/configuracion/page.tsx:90
+  - src/app/(app)/configuracion/page.tsx:95
+  - src/app/(app)/configuracion/page.tsx:101
+  - src/lib/automatizaciones/obtener-datos.ts:11
+  - src/lib/automatizaciones/obtener-datos.ts:13
+  - src/lib/configuracion/admin.ts:28
+  timeout: 29
+- method: GET
+  path: /configuracion/parametros
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: GetParametrosUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/parametros/route.ts:15
+- method: PUT
+  path: /configuracion/parametros
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: UpdateParametroUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/parametros/route.ts:32
+- method: GET
+  path: /configuracion/semaforo
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: GetSemaforoUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/semaforo/route.ts:25
+- method: PUT
+  path: /configuracion/semaforo
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: UpdateSemaforoUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/semaforo/route.ts:49
+- method: GET
+  path: /configuracion/sla
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: GetSlaUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/sla/route.ts:6
+- method: PUT
+  path: /configuracion/sla
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: UpdateSlaUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/sla/route.ts:29
+- method: GET
+  path: /configuracion/automatizaciones
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: GetAutomatizacionesUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/automatizaciones/route.ts:7
+  - src/lib/automatizaciones/obtener-datos.ts:11
+  - src/lib/automatizaciones/obtener-datos.ts:13
+- method: PUT
+  path: /configuracion/automatizaciones
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: ToggleAutomatizacionUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/automatizaciones/route.ts:23
+- method: GET
+  path: /configuracion/automatizaciones/feed
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: ListAutomatizacionesFeedUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/automatizaciones/feed/route.ts:5
+- method: PATCH
+  path: /configuracion/automatizaciones/feed/{id}
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: MarcarEventoLeidoUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/automatizaciones/feed/[id]/route.ts:7
+- method: GET
+  path: /configuracion/cierre-mes
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: ListVentasMensualesUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/cierre-mes/route.ts:12
+- method: PUT
+  path: /configuracion/cierre-mes
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: GuardarCierreMesUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/cierre-mes/route.ts:31
+- method: GET
+  path: /configuracion/log
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: ListAuditLogUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/log/route.ts:5
+- method: GET
+  path: /configuracion/usuarios
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: ListUsuariosConfigUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/usuarios/route.ts:9
+- method: POST
+  path: /configuracion/usuarios
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: CreateUsuarioUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/usuarios/route.ts:25
+- method: PUT
+  path: /configuracion/usuarios/{id}
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: UpdateUsuarioUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/usuarios/[id]/route.ts:12
+- method: GET
+  path: /configuracion/vendedores
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: ListVendedoresConfigUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/vendedores/route.ts:5
+- method: POST
+  path: /configuracion/vendedores
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: CreateVendedorUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/vendedores/route.ts:37
+- method: PUT
+  path: /configuracion/vendedores/{cod}
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: UpdateVendedorUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/vendedores/[cod]/route.ts:10
+- method: DELETE
+  path: /configuracion/vendedores/{cod}
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: DeactivateVendedorUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/vendedores/[cod]/route.ts:92
+- method: GET
+  path: /configuracion/supervisores
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: ListSupervisoresConfigUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/supervisores/route.ts:5
+- method: POST
+  path: /configuracion/supervisores
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: CreateSupervisorUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/supervisores/route.ts:39
+- method: PUT
+  path: /configuracion/supervisores/{cod}
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: UpdateSupervisorUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/supervisores/[cod]/route.ts:7
+- method: DELETE
+  path: /configuracion/supervisores/{cod}
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: DeactivateSupervisorUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/supervisores/[cod]/route.ts:59
+- method: GET
+  path: /configuracion/directorio
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: ListDirectorioUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/directorio/route.ts:10
+- method: POST
+  path: /configuracion/directorio
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: CreateContactoUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/directorio/route.ts:34
+- method: PUT
+  path: /configuracion/directorio/{id}
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: UpdateContactoUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/directorio/[id]/route.ts:12
+- method: DELETE
+  path: /configuracion/directorio/{id}
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: DeactivateContactoUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/directorio/[id]/route.ts:60
+- method: GET
+  path: /configuracion/directorio-activo
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: ListContactosDirectorioUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/components/ui/DirectorioInput.tsx:4
+  - src/components/ui/DirectorioInput.tsx:21
+  - src/components/ui/DirectorioInput.tsx:24
+  - src/lib/utils/directorio.ts:9
+  - src/lib/utils/directorio.ts:24
+  - src/lib/utils/directorio.ts:27
+  - src/lib/utils/directorio.ts:41
+  - src/lib/utils/directorio.ts:44
+- method: GET
+  path: /configuracion/portafolio-acotado
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: ListRutasUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/portafolio-acotado/route.ts:5
+- method: POST
+  path: /configuracion/portafolio-acotado
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: CreateRutaUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/portafolio-acotado/route.ts:48
+- method: PUT
+  path: /configuracion/portafolio-acotado/{principal_cod}
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: UpdateRutaUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/portafolio-acotado/[principal_cod]/route.ts:9
+- method: DELETE
+  path: /configuracion/portafolio-acotado/{principal_cod}
+  function: ConfiguracionApi
+  handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+  use_case: DeactivateRutaUseCase
+  module: configuracion
+  auth: cognito
+  source:
+  - src/app/api/configuracion/portafolio-acotado/[principal_cod]/route.ts:89
+storage_buckets: []
+authorization_rules:
+- table: public.config_audit_log
+  policy: Solo coordinador accede al log
+  command: ALL
+  enforced_in: ListAuditLogUseCase / GetConfiguracionPantallaUseCase (require_usuario + require_coordinador); las
+    escrituras solo vía registrar_auditoria() dentro de casos de uso de coordinador
+- table: public.config_sistema
+  policy: config_sistema_select_usuarios_activos
+  command: SELECT
+  enforced_in: 'Get{Parametros,Semaforo,Sla,Automatizaciones}UseCase y GetConfiguracionPantallaUseCase (require_usuario
+    activo + require_coordinador, más estricto que la política: en el origen estas lecturas también exigían COORDINADOR
+    vía checkCoordinador); escrituras: Update{Parametro,Semaforo,Sla}UseCase / ToggleAutomatizacionUseCase (solo
+    coordinador)'
+- table: public.directorio_empresa
+  policy: Coordinador gestiona directorio
+  command: ALL
+  enforced_in: ListDirectorioUseCase, CreateContactoUseCase, UpdateContactoUseCase, DeactivateContactoUseCase (require_usuario
+    + require_coordinador)
+- table: public.directorio_empresa
+  policy: Todos leen directorio para autocomplete
+  command: SELECT
+  enforced_in: ListContactosDirectorioUseCase (require_usuario activo; solo contactos activos y columnas id, nombre,
+    email, cargo, area)
+- table: public.portafolio_acotado
+  policy: solo_usuarios_activos
+  command: ALL
+  enforced_in: ListRutasUseCase, CreateRutaUseCase, UpdateRutaUseCase, DeactivateRutaUseCase, GetConfiguracionPantallaUseCase
+    (require_usuario activo + require_coordinador; en el origen se escribía con service_role tras checkCoordinador)
+- table: public.portafolio_grupos
+  policy: solo_usuarios_activos
+  command: ALL
+  enforced_in: ListRutasUseCase, CreateRutaUseCase, UpdateRutaUseCase, DeactivateRutaUseCase, UpdateVendedorUseCase/DeactivateVendedorUseCase
+    (lectura de ruta activa) (require_usuario activo + require_coordinador)
+- table: public.supervisores
+  policy: Analistas leen supervisores
+  command: SELECT
+  enforced_in: ListSupervisoresConfigUseCase / ListVendedoresConfigUseCase / GetConfiguracionPantallaUseCase (require_usuario
+    activo + require_coordinador; las lecturas de supervisores de otros módulos aplican require_usuario en su propio
+    caso de uso)
+- table: public.supervisores
+  policy: Coordinador gestiona supervisores
+  command: ALL
+  enforced_in: CreateSupervisorUseCase, UpdateSupervisorUseCase, DeactivateSupervisorUseCase (require_usuario +
+    require_coordinador)
+- table: public.usuarios
+  policy: usuarios_select_autenticados
+  command: SELECT
+  enforced_in: 'ListUsuariosConfigUseCase / GetConfiguracionPantallaUseCase (require_usuario activo + require_coordinador;
+    nunca devuelve google_refresh_token); altas/ediciones: CreateUsuarioUseCase / UpdateUsuarioUseCase (solo coordinador,
+    antes service_role)'
+- table: public.vendedores
+  policy: Analistas leen vendedores
+  command: SELECT
+  enforced_in: ListVendedoresConfigUseCase / ListRutasUseCase / GetConfiguracionPantallaUseCase (require_usuario
+    activo + require_coordinador)
+- table: public.vendedores
+  policy: Coordinador gestiona vendedores
+  command: ALL
+  enforced_in: CreateVendedorUseCase, UpdateVendedorUseCase, DeactivateVendedorUseCase (require_usuario + require_coordinador)
+scheduled_jobs: []
+async_workers: []
+structural_changes:
+- Las 18 API Routes de /api/configuracion/** pasan a la Lambda ConfiguracionApi con los mismos paths sin /api, mismo
+  método, mismo body y misma forma de respuesta ({data}, {ok}, {data,total,page,pageSize}, {data,mostrados,truncado});
+  201 en las altas. checkCoordinador() + insertAuditLog() de src/lib/configuracion/admin.ts quedan en coordinador()/registrar_auditoria()
+  del caso de uso (mismo texto 'Acceso restringido al coordinador'); el archivo admin.ts se eliminó (los demás módulos
+  ya no lo importan).
+- 'Altas de usuarios: siguen restringidas a @cofersa.cr / @mayoreo.biz y la fila en tbl_usuarios es la que da acceso.
+  Con Cognito + Google federado NO se crea nada en el User Pool desde Configuración: en el primer login con Google,
+  Cognito crea el usuario federado y ResolveCurrentUserUseCase/GET /me lo vincula por email verificado con tbl_usuarios
+  (tbl_app_users). Desactivar un usuario (activo=false) corta el acceso en el siguiente request (require_usuario
+  exige fila activa), aunque la sesión de Cognito siga viva.'
+- 'configuracion/page.tsx: las 12 consultas con service_role + el armado (n_clientes, supervisor_nombre, n_vendedores,
+  semáforo con defaults, SLA, rutas, mes de cierre sugerido) se reemplazan por GET /configuracion (GetConfiguracionPantallaUseCase),
+  que devuelve ConfigTabsData ya procesado. Si fn_automatizaciones_resumen falla, el tab Automatizaciones viene
+  vacío sin tumbar la pantalla (igual que el .catch original).'
+- Registro de automatizaciones (REGLAS, DEFAULTS_AUTOMATIZACIONES) y el cálculo de última/próxima corrida pg_cron
+  (cron.ts) se movieron a backend/src/domain/entities/configuracion.py; src/lib/automatizaciones/registry.ts queda
+  solo con los tipos (ReglaId) y se borraron cron.ts y obtener-datos.ts.
+- DirectorioInput (autocomplete usado en Ficha 360°, Solicitudes y reportes) y lib/utils/directorio.ts leían directorio_empresa
+  directo con la sesión del usuario; ahora usan GET /configuracion/directorio-activo (cualquier usuario activo;
+  solo contactos activos) vía useDirectorioContactosController (misma caché de módulo, una consulta por sesión)
+  y createConfiguracionApi(getServerHttp()) en server.
+- 'Log del Sistema → Exportar CSV: antes window.open de la API Route (respuesta text/csv); ahora GET /configuracion/log?format=csv
+  devuelve todas las filas en JSON y el navegador arma el mismo CSV (mismas columnas y formato de fecha es-CR/America/Costa_Rica)
+  y lo descarga como audit-log-AAAA-MM-DD.csv.'
+- 'Las escrituras multi-paso (crear/editar ruta con sus miembros, upserts de semáforo/SLA) ahora son transaccionales:
+  si una parte falla se revierte todo. La auditoría corre en un SAVEPOINT para que un fallo de config_audit_log
+  no aborte la operación principal.'
+- GET /configuracion/usuarios y la pantalla devuelven columnas explícitas de tbl_usuarios (sin google_refresh_token);
+  antes PUT/POST devolvían select() completo.
+incompatibilities:
+- 'Errores de base de datos: antes la UI mostraba error.message de PostgREST (p. ej. ''duplicate key value violates
+  unique constraint ...''); ahora los errores de unicidad/FK/NOT NULL llegan traducidos por el adaptador (''El registro
+  ya existe.'', ''La operación viola una referencia entre registros.'', ''Los datos no cumplen las reglas de la
+  base de datos.''). Ej.: crear un supervisor sin email (tbl_supervisores.email es NOT NULL, igual que en Supabase)
+  sigue fallando, con el mensaje genérico.'
+- El filtro q del directorio escapa % y _ (antes se interpolaban crudos en el .or() de PostgREST).
+- 'PUT /configuracion/portafolio-acotado/{principal_cod} con el principal dentro de miembros: antes los cambios
+  de nombre/rol ya quedaban guardados antes del 400; ahora el 400 revierte toda la operación.'
+- 'Ids inválidos: PUT usuarios/directorio con id no-UUID responde 404 con el mismo texto (''Usuario no encontrado''
+  / ''Contacto no encontrado''); DELETE directorio y PATCH feed con id no-UUID responden 400 (antes 500 con el error
+  de PostgreSQL).'
+migration_risks:
+- 'GET /configuracion/log?format=csv sin filtros devuelve todo el log en una respuesta JSON: si config_audit_log
+  crece mucho puede acercarse al límite de 6 MB de respuesta de Lambda/API Gateway (en el origen no había límite).
+  Mitigación: exportar con filtro de fechas.'
+- Reasignar el analista de un vendedor (PUT /configuracion/vendedores/{cod}) dispara trg_vendedores_trg_propagar_analista_vendedor
+  → fn_propagar_analista_vendedor sobre tbl_maestro_clientes dentro de la misma transacción; con muchos clientes
+  el UPDATE debe terminar dentro de los 29 s de API Gateway (verificado sobre esquema vacío).
+- 'Validación de dominio en altas de usuarios es sensible a mayúsculas como el original (email.split(''@'')[1] exacto):
+  ''X@Cofersa.cr'' se rechaza.'
+pending:
+- Ninguno bloqueante. Los demás módulos que importaban src/lib/configuracion/admin.ts (dashboard, centro-recursos,
+  pagos-anulados, pagos-duplicado-descartado, tipo-cambio) ya no lo importan; si alguno lo vuelve a necesitar, registrar_auditoria()/coordinador()
+  están en application/use_cases/configuracion.py.
+- 'Coordinador: el recurso raíz GET /configuracion debe existir en API Gateway además de sus hijos (/configuracion/usuarios,
+  etc.) y el nuevo /configuracion/directorio-activo (lo usa cualquier usuario activo desde DirectorioInput).'

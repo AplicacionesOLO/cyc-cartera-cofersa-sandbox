@@ -1,0 +1,1607 @@
+# BORRADOR generado por bootstrap_output.py desde el uso real de Supabase.
+# Revisar y completar (módulos, use cases, rutas, auth, workers) y luego poner draft: false.
+# Contrato: references/output-contract.md
+version: 1
+draft: true
+project:
+  name: cyc-cofersa
+  slug: cyc_cofersa
+  compania: cof
+  label: CYC_COFERSA
+  exposure: public
+  public_reason: ''
+source:
+  framework: next
+  language: ts
+  router: next-app
+  monolith: false
+  schema_source: live_database
+target:
+  aws_region: us-east-1
+  api_endpoint_type: REGIONAL
+  frontend_hosting: ecs-fargate
+  lambda:
+    memory: 512
+    timeout: 30
+    architecture: x86_64
+  cognito:
+    groups: []
+  database:
+    engine: aurora-postgresql
+    rls_mode: backend
+modules:
+- name: vendedores
+  entities:
+  - vendedores
+  use_cases:
+  - ListVendedoresUseCase
+- name: config_sistema
+  entities:
+  - config_sistema
+  use_cases:
+  - ListConfigSistemaUseCase
+- name: garantias
+  entities:
+  - garantias
+  use_cases:
+  - ListGarantiasUseCase
+  - GetGarantiaUseCase
+- name: personas_legales
+  entities:
+  - personas_legales
+  use_cases:
+  - ListPersonasLegalesUseCase
+- name: garantia_eventos
+  entities:
+  - garantia_eventos
+  use_cases:
+  - ListGarantiaEventosUseCase
+- name: solicitudes_actualizacion
+  entities:
+  - solicitudes_actualizacion
+  use_cases:
+  - ListSolicitudesActualizacionUseCase
+- name: cartera
+  entities:
+  - cartera
+  use_cases:
+  - ListCarteraUseCase
+- name: maestro_clientes
+  entities:
+  - maestro_clientes
+  use_cases:
+  - ListMaestroClientesUseCase
+- name: gestiones
+  entities:
+  - gestiones
+  use_cases:
+  - ListGestionesUseCase
+  - GetGestioneUseCase
+  - CreateGestioneUseCase
+- name: promesas
+  entities:
+  - promesas
+  use_cases:
+  - ListPromesasUseCase
+  - CreatePromesaUseCase
+- name: icp_por_cliente
+  entities: []
+  use_cases:
+  - ListIcpPorClienteUseCase
+- name: pedidos_retenidos
+  entities:
+  - pedidos_retenidos
+  use_cases:
+  - ListPedidosRetenidosUseCase
+- name: solicitudes
+  entities:
+  - solicitudes
+  use_cases:
+  - ListSolicitudesUseCase
+- name: usuarios
+  entities:
+  - usuarios
+  use_cases:
+  - ListUsuariosUseCase
+  - GetUsuarioUseCase
+- name: facturas
+  entities:
+  - facturas
+  use_cases:
+  - ListFacturasUseCase
+- name: ventas_mensuales
+  entities:
+  - ventas_mensuales
+  use_cases:
+  - ListVentasMensualesUseCase
+- name: historico_cartera
+  entities:
+  - historico_cartera
+  use_cases:
+  - ListHistoricoCarteraUseCase
+- name: portafolio_grupos
+  entities:
+  - portafolio_grupos
+  use_cases:
+  - ListPortafolioGruposUseCase
+- name: portafolio_acotado
+  entities:
+  - portafolio_acotado
+  use_cases:
+  - ListPortafolioAcotadoUseCase
+- name: supervisores
+  entities:
+  - supervisores
+  use_cases:
+  - ListSupervisoresUseCase
+- name: presupuesto_cobro
+  entities:
+  - presupuesto_cobro
+  use_cases:
+  - ListPresupuestoCobroUseCase
+- name: storage
+  entities: []
+  use_cases:
+  - CreateGarantiasLegalUploadUrlUseCase
+- name: notificaciones
+  entities:
+  - notificaciones
+  use_cases:
+  - ListNotificacionesUseCase
+- name: pagos
+  entities:
+  - pagos
+  use_cases:
+  - ListPagosUseCase
+- name: users
+  entities: []
+  use_cases:
+  - GetCurrentUserUseCase
+api_endpoints:
+- method: GET
+  path: /cartera
+  function: ListCartera
+  handler: entrypoints.lambda_handlers.cartera.list_cartera_handler
+  use_case: ListCarteraUseCase
+  module: cartera
+  auth: cognito
+  source:
+  - src/app/(app)/clientes/[cod]/page.tsx:57
+  - src/app/(app)/clientes/[cod]/solicitudes/nueva/page.tsx:24
+  - src/app/(app)/gestiones/page.tsx:84
+  - src/app/(app)/solicitudes/nueva/page.tsx:49
+  - src/lib/utils/cola-analista.ts:283
+- method: GET
+  path: /config-sistema
+  function: ListConfigSistema
+  handler: entrypoints.lambda_handlers.config_sistema.list_config_sistema_handler
+  use_case: ListConfigSistemaUseCase
+  module: config_sistema
+  auth: cognito
+  source:
+  - src/app/(app)/auditoria-legal/garantias/ModalEmitirPagare.tsx:174
+  - src/app/(app)/auditoria-legal/garantias/ModalGenerarPagare.tsx:97
+  - src/app/(app)/dashboard/page.tsx:269
+  - src/app/(app)/dashboard/page.tsx:506
+  - src/app/(print)/pagare/[id]/page.tsx:62
+- method: GET
+  path: /facturas
+  function: ListFacturas
+  handler: entrypoints.lambda_handlers.facturas.list_facturas_handler
+  use_case: ListFacturasUseCase
+  module: facturas
+  auth: cognito
+  source:
+  - src/app/(app)/clientes/[cod]/page.tsx:179
+  - src/app/(app)/clientes/[cod]/solicitudes/nueva/page.tsx:35
+  - src/components/solicitudes/form-nueva-solicitud.tsx:118
+  - src/components/solicitudes/form-solicitud-nueva.tsx:125
+- method: GET
+  path: /garantia-eventos
+  function: ListGarantiaEventos
+  handler: entrypoints.lambda_handlers.garantia_eventos.list_garantia_eventos_handler
+  use_case: ListGarantiaEventosUseCase
+  module: garantia_eventos
+  auth: cognito
+  source:
+  - src/app/(app)/auditoria-legal/garantias/ModalHistorialGarantia.tsx:48
+- method: GET
+  path: /garantias
+  function: ListGarantias
+  handler: entrypoints.lambda_handlers.garantias.list_garantias_handler
+  use_case: ListGarantiasUseCase
+  module: garantias
+  auth: cognito
+  source:
+  - src/app/(app)/auditoria-legal/garantias/ModalEmitirPagare.tsx:262
+  - src/app/(app)/auditoria-legal/garantias/ModalRegistrarGarantia.tsx:312
+  - src/app/api/auditoria-legal/garantias/route.ts:165
+- method: GET
+  path: /garantias/{id}
+  function: GetGarantia
+  handler: entrypoints.lambda_handlers.garantias.get_garantia_handler
+  use_case: GetGarantiaUseCase
+  module: garantias
+  auth: cognito
+  source:
+  - src/app/(print)/pagare/[id]/page.tsx:23
+  - src/app/(print)/pagare/[id]/page.tsx:54
+  - src/app/api/auditoria-legal/garantias/[id]/route.ts:118
+  - src/app/api/auditoria-legal/garantias/[id]/custodia/route.ts:70
+  - src/app/api/auditoria-legal/garantias/[id]/documento/route.ts:61
+  - src/app/api/auditoria-legal/garantias/[id]/pagare/route.ts:69
+- method: GET
+  path: /gestiones
+  function: ListGestiones
+  handler: entrypoints.lambda_handlers.gestiones.list_gestiones_handler
+  use_case: ListGestionesUseCase
+  module: gestiones
+  auth: cognito
+  source:
+  - src/app/(app)/clientes/[cod]/page.tsx:59
+  - src/app/(app)/dashboard/page.tsx:130
+  - src/app/(app)/dashboard/page.tsx:131
+  - src/app/(app)/dashboard/page.tsx:132
+  - src/app/(app)/dashboard/page.tsx:464
+  - src/app/(app)/gestiones/page.tsx:35
+  - src/app/(app)/promesas/page.tsx:73
+  - src/app/(app)/reportes/cartera-vencida/page.tsx:104
+  - src/app/(app)/reportes/gestiones-periodo/gestiones-periodo-cliente.tsx:81
+  - src/app/(app)/reportes/gestiones-periodo/page.tsx:37
+  - src/lib/utils/cola-analista.ts:310
+- method: POST
+  path: /gestiones
+  function: CreateGestione
+  handler: entrypoints.lambda_handlers.gestiones.create_gestione_handler
+  use_case: CreateGestioneUseCase
+  module: gestiones
+  auth: cognito
+  source:
+  - src/components/clientes/ficha/ficha-cliente.tsx:1539
+  - src/components/clientes/ficha/modal-gestion.tsx:89
+- method: GET
+  path: /gestiones/{id}
+  function: GetGestione
+  handler: entrypoints.lambda_handlers.gestiones.get_gestione_handler
+  use_case: GetGestioneUseCase
+  module: gestiones
+  auth: cognito
+  source:
+  - src/app/(app)/solicitudes/[id]/page.tsx:67
+  - src/app/(app)/solicitudes/nueva/page.tsx:63
+- method: GET
+  path: /historico-cartera
+  function: ListHistoricoCartera
+  handler: entrypoints.lambda_handlers.historico_cartera.list_historico_cartera_handler
+  use_case: ListHistoricoCarteraUseCase
+  module: historico_cartera
+  auth: cognito
+  source:
+  - src/app/(app)/dashboard/page.tsx:135
+  - src/app/(app)/reportes/resumen-ejecutivo/page.tsx:55
+- method: GET
+  path: /icp-por-cliente
+  function: ListIcpPorCliente
+  handler: entrypoints.lambda_handlers.icp_por_cliente.list_icp_por_cliente_handler
+  use_case: ListIcpPorClienteUseCase
+  module: icp_por_cliente
+  auth: cognito
+  source:
+  - src/app/(app)/clientes/[cod]/page.tsx:62
+  - src/lib/utils/cola-analista.ts:325
+- method: GET
+  path: /maestro-clientes
+  function: ListMaestroClientes
+  handler: entrypoints.lambda_handlers.maestro_clientes.list_maestro_clientes_handler
+  use_case: ListMaestroClientesUseCase
+  module: maestro_clientes
+  auth: cognito
+  source:
+  - src/app/(app)/clientes/[cod]/page.tsx:58
+  - src/app/(app)/clientes/[cod]/solicitudes/nueva/page.tsx:25
+  - src/app/(app)/dashboard/page.tsx:145
+  - src/app/(app)/dashboard/page.tsx:560
+  - src/app/(app)/gestiones/page.tsx:79
+  - src/app/(app)/reportes/cartera-vencida/page.tsx:51
+  - src/app/(app)/reportes/cierre-mensual/page.tsx:133
+  - src/app/(app)/reportes/estados-cuenta/page.tsx:57
+  - src/app/(app)/solicitudes/nueva/page.tsx:55
+  - src/app/api/clientes/gestiones/nueva/route.ts:132
+  - src/app/api/saldos-favor/matching/route.ts:28
+  - src/components/clientes/ficha/form-nueva-gestion.tsx:199
+  - src/components/reportes/DimensionFilter.tsx:18
+  - src/components/solicitudes/form-nueva-solicitud.tsx:134
+  - src/lib/utils/analistas-equipo.ts:29
+  - src/lib/utils/cola-analista.ts:282
+- method: GET
+  path: /notificaciones
+  function: ListNotificaciones
+  handler: entrypoints.lambda_handlers.notificaciones.list_notificaciones_handler
+  use_case: ListNotificacionesUseCase
+  module: notificaciones
+  auth: cognito
+  source:
+  - src/components/topbar.tsx:192
+- method: GET
+  path: /pagos
+  function: ListPagos
+  handler: entrypoints.lambda_handlers.pagos.list_pagos_handler
+  use_case: ListPagosUseCase
+  module: pagos
+  auth: cognito
+  source:
+  - src/lib/utils/cola-analista.ts:327
+- method: GET
+  path: /pedidos-retenidos
+  function: ListPedidosRetenidos
+  handler: entrypoints.lambda_handlers.pedidos_retenidos.list_pedidos_retenidos_handler
+  use_case: ListPedidosRetenidosUseCase
+  module: pedidos_retenidos
+  auth: cognito
+  source:
+  - src/app/(app)/clientes/[cod]/page.tsx:71
+- method: GET
+  path: /personas-legales
+  function: ListPersonasLegales
+  handler: entrypoints.lambda_handlers.personas_legales.list_personas_legales_handler
+  use_case: ListPersonasLegalesUseCase
+  module: personas_legales
+  auth: cognito
+  source:
+  - src/app/(app)/auditoria-legal/garantias/ModalEmitirPagare.tsx:336
+  - src/app/(app)/auditoria-legal/garantias/ModalEmitirPagare.tsx:354
+  - src/app/(app)/auditoria-legal/garantias/ModalEmitirPagare.tsx:373
+  - src/app/(app)/auditoria-legal/garantias/ModalGenerarPagare.tsx:108
+  - src/app/(app)/auditoria-legal/garantias/ModalGenerarPagare.tsx:161
+- method: GET
+  path: /portafolio-acotado
+  function: ListPortafolioAcotado
+  handler: entrypoints.lambda_handlers.portafolio_acotado.list_portafolio_acotado_handler
+  use_case: ListPortafolioAcotadoUseCase
+  module: portafolio_acotado
+  auth: cognito
+  source:
+  - src/app/(app)/reportes/cierre-mensual/page.tsx:131
+- method: GET
+  path: /portafolio-grupos
+  function: ListPortafolioGrupos
+  handler: entrypoints.lambda_handlers.portafolio_grupos.list_portafolio_grupos_handler
+  use_case: ListPortafolioGruposUseCase
+  module: portafolio_grupos
+  auth: cognito
+  source:
+  - src/app/(app)/reportes/cierre-mensual/page.tsx:130
+- method: GET
+  path: /presupuesto-cobro
+  function: ListPresupuestoCobro
+  handler: entrypoints.lambda_handlers.presupuesto_cobro.list_presupuesto_cobro_handler
+  use_case: ListPresupuestoCobroUseCase
+  module: presupuesto_cobro
+  auth: cognito
+  source:
+  - src/app/(app)/reportes/presupuesto-cobro/tab-sin-pago.tsx:50
+- method: GET
+  path: /promesas
+  function: ListPromesas
+  handler: entrypoints.lambda_handlers.promesas.list_promesas_handler
+  use_case: ListPromesasUseCase
+  module: promesas
+  auth: cognito
+  source:
+  - src/app/(app)/clientes/[cod]/page.tsx:60
+  - src/app/(app)/dashboard/page.tsx:473
+  - src/app/(app)/dashboard/page.tsx:482
+  - src/app/(app)/promesas/page.tsx:38
+  - src/app/api/clientes/gestiones/nueva/route.ts:83
+  - src/lib/utils/cola-analista.ts:315
+  - src/lib/utils/cola-analista.ts:319
+- method: POST
+  path: /promesas
+  function: CreatePromesa
+  handler: entrypoints.lambda_handlers.promesas.create_promesa_handler
+  use_case: CreatePromesaUseCase
+  module: promesas
+  auth: cognito
+  source:
+  - src/components/clientes/ficha/modal-gestion.tsx:115
+- method: GET
+  path: /solicitudes
+  function: ListSolicitudes
+  handler: entrypoints.lambda_handlers.solicitudes.list_solicitudes_handler
+  use_case: ListSolicitudesUseCase
+  module: solicitudes
+  auth: cognito
+  source:
+  - src/app/(app)/clientes/[cod]/page.tsx:77
+- method: GET
+  path: /solicitudes-actualizacion
+  function: ListSolicitudesActualizacion
+  handler: entrypoints.lambda_handlers.solicitudes_actualizacion.list_solicitudes_actualizacion_handler
+  use_case: ListSolicitudesActualizacionUseCase
+  module: solicitudes_actualizacion
+  auth: cognito
+  source:
+  - src/app/(app)/auditoria-legal/garantias/garantias-cliente.tsx:402
+- method: POST
+  path: /storage/garantias-legal/upload-url
+  function: CreateGarantiasLegalUploadUrl
+  handler: entrypoints.lambda_handlers.storage.create_garantias_legal_upload_url_handler
+  use_case: CreateGarantiasLegalUploadUrlUseCase
+  module: storage
+  auth: cognito
+  source:
+  - src/app/api/auditoria-legal/garantias/[id]/documento/route.ts:70
+- method: GET
+  path: /supervisores
+  function: ListSupervisores
+  handler: entrypoints.lambda_handlers.supervisores.list_supervisores_handler
+  use_case: ListSupervisoresUseCase
+  module: supervisores
+  auth: cognito
+  source:
+  - src/app/(app)/reportes/migracion-mora/migracion-cliente.tsx:56
+  - src/app/api/auditoria-legal/garantias/[id]/custodia/route.ts:163
+- method: GET
+  path: /me
+  function: GetCurrentUser
+  handler: entrypoints.lambda_handlers.users.get_current_user_handler
+  use_case: GetCurrentUserUseCase
+  module: users
+  auth: cognito
+  source:
+  - auth (sesión del usuario)
+- method: GET
+  path: /usuarios
+  function: ListUsuarios
+  handler: entrypoints.lambda_handlers.usuarios.list_usuarios_handler
+  use_case: ListUsuariosUseCase
+  module: usuarios
+  auth: cognito
+  source:
+  - src/app/(app)/clientes/[cod]/page.tsx:80
+  - src/app/(app)/clientes/[cod]/page.tsx:184
+  - src/app/(app)/clientes/[cod]/page.tsx:187
+  - src/app/(app)/dashboard/page.tsx:127
+  - src/app/(app)/gestion-cartera/saldos-favor/page.tsx:32
+  - src/app/(app)/gestiones/page.tsx:60
+  - src/app/(app)/promesas/page.tsx:55
+  - src/app/(app)/reportes/estados-cuenta/page.tsx:41
+  - src/app/(app)/solicitudes/page.tsx:44
+  - src/app/(app)/solicitudes/[id]/page.tsx:64
+  - src/app/(app)/solicitudes/nueva/page.tsx:95
+  - src/app/(print)/pagare/[id]/page.tsx:46
+  - src/app/api/auditoria-legal/garantias/route.ts:85
+  - src/app/api/auditoria-legal/garantias/route.ts:270
+  - src/app/api/auditoria-legal/garantias/[id]/route.ts:104
+  - src/app/api/auditoria-legal/garantias/[id]/custodia/route.ts:61
+  - src/app/api/auditoria-legal/garantias/[id]/documento/route.ts:32
+  - src/app/api/auditoria-legal/garantias/[id]/pagare/route.ts:58
+  - src/app/api/auditoria-legal/solicitudes-actualizacion/route.ts:38
+  - src/app/api/auditoria-legal/solicitudes-actualizacion/[id]/route.ts:21
+  - src/app/api/chat/route.ts:38
+  - src/app/api/clientes/contacto/route.ts:19
+  - src/app/api/clientes/email-cobro/route.ts:65
+  - src/app/api/clientes/estado/route.ts:28
+  - src/app/api/clientes/estado-cuenta/route.ts:69
+  - src/app/api/clientes/estado-cuenta/route.ts:92
+  - src/app/api/clientes/estado-cuenta/data/route.ts:34
+  - src/app/api/clientes/gestiones/route.ts:26
+  - src/app/api/clientes/gestiones/route.ts:65
+  - src/app/api/clientes/logistica/route.ts:34
+  - src/app/api/clientes/promesas/route.ts:71
+  - src/app/api/clientes/promesas/route.ts:154
+  - src/app/api/clientes/promesas/reprogramar/route.ts:49
+  - src/app/api/gestion-cartera/pedidos-retenidos/[id]/route.ts:20
+  - src/app/api/notas-rapidas/route.ts:16
+  - src/app/api/notas-rapidas/route.ts:55
+  - src/app/api/preview-rol/route.ts:16
+  - src/app/api/reportes/enviar/route.ts:41
+  - src/app/api/saldos-favor/matching/route.ts:15
+  - src/app/api/solicitudes/route.ts:62
+  - src/app/api/solicitudes/route.ts:169
+  - src/app/api/solicitudes/route.ts:349
+  - src/app/api/solicitudes/[id]/route.ts:23
+  - src/app/api/solicitudes/[id]/comentarios/route.ts:27
+  - src/app/api/solicitudes/[id]/estado/route.ts:36
+  - src/app/api/sync/cartera/route.ts:15
+  - src/app/api/sync/facturas/route.ts:15
+  - src/app/api/sync/pagos/route.ts:21
+  - src/app/api/sync/pedidos-retenidos/route.ts:24
+  - src/app/api/sync/saldos_favor/route.ts:15
+  - src/lib/configuracion/admin.ts:28
+  - src/lib/utils/gmail-token.ts:50
+  - src/lib/utils/usuario-actual.ts:49
+- method: GET
+  path: /usuarios/{id}
+  function: GetUsuario
+  handler: entrypoints.lambda_handlers.usuarios.get_usuario_handler
+  use_case: GetUsuarioUseCase
+  module: usuarios
+  auth: cognito
+  source:
+  - src/app/api/auditoria-legal/garantias/[id]/custodia/route.ts:172
+  - src/app/api/solicitudes/route.ts:158
+  - src/app/api/solicitudes/route.ts:383
+- method: GET
+  path: /vendedores
+  function: ListVendedores
+  handler: entrypoints.lambda_handlers.vendedores.list_vendedores_handler
+  use_case: ListVendedoresUseCase
+  module: vendedores
+  auth: cognito
+  source:
+  - src/app/(app)/auditoria-legal/garantias/ModalConfirmarEnvioVendedor.tsx:34
+  - src/app/(app)/auditoria-legal/garantias/garantias-cliente.tsx:446
+  - src/app/(app)/reportes/cierre-mensual/page.tsx:129
+  - src/app/(app)/reportes/migracion-mora/migracion-cliente.tsx:57
+  - src/app/api/auditoria-legal/garantias/[id]/custodia/route.ts:101
+- method: GET
+  path: /ventas-mensuales
+  function: ListVentasMensuales
+  handler: entrypoints.lambda_handlers.ventas_mensuales.list_ventas_mensuales_handler
+  use_case: ListVentasMensualesUseCase
+  module: ventas_mensuales
+  auth: cognito
+  source:
+  - src/app/(app)/dashboard/page.tsx:117
+  - src/app/(app)/reportes/resumen-ejecutivo/page.tsx:47
+async_workers: []
+storage_buckets:
+- name: comprobantes-pago
+  public: true
+  functions: []
+- name: documentos-recursos
+  public: true
+  functions: []
+- name: expedientes-clientes
+  public: false
+  functions: []
+- name: garantias-legal
+  public: true
+  functions:
+  - CreateGarantiasLegalUploadUrl
+realtime:
+  enabled: true
+  tables:
+  - mensajes_chat
+  - notificaciones
+  publishers: []
+  ticket_handler: entrypoints.lambda_handlers.realtime.ticket_handler
+scheduled_jobs:
+- name: check-recibos-reversion
+  schedule: cron(15 23 ? * 1-5 *)
+  function: CheckRecibosReversionJob
+  handler: entrypoints.lambda_handlers.jobs.check_recibos_reversion_handler
+  source: SELECT public.fn_check_recibos_reversion();
+- name: check-sync-salud
+  schedule: cron(15 13-23 ? * 1-5 *)
+  function: CheckSyncSaludJob
+  handler: entrypoints.lambda_handlers.jobs.check_sync_salud_handler
+  source: SELECT public.fn_check_sync_salud();
+- name: cierre-cartera-mensual
+  schedule: cron(50 5 * * ? *)
+  function: CierreCarteraMensualJob
+  handler: entrypoints.lambda_handlers.jobs.cierre_cartera_mensual_handler
+  source: SELECT public.fn_cron_cierre_mensual();
+- name: cierre-mensual-pedidos-retenidos
+  schedule: cron(59 5 * * ? *)
+  function: CierreMensualPedidosRetenidosJob
+  handler: entrypoints.lambda_handlers.jobs.cierre_mensual_pedidos_retenidos_handler
+  source: SELECT public.fn_cierre_mensual_pedidos_retenidos();
+- name: evening-conciliar-promesas
+  schedule: cron(30 23 * * ? *)
+  function: EveningConciliarPromesasJob
+  handler: entrypoints.lambda_handlers.jobs.evening_conciliar_promesas_handler
+  source: ' SELECT public.fn_conciliar_promesas(); '
+- name: expirar-solicitudes-actualizacion-diario
+  schedule: cron(0 12 * * ? *)
+  function: ExpirarSolicitudesActualizacionDiarioJob
+  handler: entrypoints.lambda_handlers.jobs.expirar_solicitudes_actualizacion_diario_handler
+  source: SELECT public.fn_expirar_solicitudes_actualizacion()
+- name: historico-cartera-diario
+  schedule: cron(30 23 * * ? *)
+  function: HistoricoCarteraDiarioJob
+  handler: entrypoints.lambda_handlers.jobs.historico_cartera_diario_handler
+  source: SELECT public.fn_registrar_historico_cartera();
+- name: notificar-pedido-en-regla
+  schedule: cron(25 13-23 ? * 1-5 *)
+  function: NotificarPedidoEnReglaJob
+  handler: entrypoints.lambda_handlers.jobs.notificar_pedido_en_regla_handler
+  source: SELECT public.fn_notificar_pedido_en_regla();
+- name: notificar-promesas-hoy
+  schedule: cron(0 13 ? * 1-5 *)
+  function: NotificarPromesasHoyJob
+  handler: entrypoints.lambda_handlers.jobs.notificar_promesas_hoy_handler
+  source: SELECT public.fn_notificar_promesas_hoy()
+- name: notificar-sin-gestion
+  schedule: cron(10 13 ? * 1-5 *)
+  function: NotificarSinGestionJob
+  handler: entrypoints.lambda_handlers.jobs.notificar_sin_gestion_handler
+  source: SELECT public.fn_notificar_sin_gestion();
+- name: notificar-sla-vencido
+  schedule: cron(20 13-23 ? * 1-5 *)
+  function: NotificarSlaVencidoJob
+  handler: entrypoints.lambda_handlers.jobs.notificar_sla_vencido_handler
+  source: SELECT public.fn_notificar_sla_vencido();
+- name: snapshot-proyeccion-lunes
+  schedule: cron(5 13 ? * 1 *)
+  function: SnapshotProyeccionLunesJob
+  handler: entrypoints.lambda_handlers.jobs.snapshot_proyeccion_lunes_handler
+  source: SELECT public.fn_snapshot_proyeccion_semana()
+- name: sync-cartera-0705cr
+  schedule: cron(5 13 * * ? *)
+  function: SyncCartera0705crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_cartera_0705cr_handler
+  source: SELECT public.fn_sync_cartera()
+- name: sync-cartera-0805cr
+  schedule: cron(5 14 * * ? *)
+  function: SyncCartera0805crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_cartera_0805cr_handler
+  source: SELECT public.fn_sync_cartera()
+- name: sync-cartera-0905cr
+  schedule: cron(5 15 * * ? *)
+  function: SyncCartera0905crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_cartera_0905cr_handler
+  source: SELECT public.fn_sync_cartera()
+- name: sync-cartera-1005cr
+  schedule: cron(5 16 * * ? *)
+  function: SyncCartera1005crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_cartera_1005cr_handler
+  source: SELECT public.fn_sync_cartera()
+- name: sync-cartera-1105cr
+  schedule: cron(5 17 * * ? *)
+  function: SyncCartera1105crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_cartera_1105cr_handler
+  source: SELECT public.fn_sync_cartera()
+- name: sync-cartera-1205cr
+  schedule: cron(5 18 * * ? *)
+  function: SyncCartera1205crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_cartera_1205cr_handler
+  source: SELECT public.fn_sync_cartera()
+- name: sync-cartera-1305cr
+  schedule: cron(5 19 * * ? *)
+  function: SyncCartera1305crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_cartera_1305cr_handler
+  source: SELECT public.fn_sync_cartera()
+- name: sync-cartera-1405cr
+  schedule: cron(5 20 * * ? *)
+  function: SyncCartera1405crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_cartera_1405cr_handler
+  source: SELECT public.fn_sync_cartera()
+- name: sync-cartera-1505cr
+  schedule: cron(5 21 * * ? *)
+  function: SyncCartera1505crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_cartera_1505cr_handler
+  source: SELECT public.fn_sync_cartera()
+- name: sync-cartera-1605cr
+  schedule: cron(5 22 * * ? *)
+  function: SyncCartera1605crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_cartera_1605cr_handler
+  source: SELECT public.fn_sync_cartera()
+- name: sync-cartera-1705cr
+  schedule: cron(5 23 * * ? *)
+  function: SyncCartera1705crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_cartera_1705cr_handler
+  source: SELECT public.fn_sync_cartera()
+- name: sync-facturas-0705cr
+  schedule: cron(5 13 * * ? *)
+  function: SyncFacturas0705crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_facturas_0705cr_handler
+  source: SELECT public.fn_sync_facturas()
+- name: sync-facturas-0805cr
+  schedule: cron(5 14 * * ? *)
+  function: SyncFacturas0805crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_facturas_0805cr_handler
+  source: SELECT public.fn_sync_facturas()
+- name: sync-facturas-0905cr
+  schedule: cron(5 15 * * ? *)
+  function: SyncFacturas0905crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_facturas_0905cr_handler
+  source: SELECT public.fn_sync_facturas()
+- name: sync-facturas-1005cr
+  schedule: cron(5 16 * * ? *)
+  function: SyncFacturas1005crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_facturas_1005cr_handler
+  source: SELECT public.fn_sync_facturas()
+- name: sync-facturas-1105cr
+  schedule: cron(5 17 * * ? *)
+  function: SyncFacturas1105crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_facturas_1105cr_handler
+  source: SELECT public.fn_sync_facturas()
+- name: sync-facturas-1205cr
+  schedule: cron(5 18 * * ? *)
+  function: SyncFacturas1205crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_facturas_1205cr_handler
+  source: SELECT public.fn_sync_facturas()
+- name: sync-facturas-1305cr
+  schedule: cron(5 19 * * ? *)
+  function: SyncFacturas1305crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_facturas_1305cr_handler
+  source: SELECT public.fn_sync_facturas()
+- name: sync-facturas-1405cr
+  schedule: cron(5 20 * * ? *)
+  function: SyncFacturas1405crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_facturas_1405cr_handler
+  source: SELECT public.fn_sync_facturas()
+- name: sync-facturas-1505cr
+  schedule: cron(5 21 * * ? *)
+  function: SyncFacturas1505crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_facturas_1505cr_handler
+  source: SELECT public.fn_sync_facturas()
+- name: sync-facturas-1605cr
+  schedule: cron(5 22 * * ? *)
+  function: SyncFacturas1605crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_facturas_1605cr_handler
+  source: SELECT public.fn_sync_facturas()
+- name: sync-facturas-1705cr
+  schedule: cron(5 23 * * ? *)
+  function: SyncFacturas1705crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_facturas_1705cr_handler
+  source: SELECT public.fn_sync_facturas()
+- name: sync-pagos-0705cr
+  schedule: cron(5 13 * * ? *)
+  function: SyncPagos0705crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_pagos_0705cr_handler
+  source: SELECT public.fn_sync_pagos()
+- name: sync-pagos-0805cr
+  schedule: cron(5 14 * * ? *)
+  function: SyncPagos0805crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_pagos_0805cr_handler
+  source: SELECT public.fn_sync_pagos()
+- name: sync-pagos-0905cr
+  schedule: cron(5 15 * * ? *)
+  function: SyncPagos0905crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_pagos_0905cr_handler
+  source: SELECT public.fn_sync_pagos()
+- name: sync-pagos-1005cr
+  schedule: cron(5 16 * * ? *)
+  function: SyncPagos1005crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_pagos_1005cr_handler
+  source: SELECT public.fn_sync_pagos()
+- name: sync-pagos-1105cr
+  schedule: cron(5 17 * * ? *)
+  function: SyncPagos1105crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_pagos_1105cr_handler
+  source: SELECT public.fn_sync_pagos()
+- name: sync-pagos-1205cr
+  schedule: cron(5 18 * * ? *)
+  function: SyncPagos1205crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_pagos_1205cr_handler
+  source: SELECT public.fn_sync_pagos()
+- name: sync-pagos-1305cr
+  schedule: cron(5 19 * * ? *)
+  function: SyncPagos1305crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_pagos_1305cr_handler
+  source: SELECT public.fn_sync_pagos()
+- name: sync-pagos-1405cr
+  schedule: cron(5 20 * * ? *)
+  function: SyncPagos1405crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_pagos_1405cr_handler
+  source: SELECT public.fn_sync_pagos()
+- name: sync-pagos-1505cr
+  schedule: cron(5 21 * * ? *)
+  function: SyncPagos1505crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_pagos_1505cr_handler
+  source: SELECT public.fn_sync_pagos()
+- name: sync-pagos-1605cr
+  schedule: cron(5 22 * * ? *)
+  function: SyncPagos1605crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_pagos_1605cr_handler
+  source: SELECT public.fn_sync_pagos()
+- name: sync-pagos-1705cr
+  schedule: cron(5 23 * * ? *)
+  function: SyncPagos1705crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_pagos_1705cr_handler
+  source: SELECT public.fn_sync_pagos()
+- name: sync-pedidos-retenidos-0705cr
+  schedule: cron(5 13 * * ? *)
+  function: SyncPedidosRetenidos0705crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_pedidos_retenidos_0705cr_handler
+  source: SELECT public.fn_sync_pedidos_retenidos()
+- name: sync-pedidos-retenidos-0805cr
+  schedule: cron(5 14 * * ? *)
+  function: SyncPedidosRetenidos0805crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_pedidos_retenidos_0805cr_handler
+  source: SELECT public.fn_sync_pedidos_retenidos()
+- name: sync-pedidos-retenidos-0905cr
+  schedule: cron(5 15 * * ? *)
+  function: SyncPedidosRetenidos0905crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_pedidos_retenidos_0905cr_handler
+  source: SELECT public.fn_sync_pedidos_retenidos()
+- name: sync-pedidos-retenidos-1005cr
+  schedule: cron(5 16 * * ? *)
+  function: SyncPedidosRetenidos1005crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_pedidos_retenidos_1005cr_handler
+  source: SELECT public.fn_sync_pedidos_retenidos()
+- name: sync-pedidos-retenidos-1105cr
+  schedule: cron(5 17 * * ? *)
+  function: SyncPedidosRetenidos1105crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_pedidos_retenidos_1105cr_handler
+  source: SELECT public.fn_sync_pedidos_retenidos()
+- name: sync-pedidos-retenidos-1205cr
+  schedule: cron(5 18 * * ? *)
+  function: SyncPedidosRetenidos1205crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_pedidos_retenidos_1205cr_handler
+  source: SELECT public.fn_sync_pedidos_retenidos()
+- name: sync-pedidos-retenidos-1305cr
+  schedule: cron(5 19 * * ? *)
+  function: SyncPedidosRetenidos1305crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_pedidos_retenidos_1305cr_handler
+  source: SELECT public.fn_sync_pedidos_retenidos()
+- name: sync-pedidos-retenidos-1405cr
+  schedule: cron(5 20 * * ? *)
+  function: SyncPedidosRetenidos1405crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_pedidos_retenidos_1405cr_handler
+  source: SELECT public.fn_sync_pedidos_retenidos()
+- name: sync-pedidos-retenidos-1505cr
+  schedule: cron(5 21 * * ? *)
+  function: SyncPedidosRetenidos1505crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_pedidos_retenidos_1505cr_handler
+  source: SELECT public.fn_sync_pedidos_retenidos()
+- name: sync-pedidos-retenidos-1605cr
+  schedule: cron(5 22 * * ? *)
+  function: SyncPedidosRetenidos1605crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_pedidos_retenidos_1605cr_handler
+  source: SELECT public.fn_sync_pedidos_retenidos()
+- name: sync-pedidos-retenidos-1705cr
+  schedule: cron(5 23 * * ? *)
+  function: SyncPedidosRetenidos1705crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_pedidos_retenidos_1705cr_handler
+  source: SELECT public.fn_sync_pedidos_retenidos()
+- name: sync-saldos-0705cr
+  schedule: cron(5 13 * * ? *)
+  function: SyncSaldos0705crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_saldos_0705cr_handler
+  source: SELECT public.fn_sync_saldos_favor()
+- name: sync-saldos-0805cr
+  schedule: cron(5 14 * * ? *)
+  function: SyncSaldos0805crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_saldos_0805cr_handler
+  source: SELECT public.fn_sync_saldos_favor()
+- name: sync-saldos-0905cr
+  schedule: cron(5 15 * * ? *)
+  function: SyncSaldos0905crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_saldos_0905cr_handler
+  source: SELECT public.fn_sync_saldos_favor()
+- name: sync-saldos-1005cr
+  schedule: cron(5 16 * * ? *)
+  function: SyncSaldos1005crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_saldos_1005cr_handler
+  source: SELECT public.fn_sync_saldos_favor()
+- name: sync-saldos-1105cr
+  schedule: cron(5 17 * * ? *)
+  function: SyncSaldos1105crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_saldos_1105cr_handler
+  source: SELECT public.fn_sync_saldos_favor()
+- name: sync-saldos-1205cr
+  schedule: cron(5 18 * * ? *)
+  function: SyncSaldos1205crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_saldos_1205cr_handler
+  source: SELECT public.fn_sync_saldos_favor()
+- name: sync-saldos-1305cr
+  schedule: cron(5 19 * * ? *)
+  function: SyncSaldos1305crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_saldos_1305cr_handler
+  source: SELECT public.fn_sync_saldos_favor()
+- name: sync-saldos-1405cr
+  schedule: cron(5 20 * * ? *)
+  function: SyncSaldos1405crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_saldos_1405cr_handler
+  source: SELECT public.fn_sync_saldos_favor()
+- name: sync-saldos-1505cr
+  schedule: cron(5 21 * * ? *)
+  function: SyncSaldos1505crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_saldos_1505cr_handler
+  source: SELECT public.fn_sync_saldos_favor()
+- name: sync-saldos-1605cr
+  schedule: cron(5 22 * * ? *)
+  function: SyncSaldos1605crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_saldos_1605cr_handler
+  source: SELECT public.fn_sync_saldos_favor()
+- name: sync-saldos-1705cr
+  schedule: cron(5 23 * * ? *)
+  function: SyncSaldos1705crJob
+  handler: entrypoints.lambda_handlers.jobs.sync_saldos_1705cr_handler
+  source: SELECT public.fn_sync_saldos_favor()
+database_objects:
+  naming_map: database/naming-map.json
+  generation_report: database/generation-report.json
+environment_variables:
+  backend:
+  - ENVIRONMENT
+  - SERVICE_NAME
+  - LOG_LEVEL
+  - DB_SECRET_NAME
+  - DB_NAME
+  - DB_PROXY_ENDPOINT
+  - DB_PORT
+  - DB_SSLMODE
+  - ALLOWED_ORIGINS
+  frontend:
+  - NEXT_PUBLIC_API_BASE_URL
+  - NEXT_PUBLIC_COGNITO_USER_POOL_ID
+  - NEXT_PUBLIC_COGNITO_CLIENT_ID
+  - NEXT_PUBLIC_COGNITO_DOMAIN
+  - NEXT_PUBLIC_APP_EXPOSURE
+  - NEXT_PUBLIC_REALTIME_ENABLED
+authorization_rules:
+- table: public.cartera
+  policy: cartera_select_autenticados
+  command: SELECT
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.centro_recursos_aplicaciones
+  policy: authenticated_read_aplicaciones
+  command: SELECT
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.centro_recursos_documentos
+  policy: authenticated_read_documentos
+  command: SELECT
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.config_audit_log
+  policy: Solo coordinador accede al log
+  command: ALL
+  roles:
+  - public
+  using: "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol\
+    \ = 'COORDINADOR'::text) AND (usuarios.activo = true))))"
+  with_check: null
+  enforced_in: ''
+- table: public.config_sistema
+  policy: config_sistema_select_usuarios_activos
+  command: SELECT
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.cuentas_bancarias
+  policy: authenticated_read_cuentas_bancarias
+  command: SELECT
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.directorio_empresa
+  policy: Coordinador gestiona directorio
+  command: ALL
+  roles:
+  - public
+  using: "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol\
+    \ = 'COORDINADOR'::text) AND (usuarios.activo = true))))"
+  with_check: null
+  enforced_in: ''
+- table: public.directorio_empresa
+  policy: Todos leen directorio para autocomplete
+  command: SELECT
+  roles:
+  - public
+  using: "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.activo\
+    \ = true))))"
+  with_check: null
+  enforced_in: ''
+- table: public.facturas
+  policy: facturas_select_usuarios_activos
+  command: SELECT
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.garantia_eventos
+  policy: garantia_eventos_insert_activos
+  command: INSERT
+  roles:
+  - public
+  using: null
+  with_check: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  enforced_in: ''
+- table: public.garantia_eventos
+  policy: garantia_eventos_select_activos
+  command: SELECT
+  roles:
+  - public
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.garantias
+  policy: garantias_insert_activos
+  command: INSERT
+  roles:
+  - public
+  using: null
+  with_check: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  enforced_in: ''
+- table: public.garantias
+  policy: garantias_select_activos
+  command: SELECT
+  roles:
+  - public
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.garantias
+  policy: garantias_update_activos
+  command: UPDATE
+  roles:
+  - public
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.garantias_consecutivo_anual
+  policy: garantias_consecutivo_anual_bloqueada
+  command: ALL
+  roles:
+  - public
+  using: 'false'
+  with_check: 'false'
+  enforced_in: ''
+- table: public.gestiones
+  policy: gestiones_insert_autenticados
+  command: INSERT
+  roles:
+  - authenticated
+  using: null
+  with_check: "((( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo) AND (analista_email = (auth.jwt() ->>\
+    \ 'email'::text))) OR (EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text))\
+    \ AND (usuarios.rol = 'COORDINADOR'::text) AND (usuarios.activo = true)))))"
+  enforced_in: ''
+- table: public.gestiones
+  policy: gestiones_select_autenticados
+  command: SELECT
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.gestiones
+  policy: gestiones_update_autenticados
+  command: UPDATE
+  roles:
+  - authenticated
+  using: "((( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo) AND (analista_email = (auth.jwt() ->> 'email'::text)))\
+    \ OR (EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol\
+    \ = 'COORDINADOR'::text) AND (usuarios.activo = true)))))"
+  with_check: "((( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo) AND (analista_email = (auth.jwt() ->>\
+    \ 'email'::text))) OR (EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text))\
+    \ AND (usuarios.rol = 'COORDINADOR'::text) AND (usuarios.activo = true)))))"
+  enforced_in: ''
+- table: public.historico_aging_factura
+  policy: solo_usuarios_activos
+  command: ALL
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.historico_bloqueados
+  policy: solo_usuarios_activos
+  command: ALL
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.historico_cartera
+  policy: read_historico_cartera
+  command: SELECT
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.historico_cierres_cartera
+  policy: solo_usuarios_activos
+  command: ALL
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.historico_pedidos_retenidos
+  policy: historico_pedidos_retenidos_select_activos
+  command: SELECT
+  roles:
+  - public
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.maestro_clientes
+  policy: maestro_clientes_select_autenticados
+  command: SELECT
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.maestro_clientes
+  policy: maestro_clientes_update_autenticados
+  command: UPDATE
+  roles:
+  - authenticated
+  using: "((( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo) AND (analista_email = (auth.jwt() ->> 'email'::text)))\
+    \ OR (EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol\
+    \ = 'COORDINADOR'::text) AND (usuarios.activo = true)))))"
+  with_check: "((( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo) AND (analista_email = (auth.jwt() ->>\
+    \ 'email'::text))) OR (EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text))\
+    \ AND (usuarios.rol = 'COORDINADOR'::text) AND (usuarios.activo = true)))))"
+  enforced_in: ''
+- table: public.marcas
+  policy: authenticated_read_marcas
+  command: SELECT
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.notas_rapidas
+  policy: notas_delete_own
+  command: DELETE
+  roles:
+  - public
+  using: "(usuario_id = ( SELECT usuarios.id\n   FROM usuarios\n  WHERE (usuarios.email = (auth.jwt() ->> 'email'::text))\n\
+    \ LIMIT 1))"
+  with_check: null
+  enforced_in: ''
+- table: public.notas_rapidas
+  policy: notas_insert_own
+  command: INSERT
+  roles:
+  - public
+  using: null
+  with_check: "(usuario_id = ( SELECT usuarios.id\n   FROM usuarios\n  WHERE (usuarios.email = (auth.jwt() ->> 'email'::text))\n\
+    \ LIMIT 1))"
+  enforced_in: ''
+- table: public.notas_rapidas
+  policy: notas_select_own
+  command: SELECT
+  roles:
+  - public
+  using: "(usuario_id = ( SELECT usuarios.id\n   FROM usuarios\n  WHERE (usuarios.email = (auth.jwt() ->> 'email'::text))\n\
+    \ LIMIT 1))"
+  with_check: null
+  enforced_in: ''
+- table: public.notas_rapidas
+  policy: notas_update_own
+  command: UPDATE
+  roles:
+  - public
+  using: "(usuario_id = ( SELECT usuarios.id\n   FROM usuarios\n  WHERE (usuarios.email = (auth.jwt() ->> 'email'::text))\n\
+    \ LIMIT 1))"
+  with_check: "(usuario_id = ( SELECT usuarios.id\n   FROM usuarios\n  WHERE (usuarios.email = (auth.jwt() ->> 'email'::text))\n\
+    \ LIMIT 1))"
+  enforced_in: ''
+- table: public.notificaciones
+  policy: Usuario actualiza sus notificaciones
+  command: UPDATE
+  roles:
+  - public
+  using: "(usuario_id = ( SELECT usuarios.id\n   FROM usuarios\n  WHERE (usuarios.email = (auth.jwt() ->> 'email'::text))\n\
+    \ LIMIT 1))"
+  with_check: null
+  enforced_in: ''
+- table: public.notificaciones
+  policy: Usuario ve sus propias notificaciones
+  command: SELECT
+  roles:
+  - public
+  using: "(usuario_id = ( SELECT usuarios.id\n   FROM usuarios\n  WHERE (usuarios.email = (auth.jwt() ->> 'email'::text))\n\
+    \ LIMIT 1))"
+  with_check: null
+  enforced_in: ''
+- table: public.notificaciones
+  policy: notificaciones_insert_usuarios_activos
+  command: INSERT
+  roles:
+  - authenticated
+  using: null
+  with_check: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  enforced_in: ''
+- table: public.pagos
+  policy: pagos_select_usuarios_activos
+  command: SELECT
+  roles:
+  - public
+  using: "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.activo\
+    \ = true))))"
+  with_check: null
+  enforced_in: ''
+- table: public.pagos
+  policy: pagos_write_coordinador
+  command: ALL
+  roles:
+  - public
+  using: "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol\
+    \ = 'COORDINADOR'::text) AND (usuarios.activo = true))))"
+  with_check: null
+  enforced_in: ''
+- table: public.pagos_anulados
+  policy: Solo coordinador accede a pagos_anulados
+  command: ALL
+  roles:
+  - public
+  using: "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol\
+    \ = 'COORDINADOR'::text) AND (usuarios.activo = true))))"
+  with_check: null
+  enforced_in: ''
+- table: public.pagos_duplicado_descartado
+  policy: Solo coordinador accede a pagos_duplicado_descartado
+  command: ALL
+  roles:
+  - public
+  using: "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol\
+    \ = 'COORDINADOR'::text) AND (usuarios.activo = true))))"
+  with_check: null
+  enforced_in: ''
+- table: public.pagos_stage
+  policy: solo_usuarios_activos
+  command: ALL
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.pedidos_retenidos
+  policy: pedidos_retenidos_select_activos
+  command: SELECT
+  roles:
+  - public
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.pedidos_retenidos
+  policy: pedidos_retenidos_update_activos
+  command: UPDATE
+  roles:
+  - public
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.pedidos_retenidos_stage
+  policy: pedidos_retenidos_stage_activos
+  command: ALL
+  roles:
+  - public
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.personas_legales
+  policy: personas_legales_insert_activos
+  command: INSERT
+  roles:
+  - public
+  using: null
+  with_check: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  enforced_in: ''
+- table: public.personas_legales
+  policy: personas_legales_select_activos
+  command: SELECT
+  roles:
+  - public
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.personas_legales
+  policy: personas_legales_update_activos
+  command: UPDATE
+  roles:
+  - public
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.portafolio_acotado
+  policy: solo_usuarios_activos
+  command: ALL
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.portafolio_grupos
+  policy: solo_usuarios_activos
+  command: ALL
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.presupuesto_cobro
+  policy: solo_usuarios_activos
+  command: ALL
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.presupuesto_meta_vendedor
+  policy: solo_usuarios_activos
+  command: ALL
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.promesas
+  policy: promesas_insert_autenticados
+  command: INSERT
+  roles:
+  - authenticated
+  using: null
+  with_check: "((( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo) AND (analista_email = (auth.jwt() ->>\
+    \ 'email'::text))) OR (EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text))\
+    \ AND (usuarios.rol = 'COORDINADOR'::text) AND (usuarios.activo = true)))))"
+  enforced_in: ''
+- table: public.promesas
+  policy: promesas_select_autenticados
+  command: SELECT
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.promesas
+  policy: promesas_update_autenticados
+  command: UPDATE
+  roles:
+  - authenticated
+  using: "((( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo) AND (analista_email = (auth.jwt() ->> 'email'::text)))\
+    \ OR (EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol\
+    \ = 'COORDINADOR'::text) AND (usuarios.activo = true)))))"
+  with_check: "((( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo) AND (analista_email = (auth.jwt() ->>\
+    \ 'email'::text))) OR (EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text))\
+    \ AND (usuarios.rol = 'COORDINADOR'::text) AND (usuarios.activo = true)))))"
+  enforced_in: ''
+- table: public.proyeccion_semana_snapshot
+  policy: solo_usuarios_activos
+  command: ALL
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.saldos_favor
+  policy: saldos_favor_select
+  command: SELECT
+  roles:
+  - authenticated
+  using: "((EXISTS ( SELECT 1\n   FROM usuarios u\n  WHERE ((u.email = (auth.jwt() ->> 'email'::text)) AND (u.rol\
+    \ = 'COORDINADOR'::text)))) OR (cliente_cod IN ( SELECT m.cliente_cod\n   FROM maestro_clientes m\n  WHERE (m.analista_email\
+    \ = (auth.jwt() ->> 'email'::text)))))"
+  with_check: null
+  enforced_in: ''
+- table: public.saldos_favor
+  policy: saldos_favor_update
+  command: UPDATE
+  roles:
+  - authenticated
+  using: "((EXISTS ( SELECT 1\n   FROM usuarios u\n  WHERE ((u.email = (auth.jwt() ->> 'email'::text)) AND (u.rol\
+    \ = 'COORDINADOR'::text)))) OR (cliente_cod IN ( SELECT m.cliente_cod\n   FROM maestro_clientes m\n  WHERE (m.analista_email\
+    \ = (auth.jwt() ->> 'email'::text)))))"
+  with_check: null
+  enforced_in: ''
+- table: public.solicitud_comentarios
+  policy: sol_com_insert
+  command: INSERT
+  roles:
+  - authenticated
+  using: null
+  with_check: (( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo) AND (usuario_id = get_usuario_id()))
+  enforced_in: ''
+- table: public.solicitud_comentarios
+  policy: sol_com_select
+  command: SELECT
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.solicitud_historial_estados
+  policy: sol_hist_insert
+  command: INSERT
+  roles:
+  - authenticated
+  using: null
+  with_check: (( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo) AND (usuario_id = get_usuario_id()))
+  enforced_in: ''
+- table: public.solicitud_historial_estados
+  policy: sol_hist_select
+  command: SELECT
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.solicitudes
+  policy: Analista actualiza sus solicitudes pendientes
+  command: UPDATE
+  roles:
+  - authenticated
+  using: ((solicitante_id = get_usuario_id()) AND (estado = 'PENDIENTE'::text))
+  with_check: null
+  enforced_in: ''
+- table: public.solicitudes
+  policy: Analista lee sus propias solicitudes
+  command: SELECT
+  roles:
+  - authenticated
+  using: (solicitante_id = get_usuario_id())
+  with_check: null
+  enforced_in: ''
+- table: public.solicitudes
+  policy: Coordinador actualiza solicitudes
+  command: UPDATE
+  roles:
+  - authenticated
+  using: (get_mi_rol() = 'COORDINADOR'::text)
+  with_check: null
+  enforced_in: ''
+- table: public.solicitudes
+  policy: Coordinador lee todas las solicitudes
+  command: SELECT
+  roles:
+  - authenticated
+  using: (get_mi_rol() = 'COORDINADOR'::text)
+  with_check: null
+  enforced_in: ''
+- table: public.solicitudes
+  policy: Gerencia lee todas las solicitudes
+  command: SELECT
+  roles:
+  - authenticated
+  using: (get_mi_rol() = 'GERENCIA'::text)
+  with_check: null
+  enforced_in: ''
+- table: public.solicitudes
+  policy: solicitudes_insert_usuarios_activos
+  command: INSERT
+  roles:
+  - authenticated
+  using: null
+  with_check: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  enforced_in: ''
+- table: public.solicitudes_actualizacion
+  policy: solicitudes_actualizacion_insert_activos
+  command: INSERT
+  roles:
+  - public
+  using: null
+  with_check: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  enforced_in: ''
+- table: public.solicitudes_actualizacion
+  policy: solicitudes_actualizacion_select_activos
+  command: SELECT
+  roles:
+  - public
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.solicitudes_actualizacion
+  policy: solicitudes_actualizacion_update_activos
+  command: UPDATE
+  roles:
+  - public
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.supervisores
+  policy: Analistas leen supervisores
+  command: SELECT
+  roles:
+  - public
+  using: "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.activo\
+    \ = true))))"
+  with_check: null
+  enforced_in: ''
+- table: public.supervisores
+  policy: Coordinador gestiona supervisores
+  command: ALL
+  roles:
+  - public
+  using: "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol\
+    \ = 'COORDINADOR'::text) AND (usuarios.activo = true))))"
+  with_check: null
+  enforced_in: ''
+- table: public.sync_log
+  policy: sync_log_insert_usuarios_activos
+  command: INSERT
+  roles:
+  - authenticated
+  using: null
+  with_check: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  enforced_in: ''
+- table: public.sync_log
+  policy: sync_log_select_usuarios_activos
+  command: SELECT
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.sync_salud
+  policy: Solo coordinador lee sync_salud
+  command: SELECT
+  roles:
+  - public
+  using: "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol\
+    \ = 'COORDINADOR'::text) AND (usuarios.activo = true))))"
+  with_check: null
+  enforced_in: ''
+- table: public.usuarios
+  policy: usuarios_select_autenticados
+  command: SELECT
+  roles:
+  - authenticated
+  using: ( SELECT fn_es_usuario_activo() AS fn_es_usuario_activo)
+  with_check: null
+  enforced_in: ''
+- table: public.vendedores
+  policy: Analistas leen vendedores
+  command: SELECT
+  roles:
+  - public
+  using: "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.activo\
+    \ = true))))"
+  with_check: null
+  enforced_in: ''
+- table: public.vendedores
+  policy: Coordinador gestiona vendedores
+  command: ALL
+  roles:
+  - public
+  using: "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol\
+    \ = 'COORDINADOR'::text) AND (usuarios.activo = true))))"
+  with_check: null
+  enforced_in: ''
+- table: public.ventas_mensuales
+  policy: Coordinador gestiona ventas mensuales
+  command: ALL
+  roles:
+  - public
+  using: "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.rol\
+    \ = 'COORDINADOR'::text) AND (usuarios.activo = true))))"
+  with_check: null
+  enforced_in: ''
+- table: public.ventas_mensuales
+  policy: Todos leen ventas mensuales
+  command: SELECT
+  roles:
+  - public
+  using: "(EXISTS ( SELECT 1\n   FROM usuarios\n  WHERE ((usuarios.email = (auth.jwt() ->> 'email'::text)) AND (usuarios.activo\
+    \ = true))))"
+  with_check: null
+  enforced_in: ''
+- table: storage.objects
+  policy: usuarios_activos_suben_comprobantes
+  command: INSERT
+  roles:
+  - authenticated
+  using: null
+  with_check: ((bucket_id = 'comprobantes-pago'::text) AND fn_es_usuario_activo())
+  enforced_in: ''
+- table: storage.objects
+  policy: usuarios_activos_suben_garantias_legal
+  command: INSERT
+  roles:
+  - authenticated
+  using: null
+  with_check: ((bucket_id = 'garantias-legal'::text) AND fn_es_usuario_activo())
+  enforced_in: ''
+structural_changes: []
+incompatibilities:
+- 'src/app/api/auditoria-legal/garantias/[id]/documento/route.ts:74: getPublicUrl → URL pública de S3/CloudFront
+  del bucket garantias-legal.'
+- 'Edge Function ''mark-promesas-incumplidas'' no invocada desde el front: ¿webhook, cron o trigger? Decidir.'
+migration_risks: []
+pending_errors: []

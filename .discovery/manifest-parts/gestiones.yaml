@@ -1,0 +1,88 @@
+module:
+  name: gestiones
+  entities: [gestiones, notas_rapidas]
+  use_cases:
+    - ListGestionesUseCase
+    - GetReferenciasGestionesUseCase
+    - ListCodigosContribuyenteUseCase
+    - RegistrarGestionUseCase
+    - RegistrarGestionRapidaUseCase
+    - UpdateGestionUseCase
+    - DeleteGestionUseCase
+    - GetNotaRapidaUseCase
+    - SaveNotaRapidaUseCase
+    - FormalizarBitacoraUseCase
+api_endpoints:
+  - {method: GET, path: /gestiones, function: GestionesApi,
+     handler: entrypoints.lambda_handlers.gestiones.gestiones_handler, use_case: ListGestionesUseCase,
+     module: gestiones, auth: cognito, source: ["src/app/(app)/gestiones/page.tsx:35"], timeout: 29}
+  - {method: GET, path: /gestiones/referencias, function: GestionesApi,
+     handler: entrypoints.lambda_handlers.gestiones.gestiones_handler, use_case: GetReferenciasGestionesUseCase,
+     module: gestiones, auth: cognito,
+     source: ["src/app/(app)/gestiones/page.tsx:57", "src/app/(app)/gestiones/page.tsx:74",
+              "src/app/(app)/gestiones/page.tsx:79", "src/app/(app)/gestiones/page.tsx:84"], timeout: 29}
+  - {method: GET, path: /gestiones/codigos-contribuyente, function: GestionesApi,
+     handler: entrypoints.lambda_handlers.gestiones.gestiones_handler, use_case: ListCodigosContribuyenteUseCase,
+     module: gestiones, auth: cognito, source: ["src/components/clientes/ficha/form-nueva-gestion.tsx:199"],
+     timeout: 29}
+  - {method: POST, path: /gestiones/rapida, function: GestionesApi,
+     handler: entrypoints.lambda_handlers.gestiones.gestiones_handler, use_case: RegistrarGestionRapidaUseCase,
+     module: gestiones, auth: cognito,
+     source: ["src/components/clientes/ficha/modal-gestion.tsx:89", "src/components/clientes/ficha/modal-gestion.tsx:115"],
+     timeout: 29}
+  - {method: PATCH, path: /clientes/gestiones, function: GestionesApi,
+     handler: entrypoints.lambda_handlers.gestiones.gestiones_handler, use_case: UpdateGestionUseCase,
+     module: gestiones, auth: cognito, source: ["src/app/api/clientes/gestiones/route.ts:5"], timeout: 29}
+  - {method: DELETE, path: /clientes/gestiones, function: GestionesApi,
+     handler: entrypoints.lambda_handlers.gestiones.gestiones_handler, use_case: DeleteGestionUseCase,
+     module: gestiones, auth: cognito, source: ["src/app/api/clientes/gestiones/route.ts:52"], timeout: 29}
+  - {method: POST, path: /clientes/gestiones/nueva, function: GestionesApi,
+     handler: entrypoints.lambda_handlers.gestiones.gestiones_handler, use_case: RegistrarGestionUseCase,
+     module: gestiones, auth: cognito, source: ["src/app/api/clientes/gestiones/nueva/route.ts:42"], timeout: 29}
+  - {method: GET, path: /notas-rapidas, function: GestionesApi,
+     handler: entrypoints.lambda_handlers.gestiones.gestiones_handler, use_case: GetNotaRapidaUseCase,
+     module: gestiones, auth: cognito, source: ["src/app/api/notas-rapidas/route.ts:5"], timeout: 29}
+  - {method: POST, path: /notas-rapidas, function: GestionesApi,
+     handler: entrypoints.lambda_handlers.gestiones.gestiones_handler, use_case: SaveNotaRapidaUseCase,
+     module: gestiones, auth: cognito, source: ["src/app/api/notas-rapidas/route.ts:36"], timeout: 29}
+  - {method: POST, path: /ai/formalizar-bitacora, function: GestionesApi,
+     handler: entrypoints.lambda_handlers.gestiones.gestiones_handler, use_case: FormalizarBitacoraUseCase,
+     module: gestiones, auth: cognito, source: ["src/app/api/ai/formalizar-bitacora/route.ts:7"], timeout: 29}
+storage_buckets: []
+authorization_rules:
+  - {table: public.gestiones, policy: gestiones_select_autenticados, command: SELECT,
+     enforced_in: "ListGestionesUseCase / GetReferenciasGestionesUseCase (require_usuario activo + require_gestor_cartera + analista_scope: ANALISTA/ANALISTA_RIESGO solo las propias, COORDINADOR todas o la del filtro); ListPromesasUseCase lee la gestion origen bajo el mismo guard"}
+  - {table: public.gestiones, policy: gestiones_insert_autenticados, command: INSERT,
+     enforced_in: "RegistrarGestionUseCase (require_usuario activo + require_escritura + require_gestor_cartera; analista_email = usuario actual siempre) / RegistrarGestionRapidaUseCase (analista_email propio salvo COORDINADOR)"}
+  - {table: public.gestiones, policy: gestiones_update_autenticados, command: UPDATE,
+     enforced_in: "UpdateGestionUseCase (dueno de la gestion o COORDINADOR + require_escritura + require_gestor_cartera; lista blanca de columnas) / DeleteGestionUseCase (solo COORDINADOR, soft-delete activo=false)"}
+  - {table: public.notas_rapidas, policy: notas_select_own, command: SELECT,
+     enforced_in: "GetNotaRapidaUseCase (usuario_id = id del perfil activo del principal; el cliente no envia usuario_id)"}
+  - {table: public.notas_rapidas, policy: notas_insert_own, command: INSERT,
+     enforced_in: "SaveNotaRapidaUseCase (upsert con usuario_id = id del perfil activo del principal)"}
+  - {table: public.notas_rapidas, policy: notas_update_own, command: UPDATE,
+     enforced_in: "SaveNotaRapidaUseCase (ON CONFLICT (usuario_id, fecha) solo sobre la fila del propio usuario)"}
+  - {table: public.notas_rapidas, policy: notas_delete_own, command: DELETE,
+     enforced_in: "Sin endpoint de borrado (el original tampoco borraba notas); cualquier borrado futuro debe filtrar por usuario_id del principal"}
+scheduled_jobs: []
+async_workers: []
+structural_changes:
+  - "La bandeja /gestiones (Server Component) ya no hace 6 consultas a Supabase: GET /gestiones (lotes de 1000 con offset, mismo orden fecha/hora/id desc; el front itera como antes con .range) + GET /gestiones/referencias (solicitudes ligadas, estado de promesas, nombres de maestro_clientes y codigos con cartera, resueltos en SQL con el mismo alcance). La lista de analistas del filtro viene de analistasConCarteraReal (GET /me/analistas-con-cartera)."
+  - "POST /clientes/gestiones/nueva: gestion + promesa + vinculo promesa_id en UNA transaccion (antes 3 escrituras con rollback manual via DELETE, que ademas fallaba en silencio porque gestiones no tiene politica DELETE)."
+  - "modal-gestion.tsx insertaba directo en gestiones y promesas desde el navegador: ahora POST /gestiones/rapida (misma forma de datos, atomico). El componente no esta importado en ninguna pantalla hoy; se migro igual."
+  - "form-nueva-gestion.tsx: la consulta directa a maestro_clientes (otros codigos del contribuyente) pasa a GET /gestiones/codigos-contribuyente; las llamadas viven en useNuevaGestionController (src/views/gestiones/hooks). El tipo NuevaGestionBody se movio de la API Route a src/views/gestiones/types.ts."
+  - "NotasRapidas.tsx: carga/guardado en useNotasRapidasController (GET/POST /notas-rapidas); JSX igual."
+  - "DELETE /clientes/gestiones recibe el id por query (?id=) porque HttpClient.delete no envia cuerpo; el handler acepta tambien {id} en el body (forma original)."
+  - "/ai/formalizar-bitacora usa container.language_model() (Anthropic Messages API, clave anthropic_api_key del secreto) con el mismo modelo claude-haiku-4-5-20251001, mismo system prompt y max_tokens 512."
+  - "Guard server-side replicado: page.tsx redirige (GERENCIA y ANALISTA_RIESGO sin cartera -> /dashboard; COORDINADOR entra) y los use cases aplican require_gestor_cartera (COORDINADOR o puede_gestionar_cartera) + require_escritura en escrituras."
+incompatibilities:
+  - "El 401/503 que la API Route distinguia (sesion vencida vs. Supabase Auth caido) ahora lo emite API Gateway/Cognito antes de la Lambda: useNuevaGestionController mapea 401 -> 'Su sesion vencio...' y error de red/503 -> 'El servicio de autenticacion no esta respondiendo...' (mismos textos que el original)."
+  - "El monto en el mensaje de promesa duplicada usaba toLocaleString('es-CR'); ahora usa el formato fmtCRC (simbolo de colon + punto de miles, redondeado) por la regla 4 del CLAUDE.md."
+  - "La consulta de solicitudes ligadas en la bandeja dependia de la RLS de solicitudes; ahora se limita a solicitudes cuyas gestiones estan en el alcance del usuario (misma informacion para la UI)."
+migration_risks:
+  - "La bandeja de Coordinador trae todas las gestiones (~8.9k filas hoy) en lotes de 1000 por llamada (cada respuesta muy por debajo de 6 MB); si el volumen crece mucho conviene paginar en la UI."
+  - "Las gestiones con activo=false se siguen devolviendo en la bandeja (el original tampoco filtraba); se conserva el comportamiento."
+  - "ANALISTA_RIESGO sin cartera y GERENCIA ya no pueden registrar ni editar gestiones (antes la RLS lo permitia para analista_email propio): se aplica el guard pedido para el modulo."
+pending:
+  - "Modulo clientes: src/components/clientes/ficha/ficha-cliente.tsx:2836 (modal 'Editar gestion') sigue con fetch('/api/clientes/gestiones', PATCH) y la API Route ya se borro; debe usar gestionesApi.actualizar({ id, tipo, resultado, nota }) de '@/views/gestiones/api/gestiones-api' (mismo body y respuesta; error en ApiError.message)."
+  - "Coordinador: agregar GestionesApi al template (/clientes/gestiones y /clientes/gestiones/nueva son recursos estaticos hermanos de /clientes/{cod}; API Gateway prioriza el estatico)."

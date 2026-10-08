@@ -1,0 +1,3572 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: CYC_COFERSA - API | Backend serverless (Lambda + API Gateway + Aurora)
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues:
+    - dev
+    - qa
+    - prod
+    Description: Ambiente de despliegue
+  VpcSubnetIds:
+    Type: AWS::SSM::Parameter::Value<List<AWS::EC2::Subnet::Id>>
+    Description: Ruta SSM con las subnets privadas de las Lambdas
+  LambdaSecurityGroupId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::SecurityGroup::Id>
+    Description: Ruta SSM con el Security Group de las Lambdas
+  DbProxyEndpoint:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Ruta SSM con el endpoint de RDS Proxy / Aurora
+  DbSecretName:
+    Type: String
+    Description: Nombre del secreto de usr_<app>_app (nunca la password)
+  DbName:
+    Type: String
+    Description: Base Aurora del ambiente ({compania}_{amb}_{app}_db)
+  AllowedOrigins:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Ruta SSM con el origen del frontend (CORS estricto)
+  CognitoUserPoolArn:
+    Type: String
+    Default: ''
+    Description: ARN de un User Pool existente; vacío = crear uno en el stack
+  AlarmTopicArn:
+    Type: String
+    Default: ''
+    Description: SNS para alarmas (opcional)
+  LogLevel:
+    Type: String
+    Default: INFO
+    AllowedValues:
+    - DEBUG
+    - INFO
+    - WARNING
+    - ERROR
+  WafRateLimit:
+    Type: Number
+    Default: 2000
+    MinValue: 100
+    Description: Peticiones por IP cada 5 minutos antes de bloquear
+  GoogleOAuthSecretName:
+    Type: String
+    Default: ''
+    Description: Secreto con client_id/client_secret del OAuth de Google; vacío = sin login con Google
+Conditions:
+  IsProduction: !Equals
+  - !Ref 'Environment'
+  - prod
+  CreateUserPool: !Equals
+  - !Ref 'CognitoUserPoolArn'
+  - ''
+  HasAlarmTopic: !Not
+  - !Equals
+    - !Ref 'AlarmTopicArn'
+    - ''
+  HasGoogle: !And
+  - !Condition 'CreateUserPool'
+  - !Not
+    - !Equals
+      - !Ref 'GoogleOAuthSecretName'
+      - ''
+Globals:
+  Function:
+    Runtime: python3.13
+    Architectures:
+    - x86_64
+    MemorySize: 512
+    Timeout: 29
+    CodeUri: src/
+    VpcConfig:
+      SubnetIds: !Ref 'VpcSubnetIds'
+      SecurityGroupIds:
+      - !Ref 'LambdaSecurityGroupId'
+    Environment:
+      Variables:
+        ENVIRONMENT: !Ref 'Environment'
+        SERVICE_NAME: cyc-cofersa
+        LOG_LEVEL: !Ref 'LogLevel'
+        DB_SECRET_NAME: !Ref 'DbSecretName'
+        DB_NAME: !Ref 'DbName'
+        DB_PROXY_ENDPOINT: !Ref 'DbProxyEndpoint'
+        DB_PORT: '5432'
+        DB_SSLMODE: require
+        ALLOWED_ORIGINS: !Ref 'AllowedOrigins'
+Resources:
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Condition: CreateUserPool
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      UserPoolName: !Sub '${AWS::StackName}-users'
+      UsernameAttributes:
+      - email
+      AutoVerifiedAttributes:
+      - email
+      MfaConfiguration: OPTIONAL
+      EnabledMfas:
+      - SOFTWARE_TOKEN_MFA
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: false
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+        - Name: verified_email
+          Priority: 1
+      DeletionProtection: !If [IsProduction, ACTIVE, INACTIVE]
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 12
+          RequireLowercase: true
+          RequireUppercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          TemporaryPasswordValidityDays: 3
+      UserPoolTags:
+        Project: CYC_COFERSA
+        Environment: !Ref 'Environment'
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Condition: CreateUserPool
+    Properties:
+      ClientName: !Sub '${AWS::StackName}-web'
+      UserPoolId: !Ref 'UserPool'
+      GenerateSecret: false
+      ExplicitAuthFlows:
+      - ALLOW_USER_SRP_AUTH
+      - ALLOW_REFRESH_TOKEN_AUTH
+      # Hosted UI: login con Google (IdP federado) y vuelta a /auth/callback del frontend
+      SupportedIdentityProviders: !If
+      - HasGoogle
+      - - COGNITO
+        - !Ref 'GoogleIdentityProvider'
+      - - COGNITO
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows:
+      - code
+      AllowedOAuthScopes:
+      - openid
+      - email
+      - profile
+      CallbackURLs:
+      - !Sub '${AllowedOrigins}/auth/callback'
+      LogoutURLs:
+      - !Sub '${AllowedOrigins}/login'
+      PreventUserExistenceErrors: ENABLED
+      EnableTokenRevocation: true
+      AccessTokenValidity: 60
+      IdTokenValidity: 60
+      RefreshTokenValidity: 30
+      TokenValidityUnits:
+        AccessToken: minutes
+        IdToken: minutes
+        RefreshToken: days
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Condition: CreateUserPool
+    Properties:
+      Domain: !Sub '${AWS::StackName}-${AWS::AccountId}'
+      UserPoolId: !Ref 'UserPool'
+  GoogleIdentityProvider:
+    Type: AWS::Cognito::UserPoolIdentityProvider
+    Condition: HasGoogle
+    Properties:
+      UserPoolId: !Ref 'UserPool'
+      ProviderName: Google
+      ProviderType: Google
+      ProviderDetails:
+        client_id: !Sub '{{resolve:secretsmanager:${GoogleOAuthSecretName}:SecretString:client_id}}'
+        client_secret: !Sub '{{resolve:secretsmanager:${GoogleOAuthSecretName}:SecretString:client_secret}}'
+        authorize_scopes: openid email profile
+      AttributeMapping:
+        email: email
+        email_verified: email_verified
+        name: name
+  Api:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub '${AWS::StackName}-api'
+      Description: CYC_COFERSA - API | REST API (public)
+      StageName: !Ref 'Environment'
+      EndpointConfiguration:
+        Type: REGIONAL
+      OpenApiVersion: 3.0.1
+      Cors:
+        AllowOrigin: !Sub '''${AllowedOrigins}'''
+        AllowHeaders: '''Authorization,Content-Type'''
+        AllowMethods: '''GET,POST,PUT,PATCH,DELETE,OPTIONS'''
+        MaxAge: '''600'''
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        AddDefaultAuthorizerToCorsPreflight: false
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !If
+            - CreateUserPool
+            - !GetAtt 'UserPool.Arn'
+            - !Ref 'CognitoUserPoolArn'
+            Identity:
+              Header: Authorization
+      MethodSettings:
+      - ResourcePath: /*
+        HttpMethod: '*'
+        ThrottlingBurstLimit: 200
+        ThrottlingRateLimit: 100
+      GatewayResponses:
+        DEFAULT_4XX:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: !Sub '''${AllowedOrigins}'''
+              Access-Control-Allow-Headers: '''Authorization,Content-Type'''
+        DEFAULT_5XX:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: !Sub '''${AllowedOrigins}'''
+              Access-Control-Allow-Headers: '''Authorization,Content-Type'''
+        UNAUTHORIZED:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: !Sub '''${AllowedOrigins}'''
+              Access-Control-Allow-Headers: '''Authorization,Content-Type'''
+        ACCESS_DENIED:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: !Sub '''${AllowedOrigins}'''
+              Access-Control-Allow-Headers: '''Authorization,Content-Type'''
+  Api5xxAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-api5xx'
+      AlarmDescription: CYC_COFERSA - errores 5XX en API Gateway
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/ApiGateway
+      MetricName: 5XXError
+      Dimensions:
+      - Name: ApiName
+        Value: !Sub '${AWS::StackName}-api'
+  ComprobantesPagoBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub '${AWS::StackName}-comprobantes-pago-${AWS::AccountId}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+        - ObjectOwnership: BucketOwnerEnforced
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: !If [IsProduction, Enabled, Suspended]
+      LifecycleConfiguration:
+        Rules:
+        - Id: abort-incomplete-uploads
+          Status: Enabled
+          AbortIncompleteMultipartUpload:
+            DaysAfterInitiation: 7
+      CorsConfiguration:
+        CorsRules:
+        - AllowedOrigins:
+          - !Ref 'AllowedOrigins'
+          AllowedMethods:
+          - GET
+          - PUT
+          - HEAD
+          AllowedHeaders:
+          - '*'
+          MaxAge: 3000
+      Tags:
+      - Key: Project
+        Value: CYC_COFERSA
+  ComprobantesPagoBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref 'ComprobantesPagoBucket'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: DenyInsecureTransport
+          Effect: Deny
+          Principal: '*'
+          Action: s3:*
+          Resource:
+          - !GetAtt 'ComprobantesPagoBucket.Arn'
+          - !Sub '${ComprobantesPagoBucket.Arn}/*'
+          Condition:
+            Bool:
+              aws:SecureTransport: 'false'
+  DocumentosRecursosBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub '${AWS::StackName}-documentos-recursos-${AWS::AccountId}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+        - ObjectOwnership: BucketOwnerEnforced
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: !If [IsProduction, Enabled, Suspended]
+      LifecycleConfiguration:
+        Rules:
+        - Id: abort-incomplete-uploads
+          Status: Enabled
+          AbortIncompleteMultipartUpload:
+            DaysAfterInitiation: 7
+      CorsConfiguration:
+        CorsRules:
+        - AllowedOrigins:
+          - !Ref 'AllowedOrigins'
+          AllowedMethods:
+          - GET
+          - PUT
+          - HEAD
+          AllowedHeaders:
+          - '*'
+          MaxAge: 3000
+      Tags:
+      - Key: Project
+        Value: CYC_COFERSA
+  DocumentosRecursosBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref 'DocumentosRecursosBucket'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: DenyInsecureTransport
+          Effect: Deny
+          Principal: '*'
+          Action: s3:*
+          Resource:
+          - !GetAtt 'DocumentosRecursosBucket.Arn'
+          - !Sub '${DocumentosRecursosBucket.Arn}/*'
+          Condition:
+            Bool:
+              aws:SecureTransport: 'false'
+  ExpedientesClientesBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub '${AWS::StackName}-expedientes-clientes-${AWS::AccountId}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+        - ObjectOwnership: BucketOwnerEnforced
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: !If [IsProduction, Enabled, Suspended]
+      LifecycleConfiguration:
+        Rules:
+        - Id: abort-incomplete-uploads
+          Status: Enabled
+          AbortIncompleteMultipartUpload:
+            DaysAfterInitiation: 7
+      CorsConfiguration:
+        CorsRules:
+        - AllowedOrigins:
+          - !Ref 'AllowedOrigins'
+          AllowedMethods:
+          - GET
+          - PUT
+          - HEAD
+          AllowedHeaders:
+          - '*'
+          MaxAge: 3000
+      Tags:
+      - Key: Project
+        Value: CYC_COFERSA
+  ExpedientesClientesBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref 'ExpedientesClientesBucket'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: DenyInsecureTransport
+          Effect: Deny
+          Principal: '*'
+          Action: s3:*
+          Resource:
+          - !GetAtt 'ExpedientesClientesBucket.Arn'
+          - !Sub '${ExpedientesClientesBucket.Arn}/*'
+          Condition:
+            Bool:
+              aws:SecureTransport: 'false'
+  GarantiasLegalBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub '${AWS::StackName}-garantias-legal-${AWS::AccountId}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+        - ObjectOwnership: BucketOwnerEnforced
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: !If [IsProduction, Enabled, Suspended]
+      LifecycleConfiguration:
+        Rules:
+        - Id: abort-incomplete-uploads
+          Status: Enabled
+          AbortIncompleteMultipartUpload:
+            DaysAfterInitiation: 7
+      CorsConfiguration:
+        CorsRules:
+        - AllowedOrigins:
+          - !Ref 'AllowedOrigins'
+          AllowedMethods:
+          - GET
+          - PUT
+          - HEAD
+          AllowedHeaders:
+          - '*'
+          MaxAge: 3000
+      Tags:
+      - Key: Project
+        Value: CYC_COFERSA
+  GarantiasLegalBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref 'GarantiasLegalBucket'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: DenyInsecureTransport
+          Effect: Deny
+          Principal: '*'
+          Action: s3:*
+          Resource:
+          - !GetAtt 'GarantiasLegalBucket.Arn'
+          - !Sub '${GarantiasLegalBucket.Arn}/*'
+          Condition:
+            Bool:
+              aws:SecureTransport: 'false'
+  IdempotencyTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      TableName: !Sub '${AWS::StackName}-idempotency'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+      - AttributeName: messageId
+        AttributeType: S
+      KeySchema:
+      - AttributeName: messageId
+        KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: expires_at
+        Enabled: true
+      SSESpecification:
+        SSEEnabled: true
+  SyncManualQueueDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub '${AWS::StackName}-sync-manual-dlq'
+      MessageRetentionPeriod: 1209600
+      SqsManagedSseEnabled: true
+  SyncManualQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub '${AWS::StackName}-sync-manual'
+      VisibilityTimeout: 540
+      ReceiveMessageWaitTimeSeconds: 20
+      MessageRetentionPeriod: 1209600
+      SqsManagedSseEnabled: true
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt 'SyncManualQueueDLQ.Arn'
+        maxReceiveCount: 5
+  SyncManualDlqAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-sync-manual-dlq'
+      AlarmDescription: CYC_COFERSA - mensajes en DLQ de SyncManual
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Maximum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/SQS
+      MetricName: ApproximateNumberOfMessagesVisible
+      Dimensions:
+      - Name: QueueName
+        Value: !GetAtt 'SyncManualQueueDLQ.QueueName'
+  AnalisisPagosApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-analisis-pagos-api'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  AnalisisPagosApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-analisis-pagos-api'
+      Description: CYC_COFERSA - ANALISIS_PAGOS_API | GET /analisis-pagos/ranking-clientes, GET /analisis-pagos/perfil-vendedor,
+        GET /analisis-pagos/alertas-deterioro, GET /analisis-pagos/concentracion, GET /analisis-pagos/pagos-mes, POST /pagos-anulados,
+        DELETE /pagos-anula
+      Handler: entrypoints.lambda_handlers.analisis_pagos.analisis_pagos_handler
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'AnalisisPagosApiLogGroup'
+      Events:
+        GetAnalisisPagosRankingClientes:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /analisis-pagos/ranking-clientes
+            Method: get
+        GetAnalisisPagosPerfilVendedor:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /analisis-pagos/perfil-vendedor
+            Method: get
+        GetAnalisisPagosAlertasDeterioro:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /analisis-pagos/alertas-deterioro
+            Method: get
+        GetAnalisisPagosConcentracion:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /analisis-pagos/concentracion
+            Method: get
+        GetAnalisisPagosPagosMes:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /analisis-pagos/pagos-mes
+            Method: get
+        PostPagosAnulados:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /pagos-anulados
+            Method: post
+        DeletePagosAnuladosNoRecibo:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /pagos-anulados/{no_recibo}
+            Method: delete
+        PostPagosDuplicadoDescartado:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /pagos-duplicado-descartado
+            Method: post
+        DeletePagosDuplicadoDescartadoNoRecibo:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /pagos-duplicado-descartado/{no_recibo}
+            Method: delete
+      Role: !GetAtt 'DbRole.Arn'
+  AnalisisPagosApiErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-analisis-pagos-api-errors'
+      AlarmDescription: CYC_COFERSA - errores en AnalisisPagosApiFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'AnalisisPagosApiFunction'
+  AuditoriaLegalApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-auditoria-legal-api'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  AuditoriaLegalApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-auditoria-legal-api'
+      Description: CYC_COFERSA - AUDITORIA_LEGAL_API | GET /garantias, POST /garantias, GET /garantias/sin-garantia, GET /garantias/vendedores,
+        GET /garantias/contribuyentes, GET /garantias/contribuyentes/saldo, GET /garantias/contribuyentes/garantia-activa,
+        GET /garantias/c
+      Handler: entrypoints.lambda_handlers.auditoria_legal.auditoria_legal_handler
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'AuditoriaLegalApiLogGroup'
+      Environment:
+        Variables:
+          EXPEDIENTES_CLIENTES_BUCKET_NAME: !Ref 'ExpedientesClientesBucket'
+          GARANTIAS_LEGAL_BUCKET_NAME: !Ref 'GarantiasLegalBucket'
+      Events:
+        GetGarantias:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /garantias
+            Method: get
+        PostGarantias:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /garantias
+            Method: post
+        GetGarantiasSinGarantia:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /garantias/sin-garantia
+            Method: get
+        GetGarantiasVendedores:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /garantias/vendedores
+            Method: get
+        GetGarantiasContribuyentes:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /garantias/contribuyentes
+            Method: get
+        GetGarantiasContribuyentesSaldo:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /garantias/contribuyentes/saldo
+            Method: get
+        GetGarantiasContribuyentesGarantiaActiva:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /garantias/contribuyentes/garantia-activa
+            Method: get
+        GetGarantiasContribuyentesVendedores:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /garantias/contribuyentes/vendedores
+            Method: get
+        GetGarantiasPersonasLegales:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /garantias/personas-legales
+            Method: get
+        GetGarantiasConfigPagare:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /garantias/config-pagare
+            Method: get
+        GetGarantiasCarpetasConteo:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /garantias/carpetas/conteo
+            Method: get
+        GetGarantiasCarpetasSiguiente:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /garantias/carpetas/siguiente
+            Method: get
+        PatchGarantiasId:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /garantias/{id}
+            Method: patch
+        GetGarantiasIdVendedor:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /garantias/{id}/vendedor
+            Method: get
+        GetGarantiasIdEventos:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /garantias/{id}/eventos
+            Method: get
+        PatchGarantiasIdCustodia:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /garantias/{id}/custodia
+            Method: patch
+        PostGarantiasIdDocumentoUploadUrl:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /garantias/{id}/documento/upload-url
+            Method: post
+        PostGarantiasIdDocumento:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /garantias/{id}/documento
+            Method: post
+        GetGarantiasIdPagare:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /garantias/{id}/pagare
+            Method: get
+        PostGarantiasIdPagare:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /garantias/{id}/pagare
+            Method: post
+        GetSolicitudesActualizacion:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /solicitudes-actualizacion
+            Method: get
+        PostSolicitudesActualizacion:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /solicitudes-actualizacion
+            Method: post
+        GetSolicitudesActualizacionId:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /solicitudes-actualizacion/{id}
+            Method: get
+        PatchSolicitudesActualizacionId:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /solicitudes-actualizacion/{id}
+            Method: patch
+      Role: !GetAtt 'DbStorageExpedientesClientesStorageGarantiasLegalRole.Arn'
+  AuditoriaLegalApiErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-auditoria-legal-api-errors'
+      AlarmDescription: CYC_COFERSA - errores en AuditoriaLegalApiFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'AuditoriaLegalApiFunction'
+  ActualizarPerfilApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-actualizar-perfil-api'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  ActualizarPerfilApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-actualizar-perfil-api'
+      Description: CYC_COFERSA - ACTUALIZAR_PERFIL_API | GET /actualizar-perfil/{token}, POST /actualizar-perfil/{token}/archivos,
+        POST /actualizar-perfil/{token}
+      Handler: entrypoints.lambda_handlers.actualizar_perfil.actualizar_perfil_handler
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'ActualizarPerfilApiLogGroup'
+      Environment:
+        Variables:
+          EXPEDIENTES_CLIENTES_BUCKET_NAME: !Ref 'ExpedientesClientesBucket'
+      Events:
+        GetActualizarPerfilToken:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /actualizar-perfil/{token}
+            Method: get
+            Auth:
+              Authorizer: NONE
+        PostActualizarPerfilTokenArchivos:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /actualizar-perfil/{token}/archivos
+            Method: post
+            Auth:
+              Authorizer: NONE
+        PostActualizarPerfilToken:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /actualizar-perfil/{token}
+            Method: post
+            Auth:
+              Authorizer: NONE
+      Role: !GetAtt 'DbStorageExpedientesClientesRole.Arn'
+  ActualizarPerfilApiErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-actualizar-perfil-api-errors'
+      AlarmDescription: CYC_COFERSA - errores en ActualizarPerfilApiFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'ActualizarPerfilApiFunction'
+  CentroRecursosApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-centro-recursos-api'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  CentroRecursosApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-centro-recursos-api'
+      Description: CYC_COFERSA - CENTRO_RECURSOS_API | GET /centro-recursos, GET /centro-recursos/aplicaciones, POST /centro-recursos/aplicaciones,
+        PUT /centro-recursos/aplicaciones/{id}, GET /centro-recursos/documentos, POST /centro-recursos/documentos/upload-url,
+        POST /cen
+      Handler: entrypoints.lambda_handlers.centro_recursos.centro_recursos_handler
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'CentroRecursosApiLogGroup'
+      Environment:
+        Variables:
+          DOCUMENTOS_RECURSOS_BUCKET_NAME: !Ref 'DocumentosRecursosBucket'
+      Events:
+        GetCentroRecursos:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /centro-recursos
+            Method: get
+        GetCentroRecursosAplicaciones:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /centro-recursos/aplicaciones
+            Method: get
+        PostCentroRecursosAplicaciones:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /centro-recursos/aplicaciones
+            Method: post
+        PutCentroRecursosAplicacionesId:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /centro-recursos/aplicaciones/{id}
+            Method: put
+        GetCentroRecursosDocumentos:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /centro-recursos/documentos
+            Method: get
+        PostCentroRecursosDocumentosUploadUrl:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /centro-recursos/documentos/upload-url
+            Method: post
+        PostCentroRecursosDocumentos:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /centro-recursos/documentos
+            Method: post
+        PostCentroRecursosMarcas:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /centro-recursos/marcas
+            Method: post
+        PutCentroRecursosMarcasId:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /centro-recursos/marcas/{id}
+            Method: put
+      Role: !GetAtt 'DbStorageDocumentosRecursosRole.Arn'
+  CentroRecursosApiErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-centro-recursos-api-errors'
+      AlarmDescription: CYC_COFERSA - errores en CentroRecursosApiFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'CentroRecursosApiFunction'
+  ClientesApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-clientes-api'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  ClientesApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-clientes-api'
+      Description: CYC_COFERSA - CLIENTES_API | GET /clientes, GET /clientes/buscar, GET /clientes/{cod}/ficha, PATCH /clientes/contacto,
+        PATCH /clientes/logistica, POST /clientes/estado, POST /clientes/recordatorio, GET /clientes/estado-cuenta/data, POST
+        /clientes/email-cob
+      Handler: entrypoints.lambda_handlers.clientes.clientes_handler
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'ClientesApiLogGroup'
+      Events:
+        GetClientes:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /clientes
+            Method: get
+        GetClientesBuscar:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /clientes/buscar
+            Method: get
+        GetClientesCodFicha:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /clientes/{cod}/ficha
+            Method: get
+        PatchClientesContacto:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /clientes/contacto
+            Method: patch
+        PatchClientesLogistica:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /clientes/logistica
+            Method: patch
+        PostClientesEstado:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /clientes/estado
+            Method: post
+        PostClientesRecordatorio:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /clientes/recordatorio
+            Method: post
+        GetClientesEstadoCuentaData:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /clientes/estado-cuenta/data
+            Method: get
+        PostClientesEmailCobro:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /clientes/email-cobro
+            Method: post
+        PostClientesEstadoCuenta:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /clientes/estado-cuenta
+            Method: post
+        PostAiGenerateEmail:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /ai/generate-email
+            Method: post
+      Role: !GetAtt 'DbRole.Arn'
+  ClientesApiErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-clientes-api-errors'
+      AlarmDescription: CYC_COFERSA - errores en ClientesApiFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'ClientesApiFunction'
+  ConfiguracionApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-configuracion-api'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  ConfiguracionApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-configuracion-api'
+      Description: CYC_COFERSA - CONFIGURACION_API | GET /configuracion, GET /configuracion/parametros, PUT /configuracion/parametros,
+        GET /configuracion/semaforo, PUT /configuracion/semaforo, GET /configuracion/sla, PUT /configuracion/sla, GET /configuracion/automatizacione
+      Handler: entrypoints.lambda_handlers.configuracion.configuracion_handler
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'ConfiguracionApiLogGroup'
+      Events:
+        GetConfiguracion:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion
+            Method: get
+        GetConfiguracionParametros:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/parametros
+            Method: get
+        PutConfiguracionParametros:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/parametros
+            Method: put
+        GetConfiguracionSemaforo:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/semaforo
+            Method: get
+        PutConfiguracionSemaforo:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/semaforo
+            Method: put
+        GetConfiguracionSla:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/sla
+            Method: get
+        PutConfiguracionSla:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/sla
+            Method: put
+        GetConfiguracionAutomatizaciones:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/automatizaciones
+            Method: get
+        PutConfiguracionAutomatizaciones:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/automatizaciones
+            Method: put
+        GetConfiguracionAutomatizacionesFeed:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/automatizaciones/feed
+            Method: get
+        PatchConfiguracionAutomatizacionesFeedId:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/automatizaciones/feed/{id}
+            Method: patch
+        GetConfiguracionCierreMes:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/cierre-mes
+            Method: get
+        PutConfiguracionCierreMes:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/cierre-mes
+            Method: put
+        GetConfiguracionLog:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/log
+            Method: get
+        GetConfiguracionUsuarios:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/usuarios
+            Method: get
+        PostConfiguracionUsuarios:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/usuarios
+            Method: post
+        PutConfiguracionUsuariosId:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/usuarios/{id}
+            Method: put
+        GetConfiguracionVendedores:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/vendedores
+            Method: get
+        PostConfiguracionVendedores:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/vendedores
+            Method: post
+        PutConfiguracionVendedoresCod:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/vendedores/{cod}
+            Method: put
+        DeleteConfiguracionVendedoresCod:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/vendedores/{cod}
+            Method: delete
+        GetConfiguracionSupervisores:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/supervisores
+            Method: get
+        PostConfiguracionSupervisores:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/supervisores
+            Method: post
+        PutConfiguracionSupervisoresCod:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/supervisores/{cod}
+            Method: put
+        DeleteConfiguracionSupervisoresCod:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/supervisores/{cod}
+            Method: delete
+        GetConfiguracionDirectorio:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/directorio
+            Method: get
+        PostConfiguracionDirectorio:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/directorio
+            Method: post
+        PutConfiguracionDirectorioId:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/directorio/{id}
+            Method: put
+        DeleteConfiguracionDirectorioId:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/directorio/{id}
+            Method: delete
+        GetConfiguracionDirectorioActivo:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/directorio-activo
+            Method: get
+        GetConfiguracionPortafolioAcotado:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/portafolio-acotado
+            Method: get
+        PostConfiguracionPortafolioAcotado:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/portafolio-acotado
+            Method: post
+        PutConfiguracionPortafolioAcotadoPrincipalCod:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/portafolio-acotado/{principal_cod}
+            Method: put
+        DeleteConfiguracionPortafolioAcotadoPrincipalCod:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /configuracion/portafolio-acotado/{principal_cod}
+            Method: delete
+      Role: !GetAtt 'DbRole.Arn'
+  ConfiguracionApiErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-configuracion-api-errors'
+      AlarmDescription: CYC_COFERSA - errores en ConfiguracionApiFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'ConfiguracionApiFunction'
+  DashboardApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-dashboard-api'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  DashboardApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-dashboard-api'
+      Description: CYC_COFERSA - DASHBOARD_API | GET /dashboard/coordinador, GET /dashboard/analista, GET /dashboard/mi-cartera
+      Handler: entrypoints.lambda_handlers.dashboard.dashboard_handler
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'DashboardApiLogGroup'
+      Events:
+        GetDashboardCoordinador:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /dashboard/coordinador
+            Method: get
+        GetDashboardAnalista:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /dashboard/analista
+            Method: get
+        GetDashboardMiCartera:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /dashboard/mi-cartera
+            Method: get
+      Role: !GetAtt 'DbRole.Arn'
+  DashboardApiErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-dashboard-api-errors'
+      AlarmDescription: CYC_COFERSA - errores en DashboardApiFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'DashboardApiFunction'
+  GestionCarteraApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-gestion-cartera-api'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  GestionCarteraApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-gestion-cartera-api'
+      Description: CYC_COFERSA - GESTION_CARTERA_API | GET /pedidos-retenidos, PUT /pedidos-retenidos/{id}, GET /saldos-favor,
+        GET /saldos-favor/por-cliente, POST /saldos-favor/{id}/aplicar, GET /saldos-favor/matching, POST /gestion-cartera/comprobantes/upload-url,
+        GET /gest
+      Handler: entrypoints.lambda_handlers.gestion_cartera.gestion_cartera_handler
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'GestionCarteraApiLogGroup'
+      Environment:
+        Variables:
+          COMPROBANTES_PAGO_BUCKET_NAME: !Ref 'ComprobantesPagoBucket'
+      Events:
+        GetPedidosRetenidos:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /pedidos-retenidos
+            Method: get
+        PutPedidosRetenidosId:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /pedidos-retenidos/{id}
+            Method: put
+        GetSaldosFavor:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /saldos-favor
+            Method: get
+        GetSaldosFavorPorCliente:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /saldos-favor/por-cliente
+            Method: get
+        PostSaldosFavorIdAplicar:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /saldos-favor/{id}/aplicar
+            Method: post
+        GetSaldosFavorMatching:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /saldos-favor/matching
+            Method: get
+        PostGestionCarteraComprobantesUploadUrl:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /gestion-cartera/comprobantes/upload-url
+            Method: post
+        GetGestionCarteraComprobantesDownloadUrl:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /gestion-cartera/comprobantes/download-url
+            Method: get
+        PostClientesPagosReportar:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /clientes/pagos/reportar
+            Method: post
+      Role: !GetAtt 'DbStorageComprobantesPagoRole.Arn'
+  GestionCarteraApiErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-gestion-cartera-api-errors'
+      AlarmDescription: CYC_COFERSA - errores en GestionCarteraApiFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'GestionCarteraApiFunction'
+  GestionesApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-gestiones-api'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  GestionesApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-gestiones-api'
+      Description: CYC_COFERSA - GESTIONES_API | GET /gestiones, GET /gestiones/referencias, GET /gestiones/codigos-contribuyente,
+        POST /gestiones/rapida, PATCH /clientes/gestiones, DELETE /clientes/gestiones, POST /clientes/gestiones/nueva, GET
+        /notas-rapidas, POST /notas-r
+      Handler: entrypoints.lambda_handlers.gestiones.gestiones_handler
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'GestionesApiLogGroup'
+      Events:
+        GetGestiones:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /gestiones
+            Method: get
+        GetGestionesReferencias:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /gestiones/referencias
+            Method: get
+        GetGestionesCodigosContribuyente:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /gestiones/codigos-contribuyente
+            Method: get
+        PostGestionesRapida:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /gestiones/rapida
+            Method: post
+        PatchClientesGestiones:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /clientes/gestiones
+            Method: patch
+        DeleteClientesGestiones:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /clientes/gestiones
+            Method: delete
+        PostClientesGestionesNueva:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /clientes/gestiones/nueva
+            Method: post
+        GetNotasRapidas:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /notas-rapidas
+            Method: get
+        PostNotasRapidas:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /notas-rapidas
+            Method: post
+        PostAiFormalizarBitacora:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /ai/formalizar-bitacora
+            Method: post
+      Role: !GetAtt 'DbRole.Arn'
+  GestionesApiErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-gestiones-api-errors'
+      AlarmDescription: CYC_COFERSA - errores en GestionesApiFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'GestionesApiFunction'
+  MeApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-me-api'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  MeApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-me-api'
+      Description: CYC_COFERSA - ME_API | GET /me, GET /me/analistas-con-cartera, POST /me/preview-rol, GET /me/google/authorize-url,
+        POST /me/google/connect, GET /me/calendar/events
+      Handler: entrypoints.lambda_handlers.me.me_handler
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'MeApiLogGroup'
+      Events:
+        GetMe:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /me
+            Method: get
+        GetMeAnalistasConCartera:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /me/analistas-con-cartera
+            Method: get
+        PostMePreviewRol:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /me/preview-rol
+            Method: post
+        GetMeGoogleAuthorizeUrl:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /me/google/authorize-url
+            Method: get
+        PostMeGoogleConnect:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /me/google/connect
+            Method: post
+        GetMeCalendarEvents:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /me/calendar/events
+            Method: get
+      Role: !GetAtt 'DbRole.Arn'
+  MeApiErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-me-api-errors'
+      AlarmDescription: CYC_COFERSA - errores en MeApiFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'MeApiFunction'
+  JobsApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-jobs-api'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  JobsApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-jobs-api'
+      Description: CYC_COFERSA - JOBS_API | POST /sync/pagos, POST /sync/pedidos-retenidos, POST /sync/cartera, POST /sync/facturas,
+        POST /sync/saldos_favor, GET /sync/historial, GET /sync/estado, POST /jobs/conciliar-promesas
+      Handler: entrypoints.lambda_handlers.jobs.jobs_handler
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'JobsApiLogGroup'
+      Timeout: 10
+      Environment:
+        Variables:
+          SYNC_MANUAL_QUEUE_URL: !Ref 'SyncManualQueue'
+      Events:
+        PostSyncPagos:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /sync/pagos
+            Method: post
+        PostSyncPedidosRetenidos:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /sync/pedidos-retenidos
+            Method: post
+        PostSyncCartera:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /sync/cartera
+            Method: post
+        PostSyncFacturas:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /sync/facturas
+            Method: post
+        PostSyncSaldosFavor:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /sync/saldos_favor
+            Method: post
+        GetSyncHistorial:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /sync/historial
+            Method: get
+        GetSyncEstado:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /sync/estado
+            Method: get
+        PostJobsConciliarPromesas:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /jobs/conciliar-promesas
+            Method: post
+      Role: !GetAtt 'DbSendSyncManualRole.Arn'
+  JobsApiErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-jobs-api-errors'
+      AlarmDescription: CYC_COFERSA - errores en JobsApiFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'JobsApiFunction'
+  IngestaApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-ingesta-api'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  IngestaApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-ingesta-api'
+      Description: CYC_COFERSA - INGESTA_API | POST /ingesta/{tabla}
+      Handler: entrypoints.lambda_handlers.ingesta.ingesta_handler
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'IngestaApiLogGroup'
+      MemorySize: 1024
+      Events:
+        PostIngestaTabla:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /ingesta/{tabla}
+            Method: post
+            Auth:
+              Authorizer: NONE
+      Role: !GetAtt 'DbRole.Arn'
+  IngestaApiErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-ingesta-api-errors'
+      AlarmDescription: CYC_COFERSA - errores en IngestaApiFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'IngestaApiFunction'
+  NotificacionesApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-notificaciones-api'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  NotificacionesApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-notificaciones-api'
+      Description: CYC_COFERSA - NOTIFICACIONES_API | GET /notificaciones, PATCH /notificaciones/{id}, POST /notificaciones/leer-todas,
+        GET /chat, POST /chat, GET /tipo-cambio, GET /hacienda, GET /hacienda/cabys
+      Handler: entrypoints.lambda_handlers.notificaciones.notificaciones_handler
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'NotificacionesApiLogGroup'
+      Events:
+        GetNotificaciones:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /notificaciones
+            Method: get
+        PatchNotificacionesId:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /notificaciones/{id}
+            Method: patch
+        PostNotificacionesLeerTodas:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /notificaciones/leer-todas
+            Method: post
+        GetChat:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /chat
+            Method: get
+        PostChat:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /chat
+            Method: post
+        GetTipoCambio:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /tipo-cambio
+            Method: get
+        GetHacienda:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /hacienda
+            Method: get
+        GetHaciendaCabys:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /hacienda/cabys
+            Method: get
+      Role: !GetAtt 'DbRole.Arn'
+  NotificacionesApiErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-notificaciones-api-errors'
+      AlarmDescription: CYC_COFERSA - errores en NotificacionesApiFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'NotificacionesApiFunction'
+  PresupuestoApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-presupuesto-api'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  PresupuestoApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-presupuesto-api'
+      Description: CYC_COFERSA - PRESUPUESTO_API | GET /presupuesto/mes, POST /presupuesto/mes/congelar, POST /presupuesto/mes/meta,
+        POST /presupuesto/mes/reasignar, GET /presupuesto/vendedores, GET /presupuesto/destinatarios, POST /presupuesto/enviar,
+        GET /presupuesto/recup
+      Handler: entrypoints.lambda_handlers.presupuesto.presupuesto_handler
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'PresupuestoApiLogGroup'
+      Events:
+        GetPresupuestoMes:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /presupuesto/mes
+            Method: get
+        PostPresupuestoMesCongelar:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /presupuesto/mes/congelar
+            Method: post
+        PostPresupuestoMesMeta:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /presupuesto/mes/meta
+            Method: post
+        PostPresupuestoMesReasignar:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /presupuesto/mes/reasignar
+            Method: post
+        GetPresupuestoVendedores:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /presupuesto/vendedores
+            Method: get
+        GetPresupuestoDestinatarios:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /presupuesto/destinatarios
+            Method: get
+        PostPresupuestoEnviar:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /presupuesto/enviar
+            Method: post
+        GetPresupuestoRecuperacion:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /presupuesto/recuperacion
+            Method: get
+        GetPresupuestoProyeccion:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /presupuesto/proyeccion
+            Method: get
+        GetPresupuestoSinPago:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /presupuesto/sin-pago
+            Method: get
+        GetPresupuestoRecuperacionMom:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /presupuesto/recuperacion-mom
+            Method: get
+        GetPresupuestoRecuperacionPeriodo:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /presupuesto/recuperacion-periodo
+            Method: get
+        GetPresupuestoRecuperacionTramos:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /presupuesto/recuperacion-tramos
+            Method: get
+        GetPresupuestoMetaAnalista:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /presupuesto/meta-analista
+            Method: get
+      Role: !GetAtt 'DbRole.Arn'
+  PresupuestoApiErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-presupuesto-api-errors'
+      AlarmDescription: CYC_COFERSA - errores en PresupuestoApiFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'PresupuestoApiFunction'
+  PromesasApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-promesas-api'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  PromesasApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-promesas-api'
+      Description: CYC_COFERSA - PROMESAS_API | GET /promesas, PATCH /clientes/promesas, DELETE /clientes/promesas, POST /clientes/promesas/reprogramar
+      Handler: entrypoints.lambda_handlers.promesas.promesas_handler
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'PromesasApiLogGroup'
+      Events:
+        GetPromesas:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /promesas
+            Method: get
+        PatchClientesPromesas:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /clientes/promesas
+            Method: patch
+        DeleteClientesPromesas:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /clientes/promesas
+            Method: delete
+        PostClientesPromesasReprogramar:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /clientes/promesas/reprogramar
+            Method: post
+      Role: !GetAtt 'DbRole.Arn'
+  PromesasApiErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-promesas-api-errors'
+      AlarmDescription: CYC_COFERSA - errores en PromesasApiFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'PromesasApiFunction'
+  ReportesApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-reportes-api'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  ReportesApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-reportes-api'
+      Description: CYC_COFERSA - REPORTES_API | GET /reportes/aging, GET /reportes/cei, POST /reportes/cei/cierre, GET /reportes/efectividad,
+        GET /reportes/icp-vendedor, GET /reportes/migracion-mora, GET /reportes/migracion-mora/filtros, GET /reportes/mora-vendedor,
+        GET /rep
+      Handler: entrypoints.lambda_handlers.reportes.reportes_handler
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'ReportesApiLogGroup'
+      Events:
+        GetReportesAging:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /reportes/aging
+            Method: get
+        GetReportesCei:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /reportes/cei
+            Method: get
+        PostReportesCeiCierre:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /reportes/cei/cierre
+            Method: post
+        GetReportesEfectividad:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /reportes/efectividad
+            Method: get
+        GetReportesIcpVendedor:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /reportes/icp-vendedor
+            Method: get
+        GetReportesMigracionMora:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /reportes/migracion-mora
+            Method: get
+        GetReportesMigracionMoraFiltros:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /reportes/migracion-mora/filtros
+            Method: get
+        GetReportesMoraVendedor:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /reportes/mora-vendedor
+            Method: get
+        GetReportesBloqueados:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /reportes/bloqueados
+            Method: get
+        GetReportesPlazoEspecial:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /reportes/plazo-especial
+            Method: get
+        GetReportesPortafolioDestinatarios:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /reportes/portafolio-destinatarios
+            Method: get
+        GetReportesDimensiones:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /reportes/dimensiones
+            Method: get
+        GetReportesEstadosCuenta:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /reportes/estados-cuenta
+            Method: get
+        GetReportesCarteraVencida:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /reportes/cartera-vencida
+            Method: get
+        GetReportesGestionesPeriodo:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /reportes/gestiones-periodo
+            Method: get
+        GetReportesResumenEjecutivo:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /reportes/resumen-ejecutivo
+            Method: get
+        GetReportesCierreMensual:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /reportes/cierre-mensual
+            Method: get
+        PostReportesEnviar:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /reportes/enviar
+            Method: post
+      Role: !GetAtt 'DbRole.Arn'
+  ReportesApiErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-reportes-api-errors'
+      AlarmDescription: CYC_COFERSA - errores en ReportesApiFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'ReportesApiFunction'
+  SolicitudesApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-solicitudes-api'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  SolicitudesApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-solicitudes-api'
+      Description: CYC_COFERSA - SOLICITUDES_API | GET /solicitudes, POST /solicitudes, GET /solicitudes/nueva-clientes, GET
+        /solicitudes/nueva-contexto, GET /solicitudes/facturas, POST /solicitudes/adjuntos/upload-url, GET /solicitudes/{id},
+        PATCH /solicitudes/{id}, PATCH /
+      Handler: entrypoints.lambda_handlers.solicitudes.solicitudes_handler
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'SolicitudesApiLogGroup'
+      Environment:
+        Variables:
+          COMPROBANTES_PAGO_BUCKET_NAME: !Ref 'ComprobantesPagoBucket'
+      Events:
+        GetSolicitudes:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /solicitudes
+            Method: get
+        PostSolicitudes:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /solicitudes
+            Method: post
+        GetSolicitudesNuevaClientes:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /solicitudes/nueva-clientes
+            Method: get
+        GetSolicitudesNuevaContexto:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /solicitudes/nueva-contexto
+            Method: get
+        GetSolicitudesFacturas:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /solicitudes/facturas
+            Method: get
+        PostSolicitudesAdjuntosUploadUrl:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /solicitudes/adjuntos/upload-url
+            Method: post
+        GetSolicitudesId:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /solicitudes/{id}
+            Method: get
+        PatchSolicitudesId:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /solicitudes/{id}
+            Method: patch
+        PatchSolicitudesIdEstado:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /solicitudes/{id}/estado
+            Method: patch
+        PostSolicitudesIdComentarios:
+          Type: Api
+          Properties:
+            RestApiId: !Ref 'Api'
+            Path: /solicitudes/{id}/comentarios
+            Method: post
+      Role: !GetAtt 'DbStorageComprobantesPagoRole.Arn'
+  SolicitudesApiErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-solicitudes-api-errors'
+      AlarmDescription: CYC_COFERSA - errores en SolicitudesApiFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'SolicitudesApiFunction'
+  SyncManualWorkerLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-sync-manual-worker'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  SyncManualWorkerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-sync-manual-worker'
+      Description: CYC_COFERSA - SYNC_MANUAL_WORKER | Consume SQS sync-manual
+      Handler: entrypoints.lambda_handlers.jobs.sync_manual_worker_handler
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'SyncManualWorkerLogGroup'
+      Timeout: 90
+      Environment:
+        Variables:
+          IDEMPOTENCY_TABLE_NAME: !Ref 'IdempotencyTable'
+      Events:
+        SqsEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt 'SyncManualQueue.Arn'
+            BatchSize: 1
+            FunctionResponseTypes:
+            - ReportBatchItemFailures
+      Role: !GetAtt 'DbIdempotencyConsumeSyncManualRole.Arn'
+  SyncManualWorkerErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-sync-manual-worker-errors'
+      AlarmDescription: CYC_COFERSA - errores en SyncManualWorkerFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'SyncManualWorkerFunction'
+  JobCheckRecibosReversionLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-job-check-recibos-reversion'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  JobCheckRecibosReversionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-job-check-recibos-reversion'
+      Description: CYC_COFERSA - JOB_CHECK_RECIBOS_REVERSION | Programado cron(15 23 ? * MON-FRI *)
+      Handler: entrypoints.lambda_handlers.jobs_programados.check_recibos_reversion_job
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'JobCheckRecibosReversionLogGroup'
+      Timeout: 120
+      Events:
+        Schedule:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: cron(15 23 ? * MON-FRI *)
+            Description: CYC_COFERSA - check-recibos-reversion
+      Role: !GetAtt 'DbRole.Arn'
+  JobCheckRecibosReversionErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-job-check-recibos-reversion-errors'
+      AlarmDescription: CYC_COFERSA - errores en JobCheckRecibosReversionFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'JobCheckRecibosReversionFunction'
+  JobCheckSyncSaludLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-job-check-sync-salud'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  JobCheckSyncSaludFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-job-check-sync-salud'
+      Description: CYC_COFERSA - JOB_CHECK_SYNC_SALUD | Programado cron(15 13-23 ? * MON-FRI *)
+      Handler: entrypoints.lambda_handlers.jobs_programados.check_sync_salud_job
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'JobCheckSyncSaludLogGroup'
+      Timeout: 120
+      Events:
+        Schedule:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: cron(15 13-23 ? * MON-FRI *)
+            Description: CYC_COFERSA - check-sync-salud
+      Role: !GetAtt 'DbRole.Arn'
+  JobCheckSyncSaludErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-job-check-sync-salud-errors'
+      AlarmDescription: CYC_COFERSA - errores en JobCheckSyncSaludFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'JobCheckSyncSaludFunction'
+  JobCierreCarteraMensualLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-job-cierre-cartera-mensual'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  JobCierreCarteraMensualFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-job-cierre-cartera-mensual'
+      Description: CYC_COFERSA - JOB_CIERRE_CARTERA_MENSUAL | Programado cron(50 5 * * ? *)
+      Handler: entrypoints.lambda_handlers.jobs_programados.cierre_cartera_mensual_job
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'JobCierreCarteraMensualLogGroup'
+      Timeout: 300
+      Events:
+        Schedule:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: cron(50 5 * * ? *)
+            Description: CYC_COFERSA - cierre-cartera-mensual
+      Role: !GetAtt 'DbRole.Arn'
+  JobCierreCarteraMensualErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-job-cierre-cartera-mensual-errors'
+      AlarmDescription: CYC_COFERSA - errores en JobCierreCarteraMensualFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'JobCierreCarteraMensualFunction'
+  JobCierreMensualPedidosRetenidosLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-job-cierre-mensual-pedidos-retenidos'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  JobCierreMensualPedidosRetenidosFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-job-cierre-mensual-pedidos-retenidos'
+      Description: CYC_COFERSA - JOB_CIERRE_MENSUAL_PEDIDOS_RETENIDOS | Programado cron(59 5 * * ? *)
+      Handler: entrypoints.lambda_handlers.jobs_programados.cierre_mensual_pedidos_retenidos_job
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'JobCierreMensualPedidosRetenidosLogGroup'
+      Timeout: 300
+      Events:
+        Schedule:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: cron(59 5 * * ? *)
+            Description: CYC_COFERSA - cierre-mensual-pedidos-retenidos
+      Role: !GetAtt 'DbRole.Arn'
+  JobCierreMensualPedidosRetenidosErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-job-cierre-mensual-pedidos-retenidos-errors'
+      AlarmDescription: CYC_COFERSA - errores en JobCierreMensualPedidosRetenidosFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'JobCierreMensualPedidosRetenidosFunction'
+  JobConciliarPromesasLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-job-conciliar-promesas'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  JobConciliarPromesasFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-job-conciliar-promesas'
+      Description: CYC_COFERSA - JOB_CONCILIAR_PROMESAS | Programado cron(30 23 * * ? *)
+      Handler: entrypoints.lambda_handlers.jobs_programados.conciliar_promesas_job
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'JobConciliarPromesasLogGroup'
+      Timeout: 300
+      Events:
+        Schedule:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: cron(30 23 * * ? *)
+            Description: CYC_COFERSA - conciliar-promesas
+      Role: !GetAtt 'DbRole.Arn'
+  JobConciliarPromesasErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-job-conciliar-promesas-errors'
+      AlarmDescription: CYC_COFERSA - errores en JobConciliarPromesasFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'JobConciliarPromesasFunction'
+  JobExpirarSolicitudesActualizacionLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-job-expirar-solicitudes-actualizacion'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  JobExpirarSolicitudesActualizacionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-job-expirar-solicitudes-actualizacion'
+      Description: CYC_COFERSA - JOB_EXPIRAR_SOLICITUDES_ACTUALIZACION | Programado cron(0 12 * * ? *)
+      Handler: entrypoints.lambda_handlers.jobs_programados.expirar_solicitudes_actualizacion_job
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'JobExpirarSolicitudesActualizacionLogGroup'
+      Timeout: 120
+      Events:
+        Schedule:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: cron(0 12 * * ? *)
+            Description: CYC_COFERSA - expirar-solicitudes-actualizacion
+      Role: !GetAtt 'DbRole.Arn'
+  JobExpirarSolicitudesActualizacionErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-job-expirar-solicitudes-actualizacion-errors'
+      AlarmDescription: CYC_COFERSA - errores en JobExpirarSolicitudesActualizacionFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'JobExpirarSolicitudesActualizacionFunction'
+  JobHistoricoCarteraLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-job-historico-cartera'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  JobHistoricoCarteraFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-job-historico-cartera'
+      Description: CYC_COFERSA - JOB_HISTORICO_CARTERA | Programado cron(30 23 * * ? *)
+      Handler: entrypoints.lambda_handlers.jobs_programados.historico_cartera_job
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'JobHistoricoCarteraLogGroup'
+      Timeout: 300
+      Events:
+        Schedule:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: cron(30 23 * * ? *)
+            Description: CYC_COFERSA - historico-cartera
+      Role: !GetAtt 'DbRole.Arn'
+  JobHistoricoCarteraErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-job-historico-cartera-errors'
+      AlarmDescription: CYC_COFERSA - errores en JobHistoricoCarteraFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'JobHistoricoCarteraFunction'
+  JobNotificarPedidoEnReglaLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-job-notificar-pedido-en-regla'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  JobNotificarPedidoEnReglaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-job-notificar-pedido-en-regla'
+      Description: CYC_COFERSA - JOB_NOTIFICAR_PEDIDO_EN_REGLA | Programado cron(25 13-23 ? * MON-FRI *)
+      Handler: entrypoints.lambda_handlers.jobs_programados.notificar_pedido_en_regla_job
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'JobNotificarPedidoEnReglaLogGroup'
+      Timeout: 120
+      Events:
+        Schedule:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: cron(25 13-23 ? * MON-FRI *)
+            Description: CYC_COFERSA - notificar-pedido-en-regla
+      Role: !GetAtt 'DbRole.Arn'
+  JobNotificarPedidoEnReglaErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-job-notificar-pedido-en-regla-errors'
+      AlarmDescription: CYC_COFERSA - errores en JobNotificarPedidoEnReglaFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'JobNotificarPedidoEnReglaFunction'
+  JobNotificarPromesasHoyLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-job-notificar-promesas-hoy'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  JobNotificarPromesasHoyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-job-notificar-promesas-hoy'
+      Description: CYC_COFERSA - JOB_NOTIFICAR_PROMESAS_HOY | Programado cron(0 13 ? * MON-FRI *)
+      Handler: entrypoints.lambda_handlers.jobs_programados.notificar_promesas_hoy_job
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'JobNotificarPromesasHoyLogGroup'
+      Timeout: 120
+      Events:
+        Schedule:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: cron(0 13 ? * MON-FRI *)
+            Description: CYC_COFERSA - notificar-promesas-hoy
+      Role: !GetAtt 'DbRole.Arn'
+  JobNotificarPromesasHoyErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-job-notificar-promesas-hoy-errors'
+      AlarmDescription: CYC_COFERSA - errores en JobNotificarPromesasHoyFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'JobNotificarPromesasHoyFunction'
+  JobNotificarSinGestionLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-job-notificar-sin-gestion'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  JobNotificarSinGestionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-job-notificar-sin-gestion'
+      Description: CYC_COFERSA - JOB_NOTIFICAR_SIN_GESTION | Programado cron(10 13 ? * MON-FRI *)
+      Handler: entrypoints.lambda_handlers.jobs_programados.notificar_sin_gestion_job
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'JobNotificarSinGestionLogGroup'
+      Timeout: 120
+      Events:
+        Schedule:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: cron(10 13 ? * MON-FRI *)
+            Description: CYC_COFERSA - notificar-sin-gestion
+      Role: !GetAtt 'DbRole.Arn'
+  JobNotificarSinGestionErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-job-notificar-sin-gestion-errors'
+      AlarmDescription: CYC_COFERSA - errores en JobNotificarSinGestionFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'JobNotificarSinGestionFunction'
+  JobNotificarSlaVencidoLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-job-notificar-sla-vencido'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  JobNotificarSlaVencidoFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-job-notificar-sla-vencido'
+      Description: CYC_COFERSA - JOB_NOTIFICAR_SLA_VENCIDO | Programado cron(20 13-23 ? * MON-FRI *)
+      Handler: entrypoints.lambda_handlers.jobs_programados.notificar_sla_vencido_job
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'JobNotificarSlaVencidoLogGroup'
+      Timeout: 120
+      Events:
+        Schedule:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: cron(20 13-23 ? * MON-FRI *)
+            Description: CYC_COFERSA - notificar-sla-vencido
+      Role: !GetAtt 'DbRole.Arn'
+  JobNotificarSlaVencidoErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-job-notificar-sla-vencido-errors'
+      AlarmDescription: CYC_COFERSA - errores en JobNotificarSlaVencidoFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'JobNotificarSlaVencidoFunction'
+  JobSnapshotProyeccionSemanaLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-job-snapshot-proyeccion-semana'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  JobSnapshotProyeccionSemanaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-job-snapshot-proyeccion-semana'
+      Description: CYC_COFERSA - JOB_SNAPSHOT_PROYECCION_SEMANA | Programado cron(5 13 ? * MON *)
+      Handler: entrypoints.lambda_handlers.jobs_programados.snapshot_proyeccion_semana_job
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'JobSnapshotProyeccionSemanaLogGroup'
+      Timeout: 300
+      Events:
+        Schedule:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: cron(5 13 ? * MON *)
+            Description: CYC_COFERSA - snapshot-proyeccion-semana
+      Role: !GetAtt 'DbRole.Arn'
+  JobSnapshotProyeccionSemanaErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-job-snapshot-proyeccion-semana-errors'
+      AlarmDescription: CYC_COFERSA - errores en JobSnapshotProyeccionSemanaFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'JobSnapshotProyeccionSemanaFunction'
+  JobSyncPagosLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-job-sync-pagos'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  JobSyncPagosFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-job-sync-pagos'
+      Description: CYC_COFERSA - JOB_SYNC_PAGOS | Programado cron(5 13-23 * * ? *)
+      Handler: entrypoints.lambda_handlers.jobs_programados.sync_pagos_job
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'JobSyncPagosLogGroup'
+      Timeout: 120
+      Events:
+        Schedule:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: cron(5 13-23 * * ? *)
+            Description: CYC_COFERSA - sync-pagos
+      Role: !GetAtt 'DbRole.Arn'
+  JobSyncPagosErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-job-sync-pagos-errors'
+      AlarmDescription: CYC_COFERSA - errores en JobSyncPagosFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'JobSyncPagosFunction'
+  JobSyncCarteraLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-job-sync-cartera'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  JobSyncCarteraFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-job-sync-cartera'
+      Description: CYC_COFERSA - JOB_SYNC_CARTERA | Programado cron(5 13-23 * * ? *)
+      Handler: entrypoints.lambda_handlers.jobs_programados.sync_cartera_job
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'JobSyncCarteraLogGroup'
+      Timeout: 60
+      Events:
+        Schedule:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: cron(5 13-23 * * ? *)
+            Description: CYC_COFERSA - sync-cartera
+      Role: !GetAtt 'DbRole.Arn'
+  JobSyncCarteraErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-job-sync-cartera-errors'
+      AlarmDescription: CYC_COFERSA - errores en JobSyncCarteraFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'JobSyncCarteraFunction'
+  JobSyncFacturasLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-job-sync-facturas'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  JobSyncFacturasFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-job-sync-facturas'
+      Description: CYC_COFERSA - JOB_SYNC_FACTURAS | Programado cron(5 13-23 * * ? *)
+      Handler: entrypoints.lambda_handlers.jobs_programados.sync_facturas_job
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'JobSyncFacturasLogGroup'
+      Timeout: 60
+      Events:
+        Schedule:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: cron(5 13-23 * * ? *)
+            Description: CYC_COFERSA - sync-facturas
+      Role: !GetAtt 'DbRole.Arn'
+  JobSyncFacturasErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-job-sync-facturas-errors'
+      AlarmDescription: CYC_COFERSA - errores en JobSyncFacturasFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'JobSyncFacturasFunction'
+  JobSyncSaldosFavorLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-job-sync-saldos-favor'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  JobSyncSaldosFavorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-job-sync-saldos-favor'
+      Description: CYC_COFERSA - JOB_SYNC_SALDOS_FAVOR | Programado cron(5 13-23 * * ? *)
+      Handler: entrypoints.lambda_handlers.jobs_programados.sync_saldos_favor_job
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'JobSyncSaldosFavorLogGroup'
+      Timeout: 60
+      Events:
+        Schedule:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: cron(5 13-23 * * ? *)
+            Description: CYC_COFERSA - sync-saldos-favor
+      Role: !GetAtt 'DbRole.Arn'
+  JobSyncSaldosFavorErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-job-sync-saldos-favor-errors'
+      AlarmDescription: CYC_COFERSA - errores en JobSyncSaldosFavorFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'JobSyncSaldosFavorFunction'
+  JobSyncPedidosRetenidosLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-job-sync-pedidos-retenidos'
+      RetentionInDays: !If [IsProduction, 30, 7]
+  JobSyncPedidosRetenidosFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-job-sync-pedidos-retenidos'
+      Description: CYC_COFERSA - JOB_SYNC_PEDIDOS_RETENIDOS | Programado cron(5 13-23 * * ? *)
+      Handler: entrypoints.lambda_handlers.jobs_programados.sync_pedidos_retenidos_job
+      LoggingConfig:
+        LogFormat: JSON
+        LogGroup: !Ref 'JobSyncPedidosRetenidosLogGroup'
+      Timeout: 120
+      Events:
+        Schedule:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: cron(5 13-23 * * ? *)
+            Description: CYC_COFERSA - sync-pedidos-retenidos
+      Role: !GetAtt 'DbRole.Arn'
+  JobSyncPedidosRetenidosErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-job-sync-pedidos-retenidos-errors'
+      AlarmDescription: CYC_COFERSA - errores en JobSyncPedidosRetenidosFunction
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 1
+      Period: 300
+      Statistic: Sum
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+      - HasAlarmTopic
+      - - !Ref 'AlarmTopicArn'
+      - !Ref 'AWS::NoValue'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref 'JobSyncPedidosRetenidosFunction'
+  DbStorageExpedientesClientesRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: 'CYC_COFERSA - rol compartido por 1 función(es): db, s3:expedientes-clientes'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      Policies:
+      - PolicyName: least-privilege
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Sid: WriteOwnLogs
+            Effect: Allow
+            Action:
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Resource:
+            - !GetAtt 'ActualizarPerfilApiLogGroup.Arn'
+          - Sid: VpcNetworkInterfaces
+            Effect: Allow
+            Action:
+            - ec2:CreateNetworkInterface
+            - ec2:DescribeNetworkInterfaces
+            - ec2:DeleteNetworkInterface
+            - ec2:AssignPrivateIpAddresses
+            - ec2:UnassignPrivateIpAddresses
+            Resource: '*'
+          - Sid: ReadDbSecret
+            Effect: Allow
+            Action:
+            - secretsmanager:GetSecretValue
+            Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${DbSecretName}-??????'
+          - Sid: BucketObjects
+            Effect: Allow
+            Action:
+            - s3:GetObject
+            - s3:PutObject
+            - s3:DeleteObject
+            Resource:
+            - !Sub '${ExpedientesClientesBucket.Arn}/*'
+          - Sid: BucketList
+            Effect: Allow
+            Action:
+            - s3:ListBucket
+            Resource:
+            - !GetAtt 'ExpedientesClientesBucket.Arn'
+  DbRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: 'CYC_COFERSA - rol compartido por 28 función(es): db'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      Policies:
+      - PolicyName: least-privilege
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Sid: WriteOwnLogs
+            Effect: Allow
+            Action:
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Resource:
+            - !GetAtt 'AnalisisPagosApiLogGroup.Arn'
+            - !GetAtt 'ClientesApiLogGroup.Arn'
+            - !GetAtt 'ConfiguracionApiLogGroup.Arn'
+            - !GetAtt 'DashboardApiLogGroup.Arn'
+            - !GetAtt 'GestionesApiLogGroup.Arn'
+            - !GetAtt 'IngestaApiLogGroup.Arn'
+            - !GetAtt 'JobCheckRecibosReversionLogGroup.Arn'
+            - !GetAtt 'JobCheckSyncSaludLogGroup.Arn'
+            - !GetAtt 'JobCierreCarteraMensualLogGroup.Arn'
+            - !GetAtt 'JobCierreMensualPedidosRetenidosLogGroup.Arn'
+            - !GetAtt 'JobConciliarPromesasLogGroup.Arn'
+            - !GetAtt 'JobExpirarSolicitudesActualizacionLogGroup.Arn'
+            - !GetAtt 'JobHistoricoCarteraLogGroup.Arn'
+            - !GetAtt 'JobNotificarPedidoEnReglaLogGroup.Arn'
+            - !GetAtt 'JobNotificarPromesasHoyLogGroup.Arn'
+            - !GetAtt 'JobNotificarSinGestionLogGroup.Arn'
+            - !GetAtt 'JobNotificarSlaVencidoLogGroup.Arn'
+            - !GetAtt 'JobSnapshotProyeccionSemanaLogGroup.Arn'
+            - !GetAtt 'JobSyncCarteraLogGroup.Arn'
+            - !GetAtt 'JobSyncFacturasLogGroup.Arn'
+            - !GetAtt 'JobSyncPagosLogGroup.Arn'
+            - !GetAtt 'JobSyncPedidosRetenidosLogGroup.Arn'
+            - !GetAtt 'JobSyncSaldosFavorLogGroup.Arn'
+            - !GetAtt 'MeApiLogGroup.Arn'
+            - !GetAtt 'NotificacionesApiLogGroup.Arn'
+            - !GetAtt 'PresupuestoApiLogGroup.Arn'
+            - !GetAtt 'PromesasApiLogGroup.Arn'
+            - !GetAtt 'ReportesApiLogGroup.Arn'
+          - Sid: VpcNetworkInterfaces
+            Effect: Allow
+            Action:
+            - ec2:CreateNetworkInterface
+            - ec2:DescribeNetworkInterfaces
+            - ec2:DeleteNetworkInterface
+            - ec2:AssignPrivateIpAddresses
+            - ec2:UnassignPrivateIpAddresses
+            Resource: '*'
+          - Sid: ReadDbSecret
+            Effect: Allow
+            Action:
+            - secretsmanager:GetSecretValue
+            Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${DbSecretName}-??????'
+  DbStorageExpedientesClientesStorageGarantiasLegalRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: 'CYC_COFERSA - rol compartido por 1 función(es): db, s3:expedientes-clientes, s3:garantias-legal'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      Policies:
+      - PolicyName: least-privilege
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Sid: WriteOwnLogs
+            Effect: Allow
+            Action:
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Resource:
+            - !GetAtt 'AuditoriaLegalApiLogGroup.Arn'
+          - Sid: VpcNetworkInterfaces
+            Effect: Allow
+            Action:
+            - ec2:CreateNetworkInterface
+            - ec2:DescribeNetworkInterfaces
+            - ec2:DeleteNetworkInterface
+            - ec2:AssignPrivateIpAddresses
+            - ec2:UnassignPrivateIpAddresses
+            Resource: '*'
+          - Sid: ReadDbSecret
+            Effect: Allow
+            Action:
+            - secretsmanager:GetSecretValue
+            Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${DbSecretName}-??????'
+          - Sid: BucketObjects
+            Effect: Allow
+            Action:
+            - s3:GetObject
+            - s3:PutObject
+            - s3:DeleteObject
+            Resource:
+            - !Sub '${ExpedientesClientesBucket.Arn}/*'
+            - !Sub '${GarantiasLegalBucket.Arn}/*'
+          - Sid: BucketList
+            Effect: Allow
+            Action:
+            - s3:ListBucket
+            Resource:
+            - !GetAtt 'ExpedientesClientesBucket.Arn'
+            - !GetAtt 'GarantiasLegalBucket.Arn'
+  DbStorageDocumentosRecursosRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: 'CYC_COFERSA - rol compartido por 1 función(es): db, s3:documentos-recursos'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      Policies:
+      - PolicyName: least-privilege
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Sid: WriteOwnLogs
+            Effect: Allow
+            Action:
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Resource:
+            - !GetAtt 'CentroRecursosApiLogGroup.Arn'
+          - Sid: VpcNetworkInterfaces
+            Effect: Allow
+            Action:
+            - ec2:CreateNetworkInterface
+            - ec2:DescribeNetworkInterfaces
+            - ec2:DeleteNetworkInterface
+            - ec2:AssignPrivateIpAddresses
+            - ec2:UnassignPrivateIpAddresses
+            Resource: '*'
+          - Sid: ReadDbSecret
+            Effect: Allow
+            Action:
+            - secretsmanager:GetSecretValue
+            Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${DbSecretName}-??????'
+          - Sid: BucketObjects
+            Effect: Allow
+            Action:
+            - s3:GetObject
+            - s3:PutObject
+            - s3:DeleteObject
+            Resource:
+            - !Sub '${DocumentosRecursosBucket.Arn}/*'
+          - Sid: BucketList
+            Effect: Allow
+            Action:
+            - s3:ListBucket
+            Resource:
+            - !GetAtt 'DocumentosRecursosBucket.Arn'
+  DbStorageComprobantesPagoRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: 'CYC_COFERSA - rol compartido por 2 función(es): db, s3:comprobantes-pago'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      Policies:
+      - PolicyName: least-privilege
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Sid: WriteOwnLogs
+            Effect: Allow
+            Action:
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Resource:
+            - !GetAtt 'GestionCarteraApiLogGroup.Arn'
+            - !GetAtt 'SolicitudesApiLogGroup.Arn'
+          - Sid: VpcNetworkInterfaces
+            Effect: Allow
+            Action:
+            - ec2:CreateNetworkInterface
+            - ec2:DescribeNetworkInterfaces
+            - ec2:DeleteNetworkInterface
+            - ec2:AssignPrivateIpAddresses
+            - ec2:UnassignPrivateIpAddresses
+            Resource: '*'
+          - Sid: ReadDbSecret
+            Effect: Allow
+            Action:
+            - secretsmanager:GetSecretValue
+            Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${DbSecretName}-??????'
+          - Sid: BucketObjects
+            Effect: Allow
+            Action:
+            - s3:GetObject
+            - s3:PutObject
+            - s3:DeleteObject
+            Resource:
+            - !Sub '${ComprobantesPagoBucket.Arn}/*'
+          - Sid: BucketList
+            Effect: Allow
+            Action:
+            - s3:ListBucket
+            Resource:
+            - !GetAtt 'ComprobantesPagoBucket.Arn'
+  DbSendSyncManualRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: 'CYC_COFERSA - rol compartido por 1 función(es): db, sqs_send:sync-manual'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      Policies:
+      - PolicyName: least-privilege
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Sid: WriteOwnLogs
+            Effect: Allow
+            Action:
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Resource:
+            - !GetAtt 'JobsApiLogGroup.Arn'
+          - Sid: VpcNetworkInterfaces
+            Effect: Allow
+            Action:
+            - ec2:CreateNetworkInterface
+            - ec2:DescribeNetworkInterfaces
+            - ec2:DeleteNetworkInterface
+            - ec2:AssignPrivateIpAddresses
+            - ec2:UnassignPrivateIpAddresses
+            Resource: '*'
+          - Sid: ReadDbSecret
+            Effect: Allow
+            Action:
+            - secretsmanager:GetSecretValue
+            Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${DbSecretName}-??????'
+          - Sid: SendToQueues
+            Effect: Allow
+            Action:
+            - sqs:SendMessage
+            Resource:
+            - !GetAtt 'SyncManualQueue.Arn'
+  DbIdempotencyConsumeSyncManualRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: 'CYC_COFERSA - rol compartido por 1 función(es): db, idempotency, sqs_consume:sync-manual'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      Policies:
+      - PolicyName: least-privilege
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Sid: WriteOwnLogs
+            Effect: Allow
+            Action:
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Resource:
+            - !GetAtt 'SyncManualWorkerLogGroup.Arn'
+          - Sid: VpcNetworkInterfaces
+            Effect: Allow
+            Action:
+            - ec2:CreateNetworkInterface
+            - ec2:DescribeNetworkInterfaces
+            - ec2:DeleteNetworkInterface
+            - ec2:AssignPrivateIpAddresses
+            - ec2:UnassignPrivateIpAddresses
+            Resource: '*'
+          - Sid: ReadDbSecret
+            Effect: Allow
+            Action:
+            - secretsmanager:GetSecretValue
+            Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${DbSecretName}-??????'
+          - Sid: ConsumeQueues
+            Effect: Allow
+            Action:
+            - sqs:ReceiveMessage
+            - sqs:DeleteMessage
+            - sqs:GetQueueAttributes
+            - sqs:ChangeMessageVisibility
+            Resource:
+            - !GetAtt 'SyncManualQueue.Arn'
+          - Sid: IdempotencyTable
+            Effect: Allow
+            Action:
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:DeleteItem
+            Resource: !GetAtt 'IdempotencyTable.Arn'
+  ApiWebAcl:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      Name: !Sub '${AWS::StackName}-api-waf'
+      Scope: REGIONAL
+      DefaultAction:
+        Allow: {}
+      VisibilityConfig:
+        SampledRequestsEnabled: true
+        CloudWatchMetricsEnabled: true
+        MetricName: !Sub '${AWS::StackName}-api-waf'
+      Rules:
+      - Name: RateLimitPerIp
+        Priority: 0
+        Statement:
+          RateBasedStatement:
+            Limit: !Ref 'WafRateLimit'
+            AggregateKeyType: IP
+        VisibilityConfig:
+          SampledRequestsEnabled: true
+          CloudWatchMetricsEnabled: true
+          MetricName: RateLimitPerIp
+        Action:
+          Block: {}
+      - Name: AWSManagedCommon
+        Priority: 1
+        Statement:
+          ManagedRuleGroupStatement:
+            VendorName: AWS
+            Name: AWSManagedRulesCommonRuleSet
+        VisibilityConfig:
+          SampledRequestsEnabled: true
+          CloudWatchMetricsEnabled: true
+          MetricName: AWSManagedCommon
+        OverrideAction:
+          None: {}
+      - Name: AWSManagedKnownBadInputs
+        Priority: 2
+        Statement:
+          ManagedRuleGroupStatement:
+            VendorName: AWS
+            Name: AWSManagedRulesKnownBadInputsRuleSet
+        VisibilityConfig:
+          SampledRequestsEnabled: true
+          CloudWatchMetricsEnabled: true
+          MetricName: AWSManagedKnownBadInputs
+        OverrideAction:
+          None: {}
+  ApiWebAclAssociation:
+    Type: AWS::WAFv2::WebACLAssociation
+    DependsOn: ApiStage
+    Properties:
+      ResourceArn: !Sub 'arn:aws:apigateway:${AWS::Region}::/restapis/${Api}/stages/${Environment}'
+      WebACLArn: !GetAtt 'ApiWebAcl.Arn'
+Outputs:
+  UserPoolId:
+    Condition: CreateUserPool
+    Value: !Ref 'UserPool'
+    Description: COGNITO_USER_POOL_ID del frontend
+  UserPoolClientId:
+    Condition: CreateUserPool
+    Value: !Ref 'UserPoolClient'
+    Description: COGNITO_CLIENT_ID del frontend
+  UserPoolDomain:
+    Condition: CreateUserPool
+    Value: !Sub '${UserPoolDomain}.auth.${AWS::Region}.amazoncognito.com'
+    Description: COGNITO_DOMAIN del frontend (Hosted UI)
+  GoogleRedirectUri:
+    Condition: CreateUserPool
+    Value: !Sub 'https://${UserPoolDomain}.auth.${AWS::Region}.amazoncognito.com/oauth2/idpresponse'
+    Description: URI de redirección autorizada a registrar en el cliente OAuth de Google
+  ComprobantesPagoBucket:
+    Value: !Ref 'ComprobantesPagoBucket'
+    Description: Bucket S3 'comprobantes-pago'
+  DocumentosRecursosBucket:
+    Value: !Ref 'DocumentosRecursosBucket'
+    Description: Bucket S3 'documentos-recursos'
+  ExpedientesClientesBucket:
+    Value: !Ref 'ExpedientesClientesBucket'
+    Description: Bucket S3 'expedientes-clientes'
+  GarantiasLegalBucket:
+    Value: !Ref 'GarantiasLegalBucket'
+    Description: Bucket S3 'garantias-legal'
+  ApiUrl:
+    Description: URL base del API (VITE_/NEXT_PUBLIC_/REACT_APP_API_BASE_URL)
+    Value: !Sub 'https://${Api}.execute-api.${AWS::Region}.amazonaws.com/${Environment}'

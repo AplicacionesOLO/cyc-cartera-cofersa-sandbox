@@ -1,0 +1,489 @@
+{
+  "generated_at": "2026-10-06T22:28:59+00:00",
+  "dynamic_checks_run": true,
+  "mode": "migration",
+  "overall": "PASSED",
+  "criteria": {
+    "1": {
+      "title": "Discovery completo: preflight, proyecto, uso de Supabase y esquema real",
+      "status": "OK"
+    },
+    "2": {
+      "title": "Manifest revisado (sin borrador, endpoints válidos, reglas de autorización asignadas)",
+      "status": "OK"
+    },
+    "3": {
+      "title": "Scripts Aurora completos por ambiente (provisioning, schema, validation, rollback, migration, datos)",
+      "status": "OK"
+    },
+    "4": {
+      "title": "SQL Aurora validado en PostgreSQL efímero (idempotente, TOTAL_FALTA=0, rollback limpio)",
+      "status": "OK"
+    },
+    "5": {
+      "title": "Backend hexagonal: handlers y use cases existen; dependencias entre capas y SQL en su lugar",
+      "status": "OK"
+    },
+    "6": {
+      "title": "Tests del backend en verde (unitarios con fakes e integración contra el esquema generado)",
+      "status": "OK"
+    },
+    "7": {
+      "title": "Lint del backend limpio (ruff)",
+      "status": "OK"
+    },
+    "8": {
+      "title": "Template SAM único y samconfig dev/qa/prod con tags y rutas por ambiente",
+      "status": "OK"
+    },
+    "9": {
+      "title": "Template válido (cfn-lint y transformación SAM)",
+      "status": "OK"
+    },
+    "10": {
+      "title": "IAM mínimo y resiliencia (sin wildcards salvo ENI; SQS con DLQ, reintentos, visibility e idempotencia)",
+      "status": "OK"
+    },
+    "11": {
+      "title": "Frontend con arquitectura estándar (Page → Controller → Api → axiosApiGateway, naming y tamaños)",
+      "status": "OK"
+    },
+    "12": {
+      "title": "Frontend compila, cumple Prettier y sus tests pasan",
+      "status": "OK"
+    },
+    "13": {
+      "title": "Cero residuos de Supabase (código, dependencias, variables)",
+      "status": "OK"
+    },
+    "14": {
+      "title": "Sin secretos ni identificadores de ambiente hardcodeados",
+      "status": "OK"
+    },
+    "15": {
+      "title": "Sin TODO/FIXME/pseudocódigo en el código generado",
+      "status": "OK"
+    },
+    "16": {
+      "title": "Reporte final con matriz ORIGEN → DESTINO y solo pendientes de configuración",
+      "status": "PENDING"
+    }
+  },
+  "checks": [
+    {
+      "id": "discovery_artifacts",
+      "criterion": 1,
+      "title": "Artefactos de discovery",
+      "status": "OK",
+      "detail": "",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "schema_source",
+      "criterion": 1,
+      "title": "Origen del esquema",
+      "status": "OK",
+      "detail": "fuente: live_database",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "manifest",
+      "criterion": 2,
+      "title": "Manifest completo",
+      "status": "OK",
+      "detail": "",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "authorization_rules",
+      "criterion": 2,
+      "title": "Cada regla de autorización tiene dónde se aplica (enforced_in)",
+      "status": "OK",
+      "detail": "",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "pending_errors",
+      "criterion": 2,
+      "title": "Sin errores pendientes declarados en el manifest",
+      "status": "OK",
+      "detail": "",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "database_files",
+      "criterion": 3,
+      "title": "Scripts Aurora por ambiente (dev, qa, prd)",
+      "status": "OK",
+      "detail": "",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "database_unsupported",
+      "criterion": 3,
+      "title": "Objetos sin equivalente en Aurora documentados",
+      "status": "OK",
+      "detail": "",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "aurora_sql_sandbox",
+      "criterion": 4,
+      "title": "SQL en PostgreSQL efímero (idempotencia, validación, rollback)",
+      "status": "OK",
+      "detail": "dev: PASSED; qa: PASSED; prd: PASSED",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "template_single",
+      "criterion": 8,
+      "title": "Un único template SAM parametrizado",
+      "status": "OK",
+      "detail": "",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "template_standard",
+      "criterion": 8,
+      "title": "Template conforme al estándar (parámetros, runtime, logs)",
+      "status": "OK",
+      "detail": "",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "backend_structure",
+      "criterion": 5,
+      "title": "Estructura hexagonal del backend",
+      "status": "OK",
+      "detail": "",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "backend_handlers",
+      "criterion": 5,
+      "title": "Handlers del manifest y del template implementados",
+      "status": "OK",
+      "detail": "35 handlers",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "backend_use_cases",
+      "criterion": 5,
+      "title": "Use cases del manifest implementados",
+      "status": "OK",
+      "detail": "178 use cases",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "backend_layers",
+      "criterion": 5,
+      "title": "Dependencias entre capas y handlers delgados",
+      "status": "OK",
+      "detail": "",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "backend_sql",
+      "criterion": 5,
+      "title": "SQL solo en adapters y con nombres de Aurora",
+      "status": "OK",
+      "detail": "",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "backend_unit_tests",
+      "criterion": 6,
+      "title": "pytest (unitarios con fakes)",
+      "status": "OK",
+      "detail": "281 passed, 30 skipped in 0.69s",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "backend_module_tests",
+      "criterion": 6,
+      "title": "Cada módulo del manifest tiene tests unitarios",
+      "status": "OK",
+      "detail": "",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "backend_integration_tests",
+      "criterion": 6,
+      "title": "pytest de integración contra el esquema generado (PG efímero)",
+      "status": "OK",
+      "detail": "30 passed in 53.96s",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "backend_lint",
+      "criterion": 7,
+      "title": "ruff check",
+      "status": "OK",
+      "detail": "",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "samconfig",
+      "criterion": 8,
+      "title": "samconfig.toml dev/qa/prod con tags y rutas por ambiente",
+      "status": "OK",
+      "detail": "",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "cfn_lint",
+      "criterion": 9,
+      "title": "cfn-lint",
+      "status": "OK",
+      "detail": "",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "sam_validate",
+      "criterion": 9,
+      "title": "Transformación SAM",
+      "status": "OK",
+      "detail": "348 recursos CloudFormation",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "iam_least_privilege",
+      "criterion": 10,
+      "title": "IAM sin comodines (salvo ENI documentado)",
+      "status": "OK",
+      "detail": "",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "sqs_controls",
+      "criterion": 10,
+      "title": "Colas SQS con los 4 controles del estándar",
+      "status": "OK",
+      "detail": "1 cola(s)",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "frontend_shared",
+      "criterion": 11,
+      "title": "Capa compartida (gateway HTTP, auth, env)",
+      "status": "OK",
+      "detail": "",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "frontend_http",
+      "criterion": 11,
+      "title": "HTTP solo vía axiosApiGateway",
+      "status": "OK",
+      "detail": "",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "frontend_layers",
+      "criterion": 11,
+      "title": "Módulos src/views con Page → Controller → Api",
+      "status": "OK",
+      "detail": "",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "frontend_naming",
+      "criterion": 11,
+      "title": "Naming kebab-case (-page, use-*-controller, -api)",
+      "status": "OK",
+      "detail": "",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "frontend_sizes",
+      "criterion": 11,
+      "title": "Límites de tamaño de pages y secciones",
+      "status": "OK",
+      "detail": "",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "frontend_large_files",
+      "criterion": 11,
+      "title": "Componentes fuera de views/ ≤ 250 líneas",
+      "status": "WARN",
+      "detail": "72 hallazgo(s)",
+      "items": [
+        "frontend/src/app/(app)/auditoria-legal/garantias/ModalEmitirPagare.tsx: 1154 líneas",
+        "frontend/src/app/(app)/auditoria-legal/garantias/ModalGenerarPagare.tsx: 788 líneas",
+        "frontend/src/app/(app)/auditoria-legal/garantias/ModalRegistrarGarantia.tsx: 966 líneas",
+        "frontend/src/app/(app)/auditoria-legal/garantias/ModalRevisarActualizacion.tsx: 252 líneas",
+        "frontend/src/app/(app)/auditoria-legal/garantias/garantias-cliente.tsx: 2161 líneas",
+        "frontend/src/app/(app)/dashboard/page.tsx: 1061 líneas",
+        "frontend/src/app/(app)/gestion-cartera/pedidos-retenidos/pedidos-retenidos-cliente.tsx: 1334 líneas",
+        "frontend/src/app/(app)/gestion-cartera/saldos-favor/saldos-favor-cliente.tsx: 540 líneas",
+        "frontend/src/app/(app)/reportes/aging-consolidado/aging-cliente.tsx: 418 líneas",
+        "frontend/src/app/(app)/reportes/cartera-vencida/cartera-vencida-cliente.tsx: 333 líneas",
+        "frontend/src/app/(app)/reportes/cei/cei-cliente.tsx: 484 líneas",
+        "frontend/src/app/(app)/reportes/cierre-mensual/cierre-mensual-cliente.tsx: 1230 líneas",
+        "frontend/src/app/(app)/reportes/cierre-mensual/page.tsx: 311 líneas",
+        "frontend/src/app/(app)/reportes/efectividad-gestiones/efectividad-cliente.tsx: 678 líneas",
+        "frontend/src/app/(app)/reportes/estados-cuenta/estados-cuenta-cliente.tsx: 792 líneas",
+        "frontend/src/app/(app)/reportes/facturas-plazo-especial/plazo-especial-cliente.tsx: 397 líneas",
+        "frontend/src/app/(app)/reportes/gestiones-periodo/gestiones-periodo-cliente.tsx: 405 líneas",
+        "frontend/src/app/(app)/reportes/icp-vendedor/icp-vendedor-cliente.tsx: 376 líneas",
+        "frontend/src/app/(app)/reportes/migracion-mora/migracion-cliente.tsx: 476 líneas",
+        "frontend/src/app/(app)/reportes/mora-vendedor/detalle-bloqueados.tsx: 823 líneas",
+        "frontend/src/app/(app)/reportes/mora-vendedor/mora-vendedor-cliente.tsx: 907 líneas",
+        "frontend/src/app/(app)/reportes/presupuesto-cobro/tab-presupuesto.tsx: 783 líneas",
+        "frontend/src/app/(app)/reportes/presupuesto-cobro/tab-proyeccion.tsx: 545 líneas",
+        "frontend/src/app/(app)/reportes/presupuesto-cobro/tab-recuperacion.tsx: 968 líneas",
+        "frontend/src/app/(app)/reportes/presupuesto-cobro/tab-sin-pago.tsx: 263 líneas",
+        "frontend/src/app/(app)/reportes/resumen-ejecutivo/resumen-ejecutivo-cliente.tsx: 1051 líneas",
+        "frontend/src/app/(print)/pagare/[id]/PagareImprimible.tsx: 251 líneas",
+        "frontend/src/app/actualizar-perfil/[token]/formulario-actualizacion.tsx: 288 líneas",
+        "frontend/src/app/login/page.tsx: 315 líneas",
+        "frontend/src/components/BuscadorGlobal.tsx: 562 líneas",
+        "frontend/src/components/sidebar.tsx: 784 líneas",
+        "frontend/src/components/topbar.tsx: 690 líneas",
+        "frontend/src/components/analisis-pagos/PagosAplicadosCliente.tsx: 782 líneas",
+        "frontend/src/components/analisis-pagos/TabAlertasDeterioro.tsx: 252 líneas",
+        "frontend/src/components/analisis-pagos/TabConcentracion.tsx: 439 líneas",
+        "frontend/src/components/analisis-pagos/TabPerfilVendedor.tsx: 364 líneas",
+        "frontend/src/components/analisis-pagos/TabRankingClientes.tsx: 598 líneas",
+        "frontend/src/components/analista/DashboardResumen.tsx: 353 líneas",
+        "frontend/src/components/analista/PorVendedor.tsx: 300 líneas",
+        "frontend/src/components/cartera/mi-cartera-view.tsx: 1332 líneas",
+        "frontend/src/components/centro-recursos/TabAplicaciones.tsx: 520 líneas",
+        "frontend/src/components/centro-recursos/TabDirectorioAgentes.tsx: 1025 líneas",
+        "frontend/src/components/clientes/tabla-clientes.tsx: 892 líneas",
+        "frontend/src/components/clientes/ficha/TendenciaPagoCard.tsx: 333 líneas",
+        "frontend/src/components/clientes/ficha/ficha-cliente.tsx: 4132 líneas",
+        "frontend/src/components/clientes/ficha/form-nueva-gestion.tsx: 999 líneas",
+        "frontend/src/components/clientes/ficha/modal-gestion.tsx: 303 líneas",
+        "frontend/src/components/clientes/ficha/modal-nueva-solicitud.tsx: 1478 líneas",
+        "frontend/src/components/clientes/ficha/tab-reportar-pago.tsx: 1258 líneas",
+        "frontend/src/components/clientes/ficha/timeline-gestiones-v2.tsx: 463 líneas",
+        "frontend/src/components/configuracion/FeedActividadAutomatizaciones.tsx: 253 líneas",
+        "frontend/src/components/configuracion/TabCierreMes.tsx: 373 líneas",
+        "frontend/src/components/configuracion/TabDirectorio.tsx: 635 líneas",
+        "frontend/src/components/configuracion/TabSincronizacion.tsx: 612 líneas",
+        "frontend/src/components/configuracion/TabSupervisores.tsx: 464 líneas",
+        "frontend/src/components/configuracion/TabUsuarios.tsx: 409 líneas",
+        "frontend/src/components/configuracion/TabVendedores.tsx: 1428 líneas",
+        "frontend/src/components/coordinador/DSOTendenciaCard.tsx: 313 líneas",
+        "frontend/src/components/coordinador/TendenciaCarteraChart.tsx: 368 líneas",
+        "frontend/src/components/gestiones/tabla-gestiones-base.tsx: 478 líneas",
+        "frontend/src/components/gestiones/tabla-gestiones.tsx: 445 líneas",
+        "frontend/src/components/layout/ChatPanel.tsx: 467 líneas",
+        "frontend/src/components/promesas/tabla-promesas.tsx: 916 líneas",
+        "frontend/src/components/reportes/RecuperacionMom.tsx: 518 líneas",
+        "frontend/src/components/reportes/RecuperacionPeriodoCliente.tsx: 679 líneas",
+        "frontend/src/components/reportes/RecuperacionTramos.tsx: 535 líneas",
+        "frontend/src/components/reportes/VendedorEnvioPanel.tsx: 590 líneas",
+        "frontend/src/components/saldos-favor/saldos-favor-tabla.tsx: 498 líneas",
+        "frontend/src/components/solicitudes/detalle-solicitud.tsx: 526 líneas",
+        "frontend/src/components/solicitudes/form-nueva-solicitud.tsx: 526 líneas",
+        "frontend/src/components/solicitudes/form-solicitud-nueva.tsx: 1074 líneas",
+        "frontend/src/components/solicitudes/wizard-nueva-solicitud.tsx: 1759 líneas"
+      ],
+      "items_total": 72
+    },
+    {
+      "id": "frontend_env_hosting",
+      "criterion": 11,
+      "title": "Variables por ambiente y hosting",
+      "status": "OK",
+      "detail": "",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "frontend_build",
+      "criterion": 12,
+      "title": "Instalación y build del frontend",
+      "status": "OK",
+      "detail": "install + build",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "frontend_prettier",
+      "criterion": 12,
+      "title": "Prettier",
+      "status": "OK",
+      "detail": "",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "frontend_tests",
+      "criterion": 12,
+      "title": "Tests del frontend",
+      "status": "OK",
+      "detail": "el proyecto no tiene tests (no aplica)",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "supabase_residue",
+      "criterion": 13,
+      "title": "Cero referencias a Supabase en frontend y backend",
+      "status": "OK",
+      "detail": "",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "hardcoded_secrets",
+      "criterion": 14,
+      "title": "Sin secretos en código ni configuración",
+      "status": "OK",
+      "detail": "",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "hardcoded_ids",
+      "criterion": 14,
+      "title": "Sin IDs/ARNs/endpoints de AWS hardcodeados",
+      "status": "OK",
+      "detail": "",
+      "items": [],
+      "items_total": 0
+    },
+    {
+      "id": "no_todos",
+      "criterion": 15,
+      "title": "Sin TODO/FIXME/pseudocódigo",
+      "status": "OK",
+      "detail": "",
+      "items": [],
+      "items_total": 0
+    }
+  ]
+}

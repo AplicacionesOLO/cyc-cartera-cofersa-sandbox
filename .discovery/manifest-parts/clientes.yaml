@@ -1,0 +1,64 @@
+module:
+  name: clientes
+  entities: [public.cartera, public.facturas, public.maestro_clientes, public.historico_cartera, public.historico_aging_factura, public.cuentas_bancarias]
+  use_cases: [ListClientesUseCase, BuscarGlobalUseCase, GetFichaClienteUseCase, ActualizarContactoClienteUseCase, ActualizarLogisticaClienteUseCase, CambiarEstadoClienteUseCase, RegistrarRecordatorioUseCase, GetEstadoCuentaDataUseCase, EnviarEmailCobroUseCase, EnviarEstadoCuentaUseCase, GenerarEmailCobroIAUseCase]
+api_endpoints:
+  - {method: GET, path: /clientes, function: ClientesApi, handler: entrypoints.lambda_handlers.clientes.clientes_handler, use_case: ListClientesUseCase, module: clientes, auth: cognito, timeout: 29,
+     source: ["src/app/(app)/clientes/page.tsx:117", "src/app/(app)/clientes/actions.ts:22", "src/app/(app)/clientes/actions.ts:27"]}
+  - {method: GET, path: /clientes/buscar, function: ClientesApi, handler: entrypoints.lambda_handlers.clientes.clientes_handler, use_case: BuscarGlobalUseCase, module: clientes, auth: cognito,
+     source: ["src/app/api/clientes/buscar/route.ts:28", "src/app/api/clientes/buscar/route.ts:47", "src/app/api/clientes/buscar/route.ts:55", "src/app/api/clientes/buscar/route.ts:64"]}
+  - {method: GET, path: "/clientes/{cod}/ficha", function: ClientesApi, handler: entrypoints.lambda_handlers.clientes.clientes_handler, use_case: GetFichaClienteUseCase, module: clientes, auth: cognito, timeout: 29,
+     source: ["src/app/(app)/clientes/[cod]/page.tsx:35", "src/app/(app)/clientes/[cod]/page.tsx:57", "src/app/(app)/clientes/[cod]/page.tsx:58", "src/app/(app)/clientes/[cod]/page.tsx:59", "src/app/(app)/clientes/[cod]/page.tsx:60", "src/app/(app)/clientes/[cod]/page.tsx:62", "src/app/(app)/clientes/[cod]/page.tsx:68", "src/app/(app)/clientes/[cod]/page.tsx:71", "src/app/(app)/clientes/[cod]/page.tsx:77", "src/app/(app)/clientes/[cod]/page.tsx:80", "src/app/(app)/clientes/[cod]/page.tsx:85", "src/app/(app)/clientes/[cod]/page.tsx:179", "src/app/(app)/clientes/[cod]/page.tsx:184", "src/app/(app)/clientes/[cod]/page.tsx:187"]}
+  - {method: PATCH, path: /clientes/contacto, function: ClientesApi, handler: entrypoints.lambda_handlers.clientes.clientes_handler, use_case: ActualizarContactoClienteUseCase, module: clientes, auth: cognito,
+     source: ["src/app/api/clientes/contacto/route.ts:5", "src/components/clientes/ficha/ficha-cliente.tsx:737"]}
+  - {method: PATCH, path: /clientes/logistica, function: ClientesApi, handler: entrypoints.lambda_handlers.clientes.clientes_handler, use_case: ActualizarLogisticaClienteUseCase, module: clientes, auth: cognito,
+     source: ["src/app/api/clientes/logistica/route.ts:8", "src/components/clientes/ficha/ficha-cliente.tsx:953"]}
+  - {method: POST, path: /clientes/estado, function: ClientesApi, handler: entrypoints.lambda_handlers.clientes.clientes_handler, use_case: CambiarEstadoClienteUseCase, module: clientes, auth: cognito,
+     source: ["src/app/api/clientes/estado/route.ts:7"]}
+  - {method: POST, path: /clientes/recordatorio, function: ClientesApi, handler: entrypoints.lambda_handlers.clientes.clientes_handler, use_case: RegistrarRecordatorioUseCase, module: clientes, auth: cognito,
+     source: ["src/app/api/clientes/recordatorio/route.ts:6", "src/components/clientes/ficha/ficha-cliente.tsx:2702"]}
+  - {method: GET, path: /clientes/estado-cuenta/data, function: ClientesApi, handler: entrypoints.lambda_handlers.clientes.clientes_handler, use_case: GetEstadoCuentaDataUseCase, module: clientes, auth: cognito,
+     source: ["src/app/api/clientes/estado-cuenta/data/route.ts:10"]}
+  - {method: POST, path: /clientes/email-cobro, function: ClientesApi, handler: entrypoints.lambda_handlers.clientes.clientes_handler, use_case: EnviarEmailCobroUseCase, module: clientes, auth: cognito, timeout: 29,
+     source: ["src/app/api/clientes/email-cobro/route.ts:12", "src/components/clientes/ficha/ficha-cliente.tsx:1458", "src/components/clientes/ficha/ficha-cliente.tsx:1539"]}
+  - {method: POST, path: /clientes/estado-cuenta, function: ClientesApi, handler: entrypoints.lambda_handlers.clientes.clientes_handler, use_case: EnviarEstadoCuentaUseCase, module: clientes, auth: cognito, timeout: 29,
+     source: ["src/app/api/clientes/estado-cuenta/route.ts:14", "src/components/clientes/ficha/ficha-cliente.tsx:1711"]}
+  - {method: POST, path: /ai/generate-email, function: ClientesApi, handler: entrypoints.lambda_handlers.clientes.clientes_handler, use_case: GenerarEmailCobroIAUseCase, module: clientes, auth: cognito, timeout: 29,
+     source: ["src/app/api/ai/generate-email/route.ts:28"]}
+storage_buckets: []
+authorization_rules:
+  - {table: public.cartera, policy: cartera_select_autenticados, command: SELECT, enforced_in: "ListClientesUseCase / GetFichaClienteUseCase (require_usuario: usuario activo; sin scope por analista, igual que el origen)"}
+  - {table: public.cuentas_bancarias, policy: authenticated_read_cuentas_bancarias, command: SELECT, enforced_in: "GetEstadoCuentaDataUseCase / EnviarEstadoCuentaUseCase (require_usuario)"}
+  - {table: public.facturas, policy: facturas_select_usuarios_activos, command: SELECT, enforced_in: "GetFichaClienteUseCase / BuscarGlobalUseCase / GetEstadoCuentaDataUseCase / EnviarEstadoCuentaUseCase (require_usuario)"}
+  - {table: public.historico_aging_factura, policy: solo_usuarios_activos, command: ALL, enforced_in: "Sin uso en el alcance de clientes; quien la lea (reportes/jobs) debe exigir require_usuario. Escrituras solo por jobs (service_role)"}
+  - {table: public.historico_cartera, policy: read_historico_cartera, command: SELECT, enforced_in: "Sin uso en el alcance de clientes (la leen dashboard/reportes: require_usuario en sus casos de uso)"}
+  - {table: public.maestro_clientes, policy: maestro_clientes_select_autenticados, command: SELECT, enforced_in: "ListClientesUseCase / BuscarGlobalUseCase / GetFichaClienteUseCase / GetEstadoCuentaDataUseCase (require_usuario)"}
+  - {table: public.maestro_clientes, policy: maestro_clientes_update_autenticados, command: UPDATE, enforced_in: "ActualizarContactoClienteUseCase / ActualizarLogisticaClienteUseCase (_require_editor_cliente: COORDINADOR o analista_email = usuario) y CambiarEstadoClienteUseCase (require_coordinador)"}
+scheduled_jobs: []
+async_workers: []
+structural_changes:
+  - "La Ficha 360° (/clientes/[cod]) hacía ~11 consultas a Supabase en dos tandas; ahora es un solo GET /clientes/{cod}/ficha?volver=... que devuelve cartera (o la cartera sintética en ₡0), maestro, facturas, gestiones, promesas, solicitudes + solicitante_map, ICP, tendencia, pedidos retenidos, contacto del analista asignado y Anterior/Siguiente (calculado en el backend a partir de los filtros de `volver`). El rol/usuario sale de getUsuarioActual()."
+  - "La Server Action fetchTodosLosClientes (actions.ts) se eliminó: el Excel usa GET /clientes?todos=true desde useExportarClientesController."
+  - "Los tipos ClienteRow/KPIsClientes/FiltrosClientes/... se movieron a src/views/clientes/types.ts (page.tsx los re-exporta); ClienteResultado/FacturaResultado/MarcaResultado (antes exportados por la route.ts de buscar) también."
+  - "Email de cobro: la gestión tipo CORREO que el navegador insertaba con supabase.from('gestiones').insert ahora la registra el backend dentro de POST /clientes/email-cobro tras un envío exitoso (mismo texto de nota; el body agrega `contribuyente`)."
+  - "El front ya no manda providerToken/providerRefreshToken: el envío usa UsuarioMailer con el refresh token guardado del usuario."
+  - "El texto libre del usuario (mensaje, observaciones, nombres) se escapa como HTML en los correos (render idéntico para texto normal; evita inyección de HTML)."
+  - "Editar gestión desde la ficha usa gestionesApi.actualizar (PATCH /clientes/gestiones del módulo Gestiones); ClientesApi no registra rutas /clientes/gestiones*, /clientes/promesas* ni /clientes/pagos/reportar."
+  - "Errores de carga en /clientes y /clientes/[cod] ya no lanzan (pantalla de error de Next): se muestra un mensaje en rojo (regla 8); 404 de la ficha sigue llamando notFound()."
+incompatibilities:
+  - "Límite de 30 correos/hora: el original respondía 429; ahora BusinessRuleViolation (422) con el mismo mensaje ('Límite de 30 correos por hora alcanzado. Esperá unos minutos.')."
+  - "Sin Gmail conectado el mensaje ahora es el de UsuarioMailer (gmail_no_conectado) en lugar de 'Sesión de Google expirada. Cerrá sesión y volvé a ingresar.'; un rechazo de Gmail en email-cobro llega como 'Gmail rechazó el envío: ...' (antes 'Error Gmail API: ...'); en estado-cuenta se sigue devolviendo en email_error con 200."
+  - "POST /api/clientes/estado estaba roto en el origen (hacía .select('analista_id, nombre') sobre maestro_clientes, columnas inexistentes) y no tenía llamadores en el front. Se implementó el comportamiento intencionado: actualiza estado_manual, registra gestión SISTEMA y notifica al analista asignado resolviendo su id por maestro_clientes.analista_email (solo usuarios activos). Cliente inexistente → 404 'Cliente no encontrado'."
+  - "La hora/fecha de la gestión SISTEMA de cambio de estado ahora es hora Costa Rica (el original usaba la hora del servidor/UTC)."
+  - "GERENCIA ya no puede enviar email de cobro/estado de cuenta ni registrar recordatorios (require_escritura); en el origen solo lo impedía la UI."
+  - "Un usuario autenticado sin fila activa en usuarios recibe 403 en /clientes/buscar (antes RLS devolvía listas vacías); el buscador muestra listas vacías igual."
+  - "Los adjuntos PDF/Excel siguen viajando en base64 en el JSON: API Gateway/Lambda limitan el payload (~6 MB en Lambda síncrona)."
+migration_risks:
+  - "GET /clientes/{cod}/ficha con `volver` del listado ejecuta fn_clientes_lista completa (sin paginar) para Anterior/Siguiente, igual que el original; con ~1.400 clientes es aceptable pero conviene vigilar la latencia (timeout 29 s)."
+  - "pathParameters de API Gateway: el use case aplica unquote() al código del cliente (equivale al decodeURIComponent del page.tsx); un código con '%' literal se decodificaría dos veces."
+  - "Los envíos de correo dependen de que cada analista haya conectado Gmail en el SIC (refresh token en usuarios.google_refresh_token)."
+  - "fn_actualizar_contacto_cliente / fn_actualizar_logistica_cliente no son SECURITY DEFINER: el usuario de la app necesita UPDATE sobre tbl_maestro_clientes (y el trigger de protección del sync GAS debe respetar app.contacto_manual / app.logistica_manual)."
+pending:
+  - "Módulo reportes: src/app/(app)/reportes/estados-cuenta/estados-cuenta-cliente.tsx todavía hace fetch a /api/clientes/estado-cuenta/data y /api/clientes/estado-cuenta (rutas ya borradas); reportes-api.ts ya apunta a /clientes/estado-cuenta/data y /clientes/estado-cuenta (GET devuelve EstadoCuentaData; POST devuelve {ok, email_sent, email_to, email_error, facturas_count, saldo_total}); también pueden usar clientesApi.estadoCuentaData/enviarEstadoCuenta."
+  - "El endpoint POST /clientes/estado no tiene llamadores en el front (ni en el original)."
+  - "ficha-cliente.tsx sigue importando componentes de otros módulos (form-nueva-gestion, modal-gestion, modal-nueva-solicitud, tab-reportar-pago, TabSaldosFavor, DirectorioInput, SolicitudCard): su migración la confirman esos módulos."

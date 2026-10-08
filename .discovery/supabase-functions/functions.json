@@ -1,0 +1,16 @@
+[
+  {
+    "id": "df388f2f-4e57-4608-b9ce-217d5ed7f995",
+    "slug": "mark-promesas-incumplidas",
+    "name": "mark-promesas-incumplidas",
+    "status": "ACTIVE",
+    "version": 1,
+    "created_at": 1779336205577,
+    "updated_at": 1779336205577,
+    "verify_jwt": false,
+    "import_map": true,
+    "entrypoint_path": "file:///tmp/user_fn_swkmrufsyhnaeoijasrz_df388f2f-4e57-4608-b9ce-217d5ed7f995_1/source/index.ts",
+    "import_map_path": "file:///tmp/user_fn_swkmrufsyhnaeoijasrz_df388f2f-4e57-4608-b9ce-217d5ed7f995_1/source/deno.json",
+    "ezbr_sha256": "37fc6c2c757b64db8af9ec534b15b11923c82f5b47fa0d1ae97d71b7952b2758"
+  }
+]

@@ -1,0 +1,22 @@
+{
+  "Environment": "dev",
+  "EnvironmentTag": "DEV",
+  "ProjectSlug": "cyc-cofersa",
+  "ProjectLabel": "CYC_COFERSA",
+  "DbName": "cof_dev_cyc_cofersa_db",
+  "CreateNetwork": "true",
+  "VpcCidr": "10.40.0.0/16",
+  "ExistingVpcId": "",
+  "ExistingPrivateSubnetIds": "",
+  "UseRdsProxy": "false",
+  "DbInstanceClass": "db.t3.micro",
+  "DbAllocatedStorage": "20",
+  "DbAvailabilityZone": "us-east-1a",
+  "DbIdentifierSuffix": "-a",
+  "ServiceHoursEnabled": "true",
+  "ServiceTimezone": "America/Costa_Rica",
+  "ServiceWarmupCron": "cron(45 4 ? * * *)",
+  "ServiceStartCron": "cron(0 5 ? * * *)",
+  "ServiceStopCron": "cron(0 18 ? * * *)",
+  "ServiceEnsureCron": "cron(0/15 5-17 ? * * *)"
+}

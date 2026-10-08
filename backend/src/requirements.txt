@@ -1,0 +1,3 @@
+# Dependencias de runtime de las Lambdas (SAM las instala desde CodeUri: src/).
+# boto3 lo provee el runtime python3.13 de Lambda; para tests locales está en requirements-dev.txt.
+psycopg[binary]==3.3.6

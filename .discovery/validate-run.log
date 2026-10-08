@@ -1,0 +1,69 @@
+[OK  ] C1  discovery_artifacts: Artefactos de discovery
+[OK  ] C1  schema_source: Origen del esquema — fuente: live_database
+[OK  ] C2  manifest: Manifest completo
+[OK  ] C2  authorization_rules: Cada regla de autorización tiene dónde se aplica (enforced_in)
+[OK  ] C2  pending_errors: Sin errores pendientes declarados en el manifest
+[FAIL] C3  database_files: Scripts Aurora por ambiente (dev, qa, prd) — 3 hallazgo(s)
+         · database/aurora_postgresql_data.sql (export_data_sql.py: datos del origen incluidos en el script)
+         · database/environments/qa/aurora_postgresql_data.sql (export_data_sql.py: datos del origen incluidos en el script)
+         · database/environments/prd/aurora_postgresql_data.sql (export_data_sql.py: datos del origen incluidos en el script)
+[OK  ] C3  database_unsupported: Objetos sin equivalente en Aurora documentados
+[OK  ] C4  aurora_sql_sandbox: SQL en PostgreSQL efímero (idempotencia, validación, rollback) — dev: PASSED; qa: PASSED; prd: PASSED
+[OK  ] C8  template_single: Un único template SAM parametrizado
+[OK  ] C8  template_standard: Template conforme al estándar (parámetros, runtime, logs)
+[OK  ] C5  backend_structure: Estructura hexagonal del backend
+[OK  ] C5  backend_handlers: Handlers del manifest y del template implementados — 35 handlers
+[OK  ] C5  backend_use_cases: Use cases del manifest implementados — 178 use cases
+[OK  ] C5  backend_layers: Dependencias entre capas y handlers delgados
+[OK  ] C5  backend_sql: SQL solo en adapters y con nombres de Aurora
+[OK  ] C6  backend_unit_tests: pytest (unitarios con fakes) — 281 passed, 30 skipped in 0.92s
+[OK  ] C6  backend_module_tests: Cada módulo del manifest tiene tests unitarios
+[OK  ] C6  backend_integration_tests: pytest de integración contra el esquema generado (PG efímero) — 30 passed in 0.75s
+[OK  ] C7  backend_lint: ruff check
+[OK  ] C8  samconfig: samconfig.toml dev/qa/prod con tags y rutas por ambiente
+[OK  ] C9  cfn_lint: cfn-lint
+[OK  ] C9  sam_validate: Transformación SAM — 348 recursos CloudFormation
+[OK  ] C10 iam_least_privilege: IAM sin comodines (salvo ENI documentado)
+[OK  ] C10 sqs_controls: Colas SQS con los 4 controles del estándar — 1 cola(s)
+[OK  ] C11 frontend_shared: Capa compartida (gateway HTTP, auth, env)
+[OK  ] C11 frontend_http: HTTP solo vía axiosApiGateway
+[OK  ] C11 frontend_layers: Módulos src/views con Page → Controller → Api
+[OK  ] C11 frontend_naming: Naming kebab-case (-page, use-*-controller, -api)
+[OK  ] C11 frontend_sizes: Límites de tamaño de pages y secciones
+[WARN] C11 frontend_large_files: Componentes fuera de views/ ≤ 250 líneas — 72 hallazgo(s)
+         · frontend/src/app/(app)/auditoria-legal/garantias/ModalEmitirPagare.tsx: 1154 líneas
+         · frontend/src/app/(app)/auditoria-legal/garantias/ModalGenerarPagare.tsx: 788 líneas
+         · frontend/src/app/(app)/auditoria-legal/garantias/ModalRegistrarGarantia.tsx: 966 líneas
+         · frontend/src/app/(app)/auditoria-legal/garantias/ModalRevisarActualizacion.tsx: 252 líneas
+         · frontend/src/app/(app)/auditoria-legal/garantias/garantias-cliente.tsx: 2161 líneas
+         · frontend/src/app/(app)/dashboard/page.tsx: 1061 líneas
+         · frontend/src/app/(app)/gestion-cartera/pedidos-retenidos/pedidos-retenidos-cliente.tsx: 1334 líneas
+         · frontend/src/app/(app)/gestion-cartera/saldos-favor/saldos-favor-cliente.tsx: 540 líneas
+[OK  ] C11 frontend_env_hosting: Variables por ambiente y hosting
+[OK  ] C12 frontend_build: Instalación y build del frontend — install + build
+[OK  ] C12 frontend_prettier: Prettier
+[OK  ] C12 frontend_tests: Tests del frontend — el proyecto no tiene tests (no aplica)
+[OK  ] C13 supabase_residue: Cero referencias a Supabase en frontend y backend
+[OK  ] C14 hardcoded_secrets: Sin secretos en código ni configuración
+[OK  ] C14 hardcoded_ids: Sin IDs/ARNs/endpoints de AWS hardcodeados
+[OK  ] C15 no_todos: Sin TODO/FIXME/pseudocódigo
+
+Criterios:
+   1. [OK] Discovery completo: preflight, proyecto, uso de Supabase y esquema real
+   2. [OK] Manifest revisado (sin borrador, endpoints válidos, reglas de autorización asignadas)
+   3. [FAIL] Scripts Aurora completos por ambiente (provisioning, schema, validation, rollback, migration, datos)
+   4. [OK] SQL Aurora validado en PostgreSQL efímero (idempotente, TOTAL_FALTA=0, rollback limpio)
+   5. [OK] Backend hexagonal: handlers y use cases existen; dependencias entre capas y SQL en su lugar
+   6. [OK] Tests del backend en verde (unitarios con fakes e integración contra el esquema generado)
+   7. [OK] Lint del backend limpio (ruff)
+   8. [OK] Template SAM único y samconfig dev/qa/prod con tags y rutas por ambiente
+   9. [OK] Template válido (cfn-lint y transformación SAM)
+  10. [OK] IAM mínimo y resiliencia (sin wildcards salvo ENI; SQS con DLQ, reintentos, visibility e idempotencia)
+  11. [OK] Frontend con arquitectura estándar (Page → Controller → Api → axiosApiGateway, naming y tamaños)
+  12. [OK] Frontend compila, cumple Prettier y sus tests pasan
+  13. [OK] Cero residuos de Supabase (código, dependencias, variables)
+  14. [OK] Sin secretos ni identificadores de ambiente hardcodeados
+  15. [OK] Sin TODO/FIXME/pseudocódigo en el código generado
+  16. [PENDING] Reporte final con matriz ORIGEN → DESTINO y solo pendientes de configuración
+
+Resultado global: FAILED  →  .discovery/validation-results.json

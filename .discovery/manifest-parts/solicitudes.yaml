@@ -1,0 +1,109 @@
+module:
+  name: solicitudes
+  entities: [solicitudes, solicitud_comentarios, solicitud_historial_estados, notificaciones, usuarios, cartera,
+             maestro_clientes, facturas, gestiones]
+  use_cases: [ListSolicitudesUseCase, GetSolicitudDetalleUseCase, GetNuevaSolicitudClientesUseCase,
+              GetNuevaSolicitudContextoUseCase, ListFacturasPendientesUseCase, CreateAdjuntoUploadUrlUseCase,
+              CreateSolicitudUseCase, ResolverSolicitudUseCase, CambiarEstadoSolicitudUseCase,
+              AgregarComentarioSolicitudUseCase]
+api_endpoints:
+  - {method: GET, path: /solicitudes, function: SolicitudesApi,
+     handler: entrypoints.lambda_handlers.solicitudes.solicitudes_handler, use_case: ListSolicitudesUseCase,
+     module: solicitudes, auth: cognito,
+     source: ["src/app/(app)/solicitudes/page.tsx:28", "src/app/(app)/solicitudes/page.tsx:44"]}
+  - {method: POST, path: /solicitudes, function: SolicitudesApi,
+     handler: entrypoints.lambda_handlers.solicitudes.solicitudes_handler, use_case: CreateSolicitudUseCase,
+     module: solicitudes, auth: cognito, timeout: 29,
+     source: ["src/app/api/solicitudes/route.ts:10", "src/components/solicitudes/form-solicitud-nueva.tsx:247",
+              "src/components/solicitudes/wizard-nueva-solicitud.tsx:798",
+              "src/components/clientes/ficha/modal-nueva-solicitud.tsx:831"]}
+  - {method: GET, path: /solicitudes/nueva-clientes, function: SolicitudesApi,
+     handler: entrypoints.lambda_handlers.solicitudes.solicitudes_handler,
+     use_case: GetNuevaSolicitudClientesUseCase, module: solicitudes, auth: cognito,
+     source: ["src/app/(app)/solicitudes/nueva/page.tsx:49", "src/app/(app)/solicitudes/nueva/page.tsx:55",
+              "src/app/(app)/solicitudes/nueva/page.tsx:63", "src/app/(app)/solicitudes/nueva/page.tsx:95"]}
+  - {method: GET, path: /solicitudes/nueva-contexto, function: SolicitudesApi,
+     handler: entrypoints.lambda_handlers.solicitudes.solicitudes_handler,
+     use_case: GetNuevaSolicitudContextoUseCase, module: solicitudes, auth: cognito,
+     source: ["src/app/(app)/clientes/[cod]/solicitudes/nueva/page.tsx:24",
+              "src/app/(app)/clientes/[cod]/solicitudes/nueva/page.tsx:25",
+              "src/app/(app)/clientes/[cod]/solicitudes/nueva/page.tsx:35",
+              "src/components/solicitudes/form-nueva-solicitud.tsx:118",
+              "src/components/solicitudes/form-nueva-solicitud.tsx:134"]}
+  - {method: GET, path: /solicitudes/facturas, function: SolicitudesApi,
+     handler: entrypoints.lambda_handlers.solicitudes.solicitudes_handler, use_case: ListFacturasPendientesUseCase,
+     module: solicitudes, auth: cognito,
+     source: ["src/components/solicitudes/form-solicitud-nueva.tsx:125"]}
+  - {method: POST, path: /solicitudes/adjuntos/upload-url, function: SolicitudesApi,
+     handler: entrypoints.lambda_handlers.solicitudes.solicitudes_handler,
+     use_case: CreateAdjuntoUploadUrlUseCase, module: solicitudes, auth: cognito,
+     source: ["src/components/solicitudes/form-solicitud-nueva.tsx:267",
+              "src/components/solicitudes/form-solicitud-nueva.tsx:273"]}
+  - {method: GET, path: "/solicitudes/{id}", function: SolicitudesApi,
+     handler: entrypoints.lambda_handlers.solicitudes.solicitudes_handler, use_case: GetSolicitudDetalleUseCase,
+     module: solicitudes, auth: cognito,
+     source: ["src/app/(app)/solicitudes/[id]/page.tsx:41", "src/app/(app)/solicitudes/[id]/page.tsx:43",
+              "src/app/(app)/solicitudes/[id]/page.tsx:46", "src/app/(app)/solicitudes/[id]/page.tsx:64",
+              "src/app/(app)/solicitudes/[id]/page.tsx:67"]}
+  - {method: PATCH, path: "/solicitudes/{id}", function: SolicitudesApi,
+     handler: entrypoints.lambda_handlers.solicitudes.solicitudes_handler, use_case: ResolverSolicitudUseCase,
+     module: solicitudes, auth: cognito,
+     source: ["src/app/api/solicitudes/[id]/route.ts:5"]}
+  - {method: PATCH, path: "/solicitudes/{id}/estado", function: SolicitudesApi,
+     handler: entrypoints.lambda_handlers.solicitudes.solicitudes_handler, use_case: CambiarEstadoSolicitudUseCase,
+     module: solicitudes, auth: cognito,
+     source: ["src/app/api/solicitudes/[id]/estado/route.ts:9", "src/components/solicitudes/detalle-solicitud.tsx:81"]}
+  - {method: POST, path: "/solicitudes/{id}/comentarios", function: SolicitudesApi,
+     handler: entrypoints.lambda_handlers.solicitudes.solicitudes_handler,
+     use_case: AgregarComentarioSolicitudUseCase, module: solicitudes, auth: cognito,
+     source: ["src/app/api/solicitudes/[id]/comentarios/route.ts:7",
+              "src/components/solicitudes/detalle-solicitud.tsx:113"]}
+storage_buckets: [{name: comprobantes-pago, functions: [SolicitudesApi]}]
+authorization_rules:
+  - {table: public.solicitudes, policy: "Analista lee sus propias solicitudes", command: SELECT,
+     enforced_in: "ListSolicitudesUseCase / GetSolicitudDetalleUseCase (require_usuario + scope solicitante_id = usuario.id si no es COORDINADOR/GERENCIA; ajena → 404)"}
+  - {table: public.solicitudes, policy: "Coordinador lee todas las solicitudes", command: SELECT,
+     enforced_in: "ListSolicitudesUseCase / GetSolicitudDetalleUseCase (usuario.es_global → sin filtro)"}
+  - {table: public.solicitudes, policy: "Gerencia lee todas las solicitudes", command: SELECT,
+     enforced_in: "ListSolicitudesUseCase / GetSolicitudDetalleUseCase (usuario.es_global → sin filtro; escrituras bloqueadas con require_escritura)"}
+  - {table: public.solicitudes, policy: solicitudes_insert_usuarios_activos, command: INSERT,
+     enforced_in: "CreateSolicitudUseCase (require_usuario activo + require_acceso_modulo + GERENCIA 403; solicitante_id = usuario.id)"}
+  - {table: public.solicitudes, policy: "Analista actualiza sus solicitudes pendientes", command: UPDATE,
+     enforced_in: "CambiarEstadoSolicitudUseCase / ResolverSolicitudUseCase (no coordinador: solo propias y con estado = 'PENDIENTE', si no 403/404)"}
+  - {table: public.solicitudes, policy: "Coordinador actualiza solicitudes", command: UPDATE,
+     enforced_in: "CambiarEstadoSolicitudUseCase / ResolverSolicitudUseCase (usuario.es_coordinador → cualquier solicitud)"}
+  - {table: public.solicitud_comentarios, policy: sol_com_insert, command: INSERT,
+     enforced_in: "AgregarComentarioSolicitudUseCase (require_usuario activo; usuario_id = usuario.id del principal)"}
+  - {table: public.solicitud_comentarios, policy: sol_com_select, command: SELECT,
+     enforced_in: "GetSolicitudDetalleUseCase (require_usuario activo)"}
+  - {table: public.solicitud_historial_estados, policy: sol_hist_insert, command: INSERT,
+     enforced_in: "CreateSolicitudUseCase / CambiarEstadoSolicitudUseCase (require_usuario activo; usuario_id = usuario.id del principal)"}
+  - {table: public.solicitud_historial_estados, policy: sol_hist_select, command: SELECT,
+     enforced_in: "GetSolicitudDetalleUseCase (require_usuario activo)"}
+scheduled_jobs: []
+async_workers: []
+structural_changes:
+  - "Las 4 API Routes (/api/solicitudes, /[id], /[id]/estado, /[id]/comentarios) pasan a SolicitudesApi con los mismos paths sin /api, mismos bodies y misma forma de respuesta (ok, id, numero, email_sent, email_to, email_error...)."
+  - "Las consultas directas de los Server Components se agrupan en un endpoint por pantalla: GET /solicitudes (lista + solicitante_map), GET /solicitudes/{id} (solicitud + comentarios + historial con autor_nombre + gestion_origen + solicitante_nombre), GET /solicitudes/nueva-clientes (cartera + maestro + analista_nombres + gestion_origen) y GET /solicitudes/nueva-contexto?cod= (cartera + maestro + facturas del cliente)."
+  - "Los tipos ClienteConDatos, GestionOrigenPreload, ComentarioConAutor, HistorialConAutor y GestionOrigenLink se movieron a src/views/solicitudes/types.ts; los page.tsx los re-exportan para no romper imports."
+  - "DetalleSolicitud usa useDetalleSolicitudController (estado, historial optimista y comentarios); los 3 formularios de creación usan useCrearSolicitudController; form-solicitud-nueva usa useFacturasClienteController (AbortController)."
+  - "Guard del módulo también en backend: todos los endpoints exigen COORDINADOR/GERENCIA o puede_gestionar_cartera (ANALISTA, o ANALISTA_RIESGO con cartera); GERENCIA no escribe. Las páginas detalle y nueva (incluida /clientes/[cod]/solicitudes/nueva) aplican el mismo redirect que el listado."
+  - "El correo (ambas ramas) sale con UsuarioMailer (refresh token guardado del solicitante); el front ya no envía providerToken/providerRefreshToken. EMAIL_COORDINADOR → integration_config('email_coordinador') con fallback jdiaz@cofersa.cr; NEXT_PUBLIC_APP_URL → integration_config('app_url') con fallback https://cyc-cartera-cofersa.vercel.app."
+  - "El correo se envía después del commit (la solicitud no se deshace si Gmail falla, igual que el original)."
+incompatibilities:
+  - "Adjuntos: el bucket comprobantes-pago era público (getPublicUrl) y en AWS es privado. El front pide URL prefirmada (POST /solicitudes/adjuntos/upload-url) y guarda la key en datos.adjuntos[].path con url=null; GET /solicitudes/{id} firma cada adjunto (1 h). Para filas migradas con URL pública de Supabase se extrae la key de la URL (/storage/v1/object/public/comprobantes-pago/<key>) y se firma igual."
+  - "Los links de adjuntos en el correo son URLs prefirmadas (pedido de 7 días); con credenciales temporales del rol de la Lambda caducan antes (al expirar la sesión). Antes eran URLs públicas permanentes. El adjunto sigue accesible desde el detalle de la solicitud en el SIC."
+  - "Rama legacy sin acceso a Gmail: antes 401 'Sesión de Google expirada...'; ahora 422 (gmail_no_conectado) con el MISMO texto, para no disparar el cierre de sesión de Cognito que hace el cliente HTTP ante un 401. Sigue sin insertar la solicitud."
+  - "Errores de Gmail: GmailApiSender no distingue 401/403, así que email_error muestra 'Gmail rechazó el envío: <detalle>' en vez de los textos específicos 401/403 del original; sin refresh token (rama catálogo) se mantiene 'Token de Google no disponible y no se pudo renovar...'."
+  - "PATCH /solicitudes/{id}/estado: en el original, un analista sobre una solicitud propia que no estuviera en 'PENDIENTE' (p. ej. las del catálogo nuevo, que nacen 'Pendiente') recibía ok=true y se insertaba historial, pero el UPDATE quedaba anulado en silencio por RLS. Ahora se responde 403 'Sin permisos para cambiar el estado de la solicitud' y no se escribe historial."
+  - "PATCH /solicitudes/{id} con una accion desconocida ahora responde 400 'accion inválida' (antes hacía un update parcial)."
+  - "Comentarios: ahora la solicitud tiene que ser visible para el usuario (404 si no); antes RLS dejaba comentar cualquier solicitud por id."
+migration_risks:
+  - "Las solicitudes del catálogo nuevo ('Pendiente', 'En revisión'...) solo las puede cambiar de estado el COORDINADOR (igual que el efecto real del RLS original, que comparaba con 'PENDIENTE' en mayúsculas). Si el negocio espera que los analistas las muevan, hay que decidir y ajustar la regla."
+  - "Para que las URLs de adjuntos migradas funcionen, los objetos de Storage de comprobantes-pago se tienen que copiar a S3 con la misma key (ruta dentro del bucket)."
+  - "Un ANALISTA_RIESGO sin cartera ya no puede crear solicitudes desde la ficha del cliente (antes RLS lo permitía a cualquier usuario activo); queda alineado con el guard del módulo pedido en el CLAUDE.md."
+  - "El correo legacy necesita que el usuario haya conectado Gmail (refresh token en usuarios.google_refresh_token); si no, la solicitud no se crea, como antes con el token vencido."
+pending:
+  - "Módulo clientes: la pestaña Solicitudes de la ficha (src/components/clientes/ficha/ficha-cliente.tsx) y otros lectores de tbl_solicitudes (dashboard, gestiones) siguen siendo responsabilidad de sus módulos."
+  - "Base/infra: SolicitudesApi necesita la variable COMPROBANTES_PAGO_BUCKET_NAME y permisos s3:PutObject/GetObject sobre el bucket comprobantes-pago (vía storage_buckets), y lectura del secreto de integración (email_coordinador, app_url, google_client_id/secret para UsuarioMailer)."
+  - "src/components/clientes/ficha/pagina-nueva-solicitud.tsx (fuera de mi alcance) solo importa WizardNuevaSolicitud, que ya está migrado; no necesita cambios."
